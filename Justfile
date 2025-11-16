@@ -1,3 +1,3 @@
 # Build the bluefin-common container locally
 build:
-    podman build -t bluefin-common:latest .
+    buildah build -t bluefin-common:latest -f ./Containerfile .
