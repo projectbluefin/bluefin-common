@@ -1,24 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:best-practices"
-  ],
-
-  "rebaseWhen": "never",
-  "schedule": [
-    "* 0 * * *"
-  ],
-
-  "packageRules": [
-    {
-      "automerge": true,
-      "matchUpdateTypes": ["pin", "pinDigest"]
-    },
-    {
-      "automerge": true,
-      "groupName": "github-actions",
-      "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["digest", "patch", "minor"]
-    }
+    "github>ublue-os/renovate-config:org-inherited-config"
   ]
 }
