@@ -12,7 +12,7 @@ permissions:
 jobs:
   release:
     name: Create monthly snapshot release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
@@ -24,7 +24,7 @@ jobs:
         id: tag
         run: |
           TAG="v$(date +'%Y.%m')"
-          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "Release tag: ${TAG}"
 
       - name: Generate release notes
@@ -32,27 +32,31 @@ jobs:
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
           PREVIOUS_TAG=$(git tag --sort=-version:refname | head -n1)
-          
+
           if [ -z "$PREVIOUS_TAG" ]; then
             echo "First release - no previous tag found"
-            NOTES="Monthly snapshot release ${TAG}
+            cat >> "$GITHUB_OUTPUT" <<EOF
+          notes<<NOTES_EOF
+          Monthly snapshot release ${TAG}
 
-This is an automated monthly snapshot of bluefin-common configuration files."
+          This is an automated monthly snapshot of bluefin-common configuration files.
+          NOTES_EOF
+          EOF
           else
             echo "Generating notes since ${PREVIOUS_TAG}"
-            NOTES="Monthly snapshot release ${TAG}
+            cat >> "$GITHUB_OUTPUT" <<EOF
+          notes<<NOTES_EOF
+          Monthly snapshot release ${TAG}
 
-## Changes since ${PREVIOUS_TAG}
+          ## Changes since ${PREVIOUS_TAG}
 
-$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:'- %s (%h)' --no-merges)
+          $(git log "${PREVIOUS_TAG}..HEAD" --pretty=format:'- %s (%h)' --no-merges)
 
----
-*This is an automated monthly snapshot of bluefin-common configuration files.*"
+          ---
+          *This is an automated monthly snapshot of bluefin-common configuration files.*
+          NOTES_EOF
+          EOF
           fi
-          
-          echo "notes<<EOF" >> $GITHUB_OUTPUT
-          echo "$NOTES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Release
         uses: ncipollo/release-action@2c591bcc8ecdcd2db72b97d6147f871fcd833ba5 # v1.14.0
