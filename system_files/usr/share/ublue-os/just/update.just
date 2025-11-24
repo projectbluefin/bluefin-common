@@ -35,18 +35,18 @@ alias auto-update := toggle-updates
 # Turn automatic updates on or off
 toggle-updates ACTION="prompt":
     #!/usr/bin/bash
-    source /usr/lib/ujust/ujust.sh
     CURRENT_STATE="Disabled"
     if systemctl is-enabled -q rpm-ostreed-automatic.timer; then
         CURRENT_STATE="Enabled"
     elif systemctl is-enabled -q uupd.timer; then
         CURRENT_STATE="Enabled"
     fi
-    OPTION={{ ACTION }}
+
+    OPTION="{{ ACTION }}"
     if [ "$OPTION" == "prompt" ]; then
         echo "Automatic updates are currently: ${bold}${CURRENT_STATE}${normal}"
         echo "Enable or Disable automatic updates?"
-        OPTION=$(ugum choose Enable Disable)
+        OPTION="$(gum choose Enable Disable)"
     elif [ "$OPTION" == "help" ]; then
         echo "Usage: ujust toggle-updates <option>"
         echo "  <option>: Specify the quick option - 'enable' or 'disable'"
@@ -54,16 +54,14 @@ toggle-updates ACTION="prompt":
         echo "  Use 'disable' to Disable automatic updates."
         exit 0
     fi
+
     if systemctl cat -- uupd.timer &> /dev/null; then
         TIMER="uupd.timer"
     else
         TIMER="rpm-ostreed-automatic.timer"
     fi
-    if [ "${OPTION,,}" == "enable" ]; then
-        sudo systemctl enable "$TIMER"
-    elif [ "${OPTION,,}" == "disable" ]; then
-        sudo systemctl disable "$TIMER"
-    fi
+
+    sudo systemctl "${OPTION,,}" "$TIMER"
 
 alias changelog := changelogs
 
