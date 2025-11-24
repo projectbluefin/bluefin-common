@@ -144,18 +144,16 @@ bluefin-apps:
     echo "Installing some extra awesome applications..."
     just install-system-flatpaks-extra
 
-# Install Brewfile bundles
-[group('System')]
-bluefin-ai:
-    brew bundle --file /usr/share/ublue-os/homebrew/bluefin-ai.Brewfile
-
-[group('System')]
-bluefin-fonts:
-    brew bundle --file /usr/share/ublue-os/homebrew/bluefin-fonts.Brewfile
-
-[group('System')]
-bluefin-k8s:
-    brew bundle --file /usr/share/ublue-os/homebrew/bluefin-k8s.Brewfile
+bbrew:
+    #!/usr/bin/env bash
+    if ! command -v bbrew &>/dev/null ; then
+        if gum confirm "Bold Brew is not installed, would you like to install it?" ; then
+            brew install Valkyrie00/homebrew-bbrew/bbrew
+        else
+            exit 0
+        fi
+    fi
+    bbrew -f "/usr/share/ublue-os/homebrew/$(gum choose $(find "/usr/share/ublue-os/homebrew"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile"
 
 clean-system:
     #!/usr/bin/bash
