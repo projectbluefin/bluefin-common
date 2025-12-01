@@ -63,7 +63,19 @@ toggle-user-motd:
 # Check for local overrides
 check-local-overrides:
     #!/usr/bin/bash
-    diff -r \
+    set -x
+    RESET="\x1b[0m"
+    if [ "${NO_COLOR}" == 1 ]; then
+        BLUE_COLOR=""
+        GREEN_COLOR=""
+        YELLOW_COLOR=""
+    else
+        BLUE_COLOR="${BLUE_COLOR:-\x1b[38;5;117m}"
+        GREEN_COLOR="${GREEN_COLOR:-\x1b[38;5;85m}"
+        YELLOW_COLOR="${YELLOW_COLOR:-\x1b[93m}"
+    fi
+
+    diff -qr \
       --suppress-common-lines \
       --color="always" \
       --exclude "passwd*" \
@@ -91,7 +103,13 @@ check-local-overrides:
       --exclude="system.control*" \
       --exclude="cdi" \
       --exclude="default.target" \
-      /usr/etc /etc 2>/dev/null | sed '/Binary\ files\ /d'
+      /usr/etc /etc 2>/dev/null | sed \
+          -e '/Binary\ files\ /d ; /Common subdirectories/d' \
+          -e "/Files/ s/^/${BLUE_COLOR}&/g" \
+          -e "/Files/ s/\$/&${RESET}/g" \
+          -e "/Only in/ s/^/${GREEN_COLOR}&/g" \
+          -e "/Only in/ s/\$/&${RESET}/g" \
+          -e "s/\:.*/${RESET}${YELLOW_COLOR}&${RESET}/g" \
 
 # Gather device info to a pastebin
 device-info:
