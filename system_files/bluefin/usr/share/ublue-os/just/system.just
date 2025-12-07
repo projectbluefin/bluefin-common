@@ -118,11 +118,10 @@ install-system-flatpaks-extra:
 # Alias to install both system flatpaks and extra flatpaks
 [group('System')]
 bluefin-apps:
-    #!/usr/bin/env bash
     echo "Installing default system flatpaks..."
-    just install-system-flatpaks
+    @ujust install-system-flatpaks
     echo "Installing some extra awesome applications..."
-    just install-system-flatpaks-extra
+    @ujust install-system-flatpaks-extra
 
 alias switch-stream := rebase-helper
 alias switch-streams := rebase-helper
