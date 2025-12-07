@@ -1,25 +1,5 @@
 # vim: set ft=make :
-
-# Run a one minute system benchmark
-[group('System')]
-benchmark:
-    #!/usr/bin/env bash
-    source /usr/lib/ujust/ujust.sh
-    if ! type -P "stress-ng" &>/dev/null ; then
-        if gum confirm "Stress does not seem to be on your path, do you wish to install it?" ; then
-            set -eu
-            brew install stress-ng
-            brew link stress-ng
-            set +eu
-        else
-            exit 0
-        fi
-    fi
-
-    echo 'Running a 1 minute benchmark ...'
-    trap popd EXIT
-    pushd $(mktemp -d)
-    stress-ng --matrix 0 -t 1m --times
+# This file should only contain bluefin specific stuff
 
 # Configure Bluefin-CLI Terminal Experience with Brew
 [group('System')]
@@ -144,39 +124,6 @@ bluefin-apps:
     echo "Installing some extra awesome applications..."
     just install-system-flatpaks-extra
 
-bbrew:
-    #!/usr/bin/env bash
-    if ! command -v bbrew &>/dev/null ; then
-        if gum confirm "Bold Brew is not installed, would you like to install it?" ; then
-            brew install Valkyrie00/homebrew-bbrew/bbrew
-        else
-            exit 0
-        fi
-    fi
-    bbrew -f "/usr/share/ublue-os/homebrew/$(gum choose $(find "/usr/share/ublue-os/homebrew"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile"
-
-cncf:
-    #!/usr/bin/env bash
-    if ! command -v bbrew &>/dev/null ; then
-        if gum confirm "Bold Brew is not installed, would you like to install it?" ; then
-            brew install Valkyrie00/homebrew-bbrew/bbrew
-        else
-            exit 0
-        fi
-    fi
-    bbrew -f "/usr/share/ublue-os/homebrew/cncf.Brewfile"
-
-clean-system:
-    #!/usr/bin/bash
-    podman image prune -af
-    podman volume prune -f
-    flatpak uninstall --unused
-    rpm-ostree cleanup -bm
-    if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
-        brew autoremove
-        brew cleanup
-    fi
-
 alias switch-stream := rebase-helper
 alias switch-streams := rebase-helper
 alias rollback-helper := rebase-helper
@@ -186,6 +133,7 @@ alias rollback-helper := rebase-helper
 rebase-helper:
     @/usr/bin/ublue-rollback-helper
 
+# FIXME: apparently this is broken since F43
 # Enable automatic LUKS unlock via TPM
 setup-luks-tpm-unlock:
     #!/usr/bin/bash
@@ -196,53 +144,3 @@ remove-luks-tpm-unlock:
     #!/usr/bin/bash
     sudo /usr/libexec/luks-disable-tpm2-autounlock
 
-# Toggle IWD
-[group('System')]
-toggle-iwd:
-    #!/usr/bin/bash
-    echo -e "This script manages enabling or disabling iwd as a replacement for wpa_supplicant for Wi-Fi networking."
-    echo -e "Enabling this can improve throughput, mesh networking, and reduce latency increases when scanning for networks"
-    echo -e "Disabling this can improve corporate or eduroam network compatibility"
-    echo -e ""
-    echo -e "WARNING: Changing this will remove all saved wifi networks"
-    get_current_status() {
-      if [[ -f "/etc/NetworkManager/conf.d/iwd.conf" ]]; then
-        echo "Enabled"
-      else
-        echo "Disabled"
-      fi
-    }
-    remove_saved_networks() {
-      nmcli -t -f NAME connection show | while read -r line; do sudo nmcli connection delete "$line"; done
-    }
-    enable_iwd() {
-      sudo mkdir -p "/etc/NetworkManager/conf.d/"
-      sudo rm -f "/etc/NetworkManager/conf.d/iwd.conf"
-      printf "[device]\nwifi.backend=iwd" | sudo tee /etc/NetworkManager/conf.d/iwd.conf > /dev/null
-      remove_saved_networks
-      echo -e "iwd enabled. Reboot required to apply changes."
-    }
-    disable_iwd() {
-      sudo rm -f "/etc/NetworkManager/conf.d/iwd.conf"
-      remove_saved_networks
-      echo -e "iwd disabled. Reboot required to apply changes."
-    }
-    # Display current status
-    current_status=$(get_current_status)
-    echo -e "\nCurrent iwd status: $current_status\n"
-    # Prompt user for action
-    CHOICE=$(gum choose "Enable iwd" "Disable iwd" "Exit without changes")
-    case "$CHOICE" in
-      "Enable iwd")
-        enable_iwd
-        ;;
-      "Disable iwd")
-        disable_iwd
-        ;;
-      "Exit without changes")
-        echo "No changes made."
-        ;;
-      *)
-        echo "Invalid choice. Exiting without changes."
-        ;;
-    esac

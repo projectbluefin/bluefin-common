@@ -1,5 +1,5 @@
 # vim: set ft=make :
-
+# These are convenience shortcuts, they should not be specific to a desktop, aimed to be rather generic things for both Aurora and Bluefin
 uid := `id -u`
 shell := `grep :$(id -u): /etc/passwd | cut -d: -f7`
 
@@ -136,3 +136,24 @@ check-idle-power-draw:
         exit 1
     fi
     sudo powerstat -a -r
+
+# Run a one minute system benchmark
+[group('System')]
+benchmark:
+    #!/usr/bin/env bash
+    source /usr/lib/ujust/ujust.sh
+    if ! type -P "stress-ng" &>/dev/null ; then
+        if gum confirm "Stress does not seem to be on your path, do you wish to install it?" ; then
+            set -eu
+            brew install stress-ng
+            brew link stress-ng
+            set +eu
+        else
+            exit 0
+        fi
+    fi
+
+    echo 'Running a 1 minute benchmark ...'
+    trap popd EXIT
+    pushd $(mktemp -d)
+    stress-ng --matrix 0 -t 1m --times

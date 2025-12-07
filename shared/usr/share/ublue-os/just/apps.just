@@ -127,3 +127,26 @@ install-resolve ACTION="":
 alias install-resolve-studio := install-resolve
 alias install-davinci := install-resolve
 alias install-davinci-resolve := install-resolve
+
+bbrew:
+    #!/usr/bin/env bash
+    if ! command -v bbrew &>/dev/null ; then
+        if gum confirm "Bold Brew is not installed, would you like to install it?" ; then
+            brew install Valkyrie00/homebrew-bbrew/bbrew
+        else
+            exit 0
+        fi
+    fi
+    bbrew -f "/usr/share/ublue-os/homebrew/$(gum choose $(find "/usr/share/ublue-os/homebrew"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile"
+
+cncf:
+    #!/usr/bin/env bash
+    if ! command -v bbrew &>/dev/null ; then
+        if gum confirm "Bold Brew is not installed, would you like to install it?" ; then
+            brew install Valkyrie00/homebrew-bbrew/bbrew
+        else
+            exit 0
+        fi
+    fi
+    bbrew -f "/usr/share/ublue-os/homebrew/cncf.Brewfile"
+
