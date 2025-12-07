@@ -5,7 +5,7 @@ permissions:
 on:
   pull_request:
     paths:
-      - "system_files/usr/share/ublue-os/homebrew/**"
+      - "system_files/shared/usr/share/ublue-os/homebrew/**"
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -21,7 +21,7 @@ jobs:
         run: |
           echo "Validating Brewfiles in homebrew directory..."
 
-          find "shared/usr/share/ublue-os/homebrew" -iname '*\.Brewfile*' -print0 | \
+          find "system_files/shared/usr/share/ublue-os/homebrew" -iname '*\.Brewfile*' -print0 | \
             while IFS= read -r -d '' brewfile ; do \
               echo "::group:: ===$(basename $brewfile)==="
               grep -E -e "^tap" $brewfile > taps.Brewfile
