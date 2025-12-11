@@ -19,7 +19,7 @@ brew "cilium-cli"
 brew "coredns"
 
 # Crossplane
-brew "crossplane-cli"
+brew "crossplane"
 
 # CubeFS
 brew "cubefsctl"
