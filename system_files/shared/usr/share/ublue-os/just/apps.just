@@ -16,33 +16,34 @@ install-jetbrains-toolbox:
 [group('Apps')]
 install-opentabletdriver:
     #!/usr/bin/bash
-    gum confirm --affirmative="Install" --negative="Uninstall" "Installer for OpenTabletDriver"
-    EXIT_CODE="$?"
-
-    if [ "${EXIT_CODE}" == 0 ] ; then
-      echo "Installing OpenTabletDriver..."
-
-      OTD_TMPDIR="$(mktemp -d)"
-
-      curl -s "https://api.github.com/repos/OpenTabletDriver/OpenTabletDriver/releases/latest" \
+    source /usr/lib/ujust/ujust.sh
+    echo "Installer for OpenTabletDriver..."
+    echo "${bold}Install or Remove OpenTabletDriver${normal}"
+    OPTION=$(Choose "Install" "Uninstall" "Exit")
+    if [[ "${OPTION,,}" =~ ^install ]]; then
+        echo "Installing OpenTabletDriver..."
+        curl -s https://api.github.com/repos/OpenTabletDriver/OpenTabletDriver/releases/latest \
         | jq -r '.assets | sort_by(.created_at) | .[] | select (.name|test("opentabletdriver.*tar.gz$")) | .browser_download_url' \
-        | wget -qi - -O - \
-        | tar --strip-components=1 -xvzf - -C "${OTD_TMPDIR}"
-
-      sudo cp "${OTD_TMPDIR}/etc/udev/rules.d/70-opentabletdriver.rules" /etc/udev/rules.d/71-opentabletdriver.rules && \
-      rm -rf "${OTD_TMPDIR}"
-
-      flatpak --system install -y flathub net.opentabletdriver.OpenTabletDriver
-
-      mkdir -p "$HOME/.config/systemd/user"
-      curl -s "https://raw.githubusercontent.com/flathub/net.opentabletdriver.OpenTabletDriver/refs/heads/master/scripts/opentabletdriver.service" > "$HOME/.config/systemd/user/opentabletdriver.service"
-
-      systemctl --user daemon-reload
-      systemctl enable --user --now opentabletdriver.service
-    elif [ "${EXIT_CODE}" == 1 ] ; then
-      echo "Uninstalling OpenTabletDriver..."
-      sudo rm /etc/udev/rules.d/71-opentabletdriver.rules && \
-      flatpak --system remove -y flathub net.opentabletdriver.OpenTabletDriver
+        | wget -qi - -O /tmp/OpenTabletDriver/opentabletdriver.tar.gz && \
+        tar --strip-components=1 -xvzf /tmp/OpenTabletDriver/opentabletdriver.tar.gz -C /tmp/OpenTabletDriver && \
+        pkexec cp /tmp/OpenTabletDriver/etc/udev/rules.d/70-opentabletdriver.rules /etc/udev/rules.d/71-opentabletdriver.rules && \
+        rm -rf /tmp/OpenTabletDriver && \
+        rpm-ostree kargs --append-if-missing=modprobe.blacklist=hid_uclogic --append-if-missing=modprobe.blacklist=wacom && \
+        flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo && \
+        flatpak --system install -y flathub net.opentabletdriver.OpenTabletDriver && \
+        mkdir -p $HOME/.config/OpenTabletDriver && \
+        flatpak override --user --filesystem=xdg-config/OpenTabletDriver net.opentabletdriver.OpenTabletDriver && \
+        mkdir -p $HOME/.config/systemd/user && \
+        curl -s https://raw.githubusercontent.com/flathub/net.opentabletdriver.OpenTabletDriver/refs/heads/master/scripts/opentabletdriver.service > $HOME/.config/systemd/user/opentabletdriver.service  && \
+        systemctl --user daemon-reload && \
+        systemctl enable --user --now opentabletdriver.service
+    elif [[ "${OPTION,,}" =~ ^uninstall ]]; then
+        echo "Uninstalling OpenTabletDriver..."
+        pkexec rm /etc/udev/rules.d/71-opentabletdriver.rules && \
+        rpm-ostree kargs --delete-if-present=modprobe.blacklist=hid_uclogic --delete-if-present=modprobe.blacklist=wacom && \
+        flatpak --system remove -y flathub net.opentabletdriver.OpenTabletDriver
+    else
+        echo "Have a good day :)!"
     fi
 
 # Install applications from curated Brewfiles (includes full-desktop.Brewfile with GNOME Circle apps)
