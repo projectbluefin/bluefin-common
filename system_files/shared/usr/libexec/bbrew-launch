@@ -1,0 +1,29 @@
+#!/bin/bash
+
+set -euo pipefail
+
+BBREW_PATH="/home/linuxbrew/.linuxbrew/bin/bbrew"
+BREW_PATH="/home/linuxbrew/.linuxbrew/bin/brew"
+
+if [[ ! -x "$BREW_PATH" ]]; then
+  echo "FATAL: Homebrew is not installed at $BREW_PATH" >&2
+  exit 1
+fi
+
+eval "$($BREW_PATH shellenv)"
+
+if [[ -x "$BBREW_PATH" ]]; then
+  exec "$BBREW_PATH" "$@"
+else
+  echo "Bold Brew first time setup. Installing..." >&2
+  if ! "$BREW_PATH" install Valkyrie00/homebrew-bbrew/bbrew; then
+    echo "FATAL: Installation command failed. Check brew logs for details." >&2
+    exit 1
+  fi
+  if [[ -x "$BBREW_PATH" ]]; then
+    exec "$BBREW_PATH" "$@"
+  else
+    echo "FATAL: Installation failed." >&2
+    exit 1
+  fi
+fi

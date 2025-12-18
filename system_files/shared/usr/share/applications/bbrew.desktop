@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Bold Brew
+Comment=A terminal UI for managing Homebrew packages and casks
+Exec=/usr/libexec/bbrew-launch
+Icon=bbrew
+Terminal=true
+Type=Application
+Categories=Development;System;
+Keywords=homebrew;brew;package;
+StartupNotify=false
