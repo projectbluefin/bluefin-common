@@ -1,4 +1,4 @@
-tap "ublue-os/homebrew-tap"
-cask "ublue-os/homebrew-tap/visual-studio-code"
-cask "ublue-os/homebrew-tap/vscodium"
-cask "ublue-os/homebrew-tap/jetbrains-toolbox"
+tap "ublue-os/tap"
+cask "ublue-os/tap/visual-studio-code-linux"
+cask "ublue-os/tap/vscodium-linux"
+cask "ublue-os/tap/jetbrains-toolbox-linux"

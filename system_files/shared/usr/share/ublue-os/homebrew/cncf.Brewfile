@@ -6,6 +6,20 @@
 # To install all formulas: brew bundle --file=cncf.Brewfile
 # To install specific sections, edit this file to comment out unwanted formulas.
 
+# === TAPS ===
+# Taps for CNCF projects not in homebrew-core
+tap "dapr/tap"
+tap "buildpacks/tap"
+tap "carvel-dev/carvel"
+tap "kitops-ml/kitops"
+tap "microcks/tap"
+tap "telepresenceio/telepresence"
+tap "k0sproject/tap"
+tap "kptdev/kpt", "https://github.com/kptdev/kpt.git"
+tap "wasmcloud/wasmcloud"
+tap "artifacthub/cmd"
+tap "pingcap/brew"
+tap "kcl-lang/tap"
 # === GRADUATED PROJECTS ===
 
 # Argo
@@ -22,13 +36,16 @@ brew "coredns"
 brew "crossplane"
 
 # CubeFS
-brew "cubefsctl"
+# brew "cubefsctl" # No Homebrew formula found
 
 # Dapr
-brew "dapr-cli"
+brew "dapr/tap/dapr-cli"
+
+# CRI-O (via cri-tools)
+brew "cri-tools"
 
 # Dragonfly
-brew "dragonfly"
+# brew "dragonfly" # P2P system (d7y) not available via brew. 'dragonfly' is DragonflyDB.
 
 # Envoy
 brew "envoy"
@@ -37,13 +54,14 @@ brew "envoy"
 brew "falco"
 
 # Fluentd
-brew "fluentd"
+# Not available via brew
+# brew "td-agent" Warning: td-agent has been deprecated because it is discontinued upstream! It will be disabled on 2026-03-01.
 
 # Flux
 brew "flux"
 
 # Harbor
-brew "harbor"
+brew "harbor-cli"
 
 # Helm
 brew "helm"
@@ -52,19 +70,21 @@ brew "helm"
 brew "istioctl"
 
 # Jaeger
-brew "jaeger"
+# brew "jaeger" # No all-in-one formula. Use Docker or 'jaeger-client' lib.
 
 # KEDA
-brew "keda"
+# brew "keda" # Use Helm
 
 # Knative
 brew "kn"
 
 # KubeEdge
-brew "kubeedge"
+# brew "kubeedge" # Use manual install (keadm)
 
 # Kubernetes
 brew "kubernetes-cli"
+brew "minikube"
+brew "kind"
 
 # Linkerd
 brew "linkerd"
@@ -76,10 +96,10 @@ brew "opa"
 brew "prometheus"
 
 # SPIRE
-brew "spire"
+# brew "spire" # Use manual install (spire-server/agent)
 
 # TiKV
-brew "tikv"
+brew "tiup"
 
 # Vitess
 brew "vitess"
@@ -88,33 +108,33 @@ brew "vitess"
 brew "cmctl"
 
 # containerd
-brew "containerd"
+brew "nerdctl"
 
 # etcd
 brew "etcd"
 
 # in-toto
-brew "in-toto"
+# brew "in-toto" # Use pip install in-toto
 
 # === INCUBATING PROJECTS ===
 
 # Artifact Hub
-brew "ah"
+brew "artifacthub/cmd/ah"
 
 # Buildpacks
-brew "pack"
+brew "buildpacks/tap/pack"
 
 # Chaos Mesh
-brew "chaos-mesh"
+# brew "chaos-mesh" # Use Helm
 
 # Cloud Custodian
 brew "c7n"
 
 # Container Network Interface (CNI)
-brew "cni"
+# brew "cni" # Manual install of plugins
 
 # Contour
-brew "contour"
+# brew "contour" # Use Helm/kubectl
 
 # Cortex
 brew "cortex"
@@ -123,13 +143,13 @@ brew "cortex"
 brew "karmadactl"
 
 # Keycloak
-brew "keycloak"
+# brew "keycloak" # Use Docker or manual install
 
 # KubeVela
-brew "vela"
+brew "kubevela"
 
-# KubeVirt
-brew "kubevirt"
+# KubeVirt (virtctl)
+brew "virtctl"
 
 # Kubescape
 brew "kubescape"
@@ -144,7 +164,7 @@ brew "lima"
 brew "litmusctl"
 
 # Longhorn
-brew "longhornctl"
+# brew "longhornctl" # Manual install or Krew
 
 # NATS
 brew "nats-server"
@@ -153,7 +173,7 @@ brew "nats-server"
 brew "notation"
 
 # OpenCost
-brew "opencost"
+# brew "opencost" # Use Helm
 
 # OpenFGA
 brew "openfga"
@@ -171,12 +191,12 @@ brew "thanos"
 brew "grpc"
 
 # wasmCloud
-brew "wash"
+brew "wasmcloud/wasmcloud/wash"
 
 # === SANDBOX PROJECTS ===
 
 # Antrea
-brew "antrea"
+# brew "antrea" # Use Helm. 'antctl' available via curl.
 
 # Atlantis
 brew "atlantis"
@@ -185,14 +205,16 @@ brew "atlantis"
 brew "cdk8s"
 
 # Carvel
-brew "ytt"
-brew "kapp"
-brew "kbld"
-brew "imgpkg"
-brew "vendir"
+brew  "carvel-dev/carvel/kwt"
+brew "carvel-dev/carvel/kctrl"
+brew "carvel-dev/carvel/ytt"
+brew "carvel-dev/carvel/kapp"
+brew "carvel-dev/carvel/kbld"
+brew "carvel-dev/carvel/imgpkg"
+brew "carvel-dev/carvel/vendir"
 
 # CloudNativePG
-brew "cnpg"
+brew "kubectl-cnpg"
 
 # DevSpace
 brew "devspace"
@@ -201,65 +223,78 @@ brew "devspace"
 brew "k8sgpt"
 
 # KCL
-brew "kcl"
+brew "kcl-lang/tap/kcl"
 
 # KitOps
-brew "kitops"
+brew "kitops-ml/kitops/kitops"
 
 # KubeArmor
-brew "kubearmor"
+# brew "kubearmor" # Use karmor CLI via curl
 
 # Kuberhealthy
-brew "kuberhealthy"
+# brew "kuberhealthy" # Use Helm
 
 # Kubewarden
 brew "kwctl"
 
 # Kuma
-brew "kuma"
 brew "kumactl"
 
 # Kured
-brew "kured"
+# Kured
+# brew "kured" # Use Helm
 
 # Meshery
 brew "mesheryctl"
 
 # Microcks
-brew "microcks-cli"
+brew "microcks/tap/microcks-cli"
 
 # Porter
 brew "porter"
 
 # Telepresence
-brew "telepresence"
+brew "telepresenceio/telepresence/telepresence-oss"
 
 # Tremor
-brew "tremor-script"
+# Tremor
+brew "tremor-runtime"
 
 # WasmEdge Runtime
 brew "wasmedge"
 
 # k0s
-brew "k0s"
+brew "k0sproject/tap/k0sctl"
 
-# k3s
-brew "k3s"
+# k3s (via k3d)
+brew "k3d"
 
 # k8gb
-brew "k8gb"
+# brew "k8gb" # Use Helm
 
 # ko
 brew "ko"
 
 # kpt
-brew "kpt"
+brew "kptdev/kpt/kpt"
 
 # kube-vip
-brew "kube-vip"
+# brew "kube-vip" # In-cluster deployment
 
 # === SUMMARY ===
 # Graduated: 31 formulas
 # Incubating: 25 formulas
 # Sandbox: 33 formulas
 # Total: 89 formulas
+
+# === FLATPAKS ===
+# Graphical tools for CNCF projects and cloud-native development
+
+# Headlamp (CNCF Sandbox) - Kubernetes UI
+flatpak "io.kinvolk.Headlamp"
+
+# OpenLens - Kubernetes IDE
+flatpak "dev.k8slens.OpenLens"
+
+# Podman Desktop - Container Management
+flatpak "io.podman_desktop.PodmanDesktop"
