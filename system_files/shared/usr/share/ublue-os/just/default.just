@@ -27,12 +27,16 @@ bios-info:
 
 clean-system:
     #!/usr/bin/bash
-    podman image prune -af
-    podman volume prune -f
+    if gum confirm "Prune all Podman images and volumes?"; then
+        podman image prune -af
+        podman volume prune -f
+    fi
 
-     if command -v docker >/dev/null 2>&1; then
+    if command -v docker >/dev/null 2>&1; then
+      if gum confirm "Prune all Docker images and volumes?"; then
         docker image prune -af
         docker volume prune -f
+      fi
     fi
 
     flatpak uninstall --unused
