@@ -1,3 +1,8 @@
+ARG BREW_IMAGE="ghcr.io/ublue-os/brew:latest"
+ARG BREW_IMAGE_SHA=""
+
+FROM ${BREW_IMAGE}@${BREW_IMAGE_SHA} AS brew
+
 FROM docker.io/library/alpine:latest AS build
 
 COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest / /out/bluefin/usr/share
@@ -24,4 +29,4 @@ COPY /system_files/bluefin /system_files/bluefin
 
 COPY --from=build /out/shared /system_files/shared
 COPY --from=build /out/bluefin /system_files/bluefin
-COPY --from=ghcr.io/ublue-os/brew:latest /system_files /system_files/shared
+COPY --from=brew /system_files /system_files/shared
