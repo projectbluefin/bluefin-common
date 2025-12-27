@@ -20,6 +20,7 @@ RUN curl -fsSLo - https://codeberg.org/fabiscafe/game-devices-udev/archive/0.25.
 
 FROM scratch AS ctx
 COPY /system_files/shared /system_files/shared/
+COPY /bluefin-branding/system_files /system_files/bluefin
 COPY /system_files/bluefin /system_files/bluefin
 
 COPY --from=build /out/shared /system_files/shared

@@ -1,0 +1,3 @@
+[submodule "bluefin-branding"]
+	path = bluefin-branding
+	url = https://github.com/projectbluefin/branding.git
