@@ -1,4 +1,8 @@
 function fish_greeting
-    rm -rf ~/.config/no-show-user-motd || true
+
+    if test -e ~/.config/no-show-user-motd
+        mv ~/.config/no-show-user-motd ~/.config/uwelcome/disabled
+    end
+
     uwelcome
 end
