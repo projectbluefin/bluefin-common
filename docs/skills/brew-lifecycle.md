@@ -193,9 +193,11 @@ Its Bluefin maintainer config ships at
 `system_files/shared/usr/share/chairlift/config.yml` (admin override:
 `/etc/chairlift/config.yml`); bootc staging and updex stay disabled
 until frostyard/chairlift#54 resolves the polkit integration. Guarded
-by `tests/test_chairlift_config.py`. This example depends on the
-`frostyard/tap` cask being published and available to Homebrew; until that
-upstream tap publication lands, Brewfile validation will fail in CI.
+by `tests/test_chairlift_config.py`. The cask is now reviewable from the
+common side because the upstream ChairLift release assets include the needed
+`data/` files and arm64 tarballs; the remaining dependency for full Brewfile
+validation is the upstream Homebrew tap PR publishing the cask to the
+Homebrew resolvers that CI uses.
 
 ### Add a variant-specific Brewfile
 
