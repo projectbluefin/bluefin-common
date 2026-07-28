@@ -103,6 +103,23 @@ These change between releases. Training data will be wrong.
 
 ---
 
+## bctl update — known limitation
+
+`bctl update` (the bluefinctl update command) exits 0 even when the system
+image update fails. It also has no retry logic for transient network errors
+such as GHCR blob CDN EOF failures.
+
+**Do not use `exec bctl update` in `ujust update`** — the `exec` replaces the
+shell process, so Flatpak and Homebrew updates are silently skipped on success,
+and the caller has no way to detect the silent failure.
+
+The correct pattern for `ujust update` is to call `sudo bootc upgrade` directly
+with a retry loop (see `update.just`, issue #806 for details).
+
+`bctl --screen updates` (UI navigation) is fine and does not have this issue.
+
+---
+
 ## What NOT to do
 
 - Do not copy bootc CLI flags from memory or another doc — verify via Context7

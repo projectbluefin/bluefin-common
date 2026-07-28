@@ -79,7 +79,16 @@ MOCK
     for cmd in bootc; do
         cat > "${MOCKDIR}/${cmd}" <<MOCK
 #!/bin/bash
-echo "${cmd} \$*" >> "\${COMMAND_LOG}"
+echo "bootc \$*" >> "\${COMMAND_LOG}"
+if [[ "\$1" == "upgrade" ]]; then
+    CALLS_FILE="\${WORKDIR}/bootc_upgrade_calls"
+    CALL_COUNT=\$(( \$(cat "\${CALLS_FILE}" 2>/dev/null || echo 0) + 1 ))
+    echo "\$CALL_COUNT" > "\${CALLS_FILE}"
+    if [[ "\${MOCK_BOOTC_FAIL_ATTEMPTS:-0}" -ge "\$CALL_COUNT" ]]; then
+        echo 'error: Upgrading: Preparing import: Fetching manifest: Get "https://pkg-containers.githubusercontent.com/ghcrblobs": EOF' >&2
+        exit 1
+    fi
+fi
 MOCK
         chmod +x "${MOCKDIR}/${cmd}"
     done
@@ -116,6 +125,11 @@ MOCK
 exec /usr/bin/grep "$@"
 MOCK
 
+    _write_mock "sleep" <<'MOCK'
+#!/bin/bash
+echo "sleep $*" >> "${COMMAND_LOG}"
+MOCK
+
     chmod -R a+rwX "${WORKDIR}"
 }
 
@@ -127,6 +141,7 @@ _run() {
     run env \
         PATH="${MOCKDIR}:${PATH}" \
         COMMAND_LOG="${COMMAND_LOG}" \
+        WORKDIR="${WORKDIR}" \
         MOCK_HAS_UUPD_TIMER="${MOCK_HAS_UUPD_TIMER:-0}" \
         MOCK_ACTIVE_SERVICE="${MOCK_ACTIVE_SERVICE:-}" \
         MOCK_ENABLED_TIMER="${MOCK_ENABLED_TIMER:-}" \
@@ -134,6 +149,7 @@ _run() {
         MOCK_GUM_CHOICE="${MOCK_GUM_CHOICE:-}" \
         MOCK_HAS_LAYERED_PACKAGES="${MOCK_HAS_LAYERED_PACKAGES:-0}" \
         MOCK_BREW_BIN="${MOCK_BREW_BIN:-${WORKDIR}/missing-brew}" \
+        MOCK_BOOTC_FAIL_ATTEMPTS="${MOCK_BOOTC_FAIL_ATTEMPTS:-0}" \
         bash "$@"
 }
 
@@ -195,6 +211,33 @@ _run() {
     _run "${UPDATE_SCRIPT}"
     [ "${status}" -eq 0 ]
     ! grep -qF "brew upgrade" "${COMMAND_LOG}"
+}
+
+@test "update: retries bootc upgrade once on transient failure then succeeds" {
+    MOCK_BOOTC_FAIL_ATTEMPTS=1 _run "${UPDATE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ $(grep -c "^bootc upgrade$" "${COMMAND_LOG}") -eq 2 ]]
+    [[ "${output}" == *"retrying in"* ]]
+    grep -qF "sleep" "${COMMAND_LOG}"
+}
+
+@test "update: retries bootc upgrade twice on transient failures then succeeds" {
+    MOCK_BOOTC_FAIL_ATTEMPTS=2 _run "${UPDATE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ $(grep -c "^bootc upgrade$" "${COMMAND_LOG}") -eq 3 ]]
+}
+
+@test "update: exits 1 after all retries exhausted" {
+    MOCK_BOOTC_FAIL_ATTEMPTS=3 _run "${UPDATE_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"failed after"* ]]
+    [[ $(grep -c "^bootc upgrade$" "${COMMAND_LOG}") -eq 3 ]]
+}
+
+@test "update: flatpaks still run after successful retry" {
+    MOCK_BOOTC_FAIL_ATTEMPTS=1 MOCK_FLATPAK_REMOTES=$'system' _run "${UPDATE_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -qF "flatpak update -y" "${COMMAND_LOG}"
 }
 
 @test "toggle-updates: enables uupd.timer when present and Enable chosen" {

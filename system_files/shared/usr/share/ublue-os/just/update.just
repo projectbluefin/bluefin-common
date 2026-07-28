@@ -19,11 +19,26 @@ update:
         echo "Run an \`rpm-ostree reset\` and try again. This removes the Zero Maintenance guarantee, take appropriate precautions!"
         exit 1
     fi
-    # Hand off to bluefinctl when available — richer progress UI, same update logic
-    if command -v bctl &>/dev/null; then
-        exec bctl update
-    fi
-    sudo bootc upgrade
+    # Upgrade system image with retry for transient GHCR blob/CDN failures (#806).
+    # bctl update is not used here: it exits 0 even on failure and has no retry,
+    # causing silent data loss (Flatpaks/Homebrew skipped) and false success reports.
+    _max_retries=3
+    _delay=10
+    _attempt=0
+    while [[ $_attempt -lt $_max_retries ]]; do
+        if sudo bootc upgrade; then
+            break
+        fi
+        _attempt=$((_attempt + 1))
+        if [[ $_attempt -lt $_max_retries ]]; then
+            echo "System image update failed (attempt ${_attempt}/${_max_retries}), retrying in ${_delay}s..."
+            sleep "$_delay"
+            _delay=$((_delay * 2))
+        else
+            echo "System image update failed after ${_max_retries} attempts." >&2
+            exit 1
+        fi
+    done
     # Updates system Flatpaks
     if flatpak remotes | grep -q system; then
         flatpak update -y
