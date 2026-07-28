@@ -106,7 +106,7 @@ Our images participate in weekly CountMe telemetry to track installation statist
 - **Dakota:** Since it is based on GNOME OS and has no standard rpm-ostree/dnf packages, it uses a production-grade client-server implementation:
   - **Systemd units:** `dakota-countme.timer` and `dakota-countme.service`, centralized in `common/system_files/shared/`, trigger `/usr/libexec/dakota-countme`.
   - **State directory:** Uses a secure systemd `StateDirectory=/var/lib/dakota-countme/` with `DynamicUser=yes`; the `epoch` and `lastrun` files are stored there to track installation age buckets.
-  - **Server & request format:** Queries our custom Cloudflare Worker at `https://countme.projectbluefin.io` with query parameters `?repo=${IMAGE_NAME}&tag=${IMAGE_TAG}&flavor=${IMAGE_FLAVOR}&arch=${ARCH}&countme=${BUCKET}` and a `dakota-countme` User-Agent.
+  - **Server & request format:** Queries our custom Cloudflare Worker at `https://countme.projectbluefin.io/metalink` with query parameters `?repo=${IMAGE_NAME}&tag=${IMAGE_TAG}&flavor=${IMAGE_FLAVOR}&arch=${ARCH}&countme=${BUCKET}` and a `dakota-countme` User-Agent.
 
 ### Dashboard processing dependency
 

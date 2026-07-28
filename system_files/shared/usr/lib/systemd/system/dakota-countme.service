@@ -1,5 +1,7 @@
 [Unit]
 Description=Weekly Dakota Count Me telemetry reporting
+Wants=network-online.target
+After=network-online.target
 ConditionPathExists=/run/ostree-booted
 ConditionPathExists=/usr/share/ublue-os/image-info.json
 
