@@ -1,8 +1,8 @@
 ---
 name: label-workflow
-version: "1.0"
-last_updated: "2026-06-23"
-tags: [labels, issues, workflow]
+version: "1.1"
+last_updated: "2026-07-28"
+tags: [labels, issues, workflow, clanker]
 description: >-
   Label taxonomy, issue lifecycle (filed→triage→queued→claimed→done), slash
   commands, and the agent/human handoff model for projectbluefin factory
@@ -22,6 +22,7 @@ metadata:
 - [Agent workflow](#agent-workflow)
 - [Label reference](#label-reference)
 - [Epics](#epics)
+- [clanker-queue — human-directed agent work](#clanker-queue--human-directed-agent-work)
 
 ---
 
@@ -391,6 +392,7 @@ Applied to issues or PRs to request a specific agent workflow. The agent removes
 
 | Label | Meaning |
 |---|---|
+| `clanker-queue` | Human-directed: route this issue to the clanker autonomous agent. See [clanker-queue](#clanker-queue--human-directed-agent-work). |
 | `ai-context` | ACMM audit finding — AI/LLM context gap that improves agent reliability org-wide |
 | `stale` | No recent activity; will auto-close unless updated |
 | `stale-digest` | Filed against an outdated image digest — may not reproduce on current build |
@@ -456,5 +458,61 @@ Do not set these labels manually unless the workflow is down.
 2. Comment `/approve`
 3. Done — automation queues it immediately
 
+**I want to hand an issue directly to clanker:**
+1. Make sure the issue has `kind/` + `area/` labels and a clear spec
+2. Add `clanker-queue` label
+3. Done — clanker picks it up on its next run
+
 **I need to stop automation from touching something:**
 → Comment `/hold` with a reason, or add `status/hold` manually
+
+---
+
+## clanker-queue — human-directed agent work
+
+`clanker-queue` is the label that routes an issue to the clanker autonomous agent.
+
+### This repo is human-first
+
+`projectbluefin/common` uses a **human-advisor model**: humans own issue filing, triage, and
+approval. Agents implement approved work. Bots do not self-triage, self-approve, or close
+issues without explicit human sign-off.
+
+Broader factory automation (E2E testing, image promotion gating, regression detection) runs in
+[projectbluefin/testing](https://github.com/projectbluefin/testing).
+
+### When to use clanker-queue
+
+Add `clanker-queue` when:
+- The issue is fully triaged (has `kind/` + `area/` + a clear implementation spec)
+- You want clanker specifically (not just any contributor or agent via `status/queued`)
+- The work is self-contained enough for autonomous implementation
+
+### How clanker-queue differs from status/queued
+
+| | `status/queued` | `clanker-queue` |
+|---|---|---|
+| Who picks it up | Any contributor or agent via `/claim` | Clanker specifically |
+| Set by | `/approve` slash command | Human maintainer directly |
+| Lifecycle integration | Full widget + stale sweep | Separate; clanker manages its own claim |
+| Use when | Normal factory workflow | You specifically want clanker |
+
+Both labels can coexist. A maintainer can add `clanker-queue` to an issue that already has
+`status/queued` to fast-path it to clanker without removing it from the general pool.
+
+### Adding clanker-queue
+
+Via the GitHub UI: add the label from the issue sidebar.
+
+Via CLI:
+```bash
+gh issue edit <number> --repo projectbluefin/common --add-label clanker-queue
+```
+
+### Prerequisites before adding clanker-queue
+
+An issue without these will sit idle in the queue — clanker will not guess at a missing spec:
+- [ ] At least one `kind/` label
+- [ ] At least one `area/` label
+- [ ] Issue body contains a clear, actionable description (no open design questions)
+- [ ] No `status/hold` or `agent/blocked` — those block all agent work
