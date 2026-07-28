@@ -246,10 +246,26 @@ toggle-testing:
     fi
     set -euo pipefail
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
-    IMAGE_TAG="$(jq -r '."image-tag"' < "${IMAGE_INFO_FILE}")"
-    IMAGE_REF="$(jq -r '."image-ref"' < "${IMAGE_INFO_FILE}")"
-    # Strip transport prefix (ostree-image-signed:docker://, ostree-unverified-registry:, etc.)
-    IMAGE_PATH="$(sed -E 's|^.*://||; s|^[a-z-]+:||' <<< "${IMAGE_REF}")"
+
+    # Derive the current image path and tag from bootc status when available.
+    # image-info.json image-tag may be a stale placeholder (e.g. "stable/testing"
+    # on bluefin-lts), which matches no valid channel in the case statement below.
+    IMAGE_PATH=""
+    IMAGE_TAG=""
+    if command -v bootc &>/dev/null; then
+        _spec_ref="$(bootc status --json 2>/dev/null \
+            | jq -r '.spec.image.image // empty' 2>/dev/null || true)"
+        if [[ "${_spec_ref}" == *:* ]]; then
+            IMAGE_PATH="${_spec_ref%:*}"
+            IMAGE_TAG="${_spec_ref##*:}"
+        fi
+    fi
+    if [[ -z "${IMAGE_TAG}" ]]; then
+        IMAGE_TAG="$(jq -r '."image-tag"' < "${IMAGE_INFO_FILE}")"
+        IMAGE_REF="$(jq -r '."image-ref"' < "${IMAGE_INFO_FILE}")"
+        # Strip transport prefix (ostree-image-signed:docker://, ostree-unverified-registry:, etc.)
+        IMAGE_PATH="$(sed -E 's|^.*://||; s|^[a-z-]+:||' <<< "${IMAGE_REF}")"
+    fi
     if [[ "${IMAGE_TAG}" == *testing* ]]; then
         if [[ "${IMAGE_TAG}" == "testing" ]]; then
             NEW_TAG="stable"

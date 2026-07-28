@@ -11,6 +11,15 @@ changelogs:
     IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
     TAG="$(jq -r '.["image-tag"]' < "${IMAGE_INFO_FILE}")"
 
+    # Prefer bootc status for the live tag — image-info.json may have a stale
+    # placeholder (e.g. "stable/testing" on bluefin-lts) that prevents matching
+    # the correct release stream below.
+    if command -v bootc &>/dev/null; then
+        _live_ref="$(bootc status --json 2>/dev/null \
+            | jq -r '.spec.image.image // empty' 2>/dev/null || true)"
+        [[ "${_live_ref}" == *:* ]] && TAG="${_live_ref##*:}"
+    fi
+
     # Select the correct upstream repo based on image stream
     IMAGE_NAME="$(jq -r '.["image-name"] // empty' < "${IMAGE_INFO_FILE}")"
     if [[ "$IMAGE_NAME" == "dakota" ]]; then

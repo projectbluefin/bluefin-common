@@ -50,6 +50,15 @@ write_image_info_fixture() {
 EOF
 }
 
+write_bootc_mock() {
+    local booted_image="$1"
+
+    write_mock "bootc" "#!/usr/bin/bash
+if [[ \"\$*\" == \"status --json\" ]]; then
+    echo '{\"status\":{\"booted\":{\"image\":{\"image\":{\"image\":\"${booted_image}\",\"transport\":\"registry\"}}}}}'
+fi"
+}
+
 run_script() {
     local image_info_file="$1"
     local path_value="$2"
@@ -99,4 +108,45 @@ run_script() {
     [ "${status}" -eq 0 ]
     [[ "${output}" == *"jq: command not found"* ]]
     [[ "${output}" == *" 🔐" ]]
+}
+
+@test "ublue-image-info: uses live tag from bootc status when available" {
+    write_jq_mock
+    write_rpm_ostree_mock 'echo "State: booted deployment signed"'
+    write_bootc_mock "ghcr.io/projectbluefin/bluefin-lts:stable"
+    # image-info.json has a stale placeholder tag
+    write_image_info_fixture "bluefin-lts" "stable/testing"
+
+    run_script "${FIXTURE}" "${MOCKDIR}:${PATH}"
+
+    [ "${status}" -eq 0 ]
+    [ "${output}" = "bluefin-lts:stable 🔐" ]
+}
+
+@test "ublue-image-info: falls back to image-info.json when bootc returns no colon-ref" {
+    write_jq_mock
+    write_rpm_ostree_mock 'echo "State: booted deployment signed"'
+    # bootc mock that returns empty (simulates bootc unavailable or status error)
+    write_mock "bootc" '#!/usr/bin/bash
+if [[ "$*" == "status --json" ]]; then
+    echo "{}"
+fi'
+    write_image_info_fixture "bluefin" "stable"
+
+    run_script "${FIXTURE}" "${MOCKDIR}:${PATH}"
+
+    [ "${status}" -eq 0 ]
+    [ "${output}" = "bluefin:stable 🔐" ]
+}
+
+@test "ublue-image-info: falls back to image-info.json when bootc is not installed" {
+    write_jq_mock
+    write_rpm_ostree_mock 'echo "State: booted deployment signed"'
+    # No bootc mock — bootc is not in MOCKDIR
+    write_image_info_fixture "bluefin" "latest"
+
+    run_script "${FIXTURE}" "${MOCKDIR}:${PATH}"
+
+    [ "${status}" -eq 0 ]
+    [ "${output}" = "bluefin:latest 🔐" ]
 }
