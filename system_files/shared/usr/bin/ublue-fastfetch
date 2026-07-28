@@ -1,5 +1,9 @@
 #!/usr/bin/bash
 
+if ! command -v fastfetch >/dev/null 2>&1; then
+	exit 0
+fi
+
 get_config() {
 	FASTFETCH_CONFIG_FILE="${FASTFETCH_CONFIG_FILE:-/etc/ublue-os/fastfetch.json}"
 	QUERY="$1"
