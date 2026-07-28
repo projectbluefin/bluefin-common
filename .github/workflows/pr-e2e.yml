@@ -57,7 +57,7 @@ jobs:
 
       - name: Build common layer candidate
         id: build_common
-        uses: redhat-actions/buildah-build@5d8479758cc72ed82df28daba521d27e20ff8c8a # v3
+        uses: redhat-actions/buildah-build@3a51aade9afa17e5c78256bcbe2e1ee08c7b995b # v3
         with:
           containerfiles: |
             ./Containerfile
@@ -83,7 +83,7 @@ jobs:
 
       - name: Build composed test image
         id: build_compose
-        uses: redhat-actions/buildah-build@5d8479758cc72ed82df28daba521d27e20ff8c8a # v3
+        uses: redhat-actions/buildah-build@3a51aade9afa17e5c78256bcbe2e1ee08c7b995b # v3
         with:
           containerfiles: |
             ./Containerfile.pr-e2e
