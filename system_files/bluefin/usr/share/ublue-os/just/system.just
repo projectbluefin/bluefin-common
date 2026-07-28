@@ -1,6 +1,9 @@
 # vim: set ft=make :
 # This file should only contain bluefin specific stuff
 
+PIED_BUNDLE_URL := "https://github.com/Elleo/pied/releases/download/v0.3.1/com.mikeasoft.pied.flatpak"
+PIED_BUNDLE_SHA256 := "2cdf50d0f9947e7e570c749a841c52709128033598bf30800db7a355011e0e34"
+
 # Configure Bluefin-CLI Terminal Experience with Brew
 # Only installs brew packages when enabling bling (not when disabling)
 [group('System')]
@@ -317,6 +320,31 @@ install-system-flatpaks $confirm="1":
         gum confirm "Install system flatpaks?" || exit 0
     fi
     brew bundle --file="${TARGET_FLATPAK_FILE:-/usr/share/ublue-os/homebrew/system-flatpaks.Brewfile}"
+
+# Install Pied's Piper voices and Speech Dispatcher integration.
+[group('System')]
+install-pied:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ "$(uname -m)" != "x86_64" ]]; then
+        echo "Pied is currently available only for x86_64." >&2
+        exit 1
+    fi
+    if ! command -v flatpak >/dev/null 2>&1; then
+        echo "Flatpak is required to install Pied." >&2
+        exit 1
+    fi
+    if flatpak info com.mikeasoft.pied >/dev/null 2>&1; then
+        echo "Pied is already installed."
+        exit 0
+    fi
+
+    BUNDLE="$(mktemp --suffix=.flatpak)"
+    trap 'rm -f "${BUNDLE}"' EXIT
+    curl --fail --location --retry 3 --proto '=https' --tlsv1.2 \
+        --output "${BUNDLE}" "{{ PIED_BUNDLE_URL }}"
+    echo "{{ PIED_BUNDLE_SHA256 }}  ${BUNDLE}" | sha256sum --check --status
+    flatpak install --user --noninteractive "${BUNDLE}"
 
 # Install default system flatpaks (alias for install-system-flatpaks)
 
