@@ -1,3 +1,11 @@
 #!/usr/bin/bash
 
+# fzf is the default just chooser but is not installed by default on Bluefin.
+# Fall back to gum filter (always present) so that `ujust --choose` works
+# out of the box. If the user later installs fzf (e.g. via brew) it takes
+# priority automatically via JUST_CHOOSER only when fzf is absent.
+if ! command -v fzf &>/dev/null && command -v gum &>/dev/null; then
+    export JUST_CHOOSER="gum filter --no-limit"
+fi
+
 just --justfile /usr/share/ublue-os/just/00-entry.just "${@}"
