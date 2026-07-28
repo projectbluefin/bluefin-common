@@ -1,7 +1,7 @@
 ---
 name: workflow-map
 version: "1.0"
-last_updated: "2026-06-23"
+last_updated: "2026-07-28"
 tags: [workflows, ci, reference]
 description: >-
   What each GitHub workflow in common is for. Use when editing workflows,
@@ -23,6 +23,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 | `backfill-pipeline.yml` | Manual workflow — injects the pipeline widget into existing issues that are missing it. Accepts optional comma-separated issue numbers; auto-discovers all missing-widget issues if left blank. | Backfilling the widget after lifecycle automation is wired to a repo |
 | `validate.yml` | Main PR gate: submodule drift, `just check`, shellcheck, image-registry guard, dconf parity, pre-commit | Tightening repo-local validation or policy guards |
 | `validate-brewfiles.yaml` | Validates Brewfile correctness | Changing Brewfile structure or Brewfile validation rules |
+| `unit-tests.yml` | Runs shellcheck (extensionless scripts and `.sh` files), pytest with coverage for `hooks.py`, and bats suites for shell scripts under `system_files/` and `tests/`. Triggers on PR/push to main when `system_files/**`, `tests/**`, or `Justfile` change, and on `merge_group`/`workflow_dispatch`. Coverage must stay ≥ 80 %. | Adding or changing shell scripts, Python hooks, or bats test suites |
 | `build.yml` | Builds and publishes the `common` OCI layer on merge. Runs parallel per-arch jobs (x86_64 on `ubuntu-24.04`, aarch64 on `ubuntu-24.04-arm`). Build uses rootless `buildah-build`; after build, `sudo skopeo copy` promotes the image into root storage so `push-image` (which uses `sudo podman push`) can find it. Then a `manifest` job assembles the multi-arch manifest, logs into GHCR, signs with keyless OIDC, generates SBOM, and attests SLSA L2. Downstream propagation is handled by Renovate (bluefin/bluefin-lts, ~3h) and dakota's daily cron — there is no direct dispatch from this workflow. | Changing how the shared layer is built or pushed |
 | `pr-e2e.yml` | Pre-merge composed-image gate for the PR's common layer (composes + runs common suite via `run-testsuite.yml`) | Changing how PR-time downstream composition is tested |
 | `e2e.yml` | Post-merge common-suite validation against Bluefin LTS, Bluefin stable, and Dakota. Dakota entry is non-blocking (`continue-on-error: true`) until infra is confirmed stable ([issue #497](https://github.com/projectbluefin/common/issues/497)). | Changing shipped-layer validation after merge |
@@ -44,7 +45,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 
 ### Validation and policy
 
-`validate.yml`, `validate-brewfiles.yaml`, and `skill-drift.yml` are about catching repo-local mistakes **before merge**.
+`validate.yml`, `validate-brewfiles.yaml`, `unit-tests.yml`, and `skill-drift.yml` are about catching repo-local mistakes **before merge**.
 
 ### Shared-layer build and release
 
