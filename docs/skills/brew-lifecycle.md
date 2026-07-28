@@ -1,7 +1,7 @@
 ---
 name: brew-lifecycle
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.1"
+last_updated: "2026-07-28"
 tags: [brew, homebrew, packages]
 description: >-
   Manage OS-managed Homebrew packages. Use when adding/removing default brew
@@ -184,12 +184,16 @@ unavailable unless the tap is explicitly trusted. This affects `ublue-os/tap`
 and `ublue-os/experimental-tap` which ship VS Code, VSCodium, JetBrains,
 Antigravity, Zed, Cursor, framework_tool, asusctl-linux.
 
-**In just recipes** that call `brew tap` before cask installs:
-```diff
-- brew tap ublue-os/tap 2>/dev/null || true
-+ brew tap --trust ublue-os/tap
+**In just recipes** that call `brew tap` before cask installs, use two
+separate commands — `brew tap --trust` is **not a valid flag** on `brew tap`
+and will error on Homebrew 6.0+:
+```bash
+brew tap ublue-os/tap 2>/dev/null || true
+brew trust ublue-os/tap 2>/dev/null || true
 ```
-The `|| true` silencer must be removed — tap failures should surface.
+`brew tap` registers the tap; `brew trust` marks it as trusted. Both are
+required, both use `2>/dev/null || true` to handle the tap-already-exists
+case without failing the recipe.
 
 **In Brewfiles** that declare taps (Homebrew 6.0 Brewfile-native syntax):
 ```ruby
@@ -198,19 +202,25 @@ tap "ublue-os/experimental-tap", trusted: true
 ```
 
 **Do not use `HOMEBREW_TRUSTED_TAPS` env var** — this was a Homebrew 4.x
-mechanism. The correct 6.0 approach is `--trust` at tap-time and
-`trusted: true` in Brewfiles.
+mechanism. The correct 6.0 approach is `brew tap` + `brew trust` in just
+recipes, and `trusted: true` in Brewfiles.
 
-### Known trust issues in the codebase (as of 2026-06)
+**Do not use `brew tap --trust`** — this flag does not exist on `brew tap`
+and was never valid. Any code that uses `brew tap --trust` will fail with
+`Error: invalid option: --trust` on Homebrew 6.0+.
+
+### Known trust issues in the codebase (as of 2026-07)
 
 | File | Current code | Status |
 |---|---|---|
-| `system.just` dx recipe | `brew tap --trust ublue-os/tap` | ✅ correct |
-| `system.just` dx recipe | `brew tap --trust ublue-os/experimental-tap` | ✅ correct |
-| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/homebrew-tap` | ❌ wrong tap name + no `--trust` |
-| `apps.just` bbrew recipe | `brew install Valkyrie00/homebrew-bbrew/bbrew` | ❌ 3rd-party tap, no trust |
+| `system.just` dx recipe | `brew tap ublue-os/tap 2>/dev/null \|\| true` + `brew trust` | ✅ correct |
+| `system.just` dx recipe | `brew tap ublue-os/experimental-tap 2>/dev/null \|\| true` + `brew trust` | ✅ correct |
+| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/tap 2>/dev/null \|\| true` + `brew trust` | ✅ correct |
+| `apps.just` install-asus | `brew tap ublue-os/tap 2>/dev/null \|\| true` + `brew trust` | ✅ correct |
+| `bazaar-hook` spawn_brew | `brew tap ublue-os/tap; brew trust ublue-os/tap; brew install --cask` | ✅ correct |
 
 Ref: https://brew.sh/2026/06/11/homebrew-6.0.0/
+Ref: https://docs.brew.sh/Tap-Trust
 
 ---
 
@@ -368,7 +378,7 @@ commands in `/usr/bin`, static Brewfiles in `/usr/share`.
 
 - Suggesting `rpm-ostree install` for any missing tool — this is never correct on Bluefin
 - Adding a package to `preinstall.d/` that has a udev rule, kernel module, D-Bus system service, FUSE driver, firmware, or PAM dependency — it must stay as an RPM
-- Adding a tap without `trusted: true` / `--trust` (Homebrew 6.0 blocks untrusted taps silently)
+- Adding a tap without `trusted: true` / `brew trust` (Homebrew 6.0 blocks untrusted taps silently); **never use `brew tap --trust` — that flag is invalid**
 - Bumping a version number or manual stamp to "trigger" a brew-preinstall re-run — the service is content-addressed; edit the Brewfile and the hash change triggers it automatically
 - Editing `preinstall.d/` in a downstream repo (bluefin, bluefin-lts, dakota) for packages that should live in `common` — common ships to all variants
 - Assuming `brew-preinstall.service` ran successfully because it's enabled — the service exits 0 silently if brew is not yet installed; check `journalctl --user -u brew-preinstall.service`
