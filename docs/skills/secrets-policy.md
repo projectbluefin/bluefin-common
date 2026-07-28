@@ -1,7 +1,7 @@
 ---
 name: secrets-policy
 version: "1.0"
-last_updated: "2026-07-20"
+last_updated: "2026-07-28"
 tags: [secrets, security, ci]
 description: >-
   Approved secrets inventory for the Bluefin factory. Use when adding a secret,
@@ -35,15 +35,13 @@ Additions require a **security review issue** in `projectbluefin/common` before 
 | `MERGERAPTOR_APP_ID` | GitHub App ID | common, dakota, bonedigger | MERGERAPTOR bot identity |
 | `MERGERAPTOR_PRIVATE_KEY` | GitHub App private key | common, dakota, bonedigger | MERGERAPTOR bot auth |
 | `CASD_CLIENT_KEY` | TLS client certificate key | dakota | BuildStream remote CAS auth |
-| `SIGNING_SECRET` | cosign private key | common | Legacy key-based image signing — pending keyless migration (#513) |
 
 ## Rules
 
 1. **No new PATs.** If you think you need a PAT, you don't. Use `GITHUB_TOKEN` or a GitHub App token.
 2. **No new secrets without a security review issue.** File an issue in `projectbluefin/common` tagged `kind/security` before provisioning or referencing any new secret name.
 3. **GitHub App tokens for cross-repo bot operations.** MERGERAPTOR and BLUEFINBOT are the approved bots. Adding a new bot requires maintainer approval.
-4. **`SIGNING_SECRET` is frozen.** It will be removed when keyless signing migration (#513) lands. Do not reference it in any new workflow.
-5. **Infrastructure keys** (`CASD_CLIENT_KEY`, Cloudflare R2 keys) are reviewed at provisioning time by org admins and frozen thereafter.
+4. **Infrastructure keys** (`CASD_CLIENT_KEY`, Cloudflare R2 keys) are reviewed at provisioning time by org admins and frozen thereafter.
 
 ## Enforcement
 
