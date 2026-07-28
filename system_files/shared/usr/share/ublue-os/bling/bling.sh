@@ -67,3 +67,26 @@ if command -v mise >/dev/null 2>&1; then
     fi
   fi
 fi
+
+# Workaround for bash-preexec 0.6.0 + Fedora array PROMPT_COMMAND
+# (rcaloras/bash-preexec#186): when PROMPT_COMMAND is declared as an
+# indexed array (the Fedora/GNOME Terminal default), bash-preexec's
+# __bp_install can land inside the wrong array slot alongside starship
+# and leave the DEBUG trap unset.  Without the DEBUG trap, tools that
+# rely on bash-preexec (e.g. atuin) silently stop recording commands.
+# Re-arming the trap from a dedicated PROMPT_COMMAND entry ensures it
+# is always set before the next command executes.  Remove this block
+# once rcaloras/bash-preexec#186 is resolved upstream.
+if [ "${BLING_SHELL}" = "bash" ] && type __bp_preexec_invoke_exec >/dev/null 2>&1; then
+    __bling_rearm_debug_trap() { trap '__bp_preexec_invoke_exec "$_"' DEBUG; }
+    # PROMPT_COMMAND may be a plain string (most systems) or an indexed
+    # array (Fedora/GNOME Terminal).  Use declare -p to detect the type
+    # and append with the matching form.  eval hides the bash-only array
+    # append syntax from POSIX sh parsers.
+    # shellcheck disable=SC2039
+    if declare -p PROMPT_COMMAND 2>/dev/null | grep -q '^declare -a'; then
+        eval 'PROMPT_COMMAND+=(__bling_rearm_debug_trap)'
+    else
+        PROMPT_COMMAND="${PROMPT_COMMAND:+${PROMPT_COMMAND};}__bling_rearm_debug_trap"
+    fi
+fi

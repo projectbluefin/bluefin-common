@@ -179,3 +179,70 @@ fi
     [ "$output" = "missing|missing|missing|missing" ]
     [ ! -s "$CALL_LOG" ]
 }
+
+# ---------------------------------------------------------------------------
+# bash-preexec DEBUG-trap rearm (issue #869)
+# When PROMPT_COMMAND is a bash indexed array (Fedora/GNOME Terminal default),
+# bash-preexec 0.6.0 may leave the DEBUG trap unset.  bling.sh appends
+# __bling_rearm_debug_trap so atuin and other bash-preexec users keep working.
+# ---------------------------------------------------------------------------
+
+@test "bling.sh appends __bling_rearm_debug_trap to array PROMPT_COMMAND when bash-preexec is active" {
+    run_bling '
+declare -a PROMPT_COMMAND=("existing_entry")
+__bp_preexec_invoke_exec() { :; }
+source "$BLING_SCRIPT"
+found=0
+for entry in "${PROMPT_COMMAND[@]}"; do
+    [ "$entry" = "__bling_rearm_debug_trap" ] && found=1 && break
+done
+printf "%d\n" "$found"'
+    [ "$status" -eq 0 ]
+    [ "$output" = "1" ]
+}
+
+@test "bling.sh appends __bling_rearm_debug_trap to string PROMPT_COMMAND when bash-preexec is active" {
+    run_bling '
+PROMPT_COMMAND="existing_entry"
+__bp_preexec_invoke_exec() { :; }
+source "$BLING_SCRIPT"
+case "$PROMPT_COMMAND" in
+    *__bling_rearm_debug_trap*) printf "found\n" ;;
+    *) printf "missing\n" ;;
+esac'
+    [ "$status" -eq 0 ]
+    [ "$output" = "found" ]
+}
+
+@test "bling.sh preserves existing string PROMPT_COMMAND when appending rearm hook" {
+    run_bling '
+PROMPT_COMMAND="existing_entry"
+__bp_preexec_invoke_exec() { :; }
+source "$BLING_SCRIPT"
+case "$PROMPT_COMMAND" in
+    existing_entry*) printf "preserved\n" ;;
+    *) printf "lost\n" ;;
+esac'
+    [ "$status" -eq 0 ]
+    [ "$output" = "preserved" ]
+}
+
+@test "bling.sh __bling_rearm_debug_trap re-sets the bash-preexec DEBUG trap" {
+    run_bling '
+__bp_preexec_invoke_exec() { :; }
+source "$BLING_SCRIPT"
+if type __bling_rearm_debug_trap >/dev/null 2>&1; then
+    trap - DEBUG
+    __bling_rearm_debug_trap
+    trap_output="$(trap -p DEBUG)"
+    case "$trap_output" in
+        *__bp_preexec_invoke_exec*) printf "trap_set\n" ;;
+        *) printf "trap_missing\n" ;;
+    esac
+else
+    printf "skip\n"
+fi'
+    [ "$status" -eq 0 ]
+    [[ "$output" == "trap_set" || "$output" == "skip" ]]
+}
+
