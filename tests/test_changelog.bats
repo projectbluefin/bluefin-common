@@ -85,9 +85,8 @@ fi
 EOF
     chmod +x "${MOCKDIR}/grep"
 
-    # Keep the fallback recipe under test; a developer's host bctl must not
-    # short-circuit repository selection before the mocked curl calls.
-    export PATH="${MOCKDIR}:$(printf '%s' "${PATH}" | tr ':' '\n' | grep -v '/.local/bin' | paste -sd: -)"
+    # Exclude non-standard directories (like user's local bin where 'bctl' may exist) to keep tests isolated and repeatable
+    export PATH="${MOCKDIR}:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
     SCRIPT_FILE="${WORKDIR}/changelog.sh"
     _extract_script "${SCRIPT_FILE}"
