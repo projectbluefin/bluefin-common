@@ -111,3 +111,34 @@ directory and removes that directory via `trap cleanup EXIT`. Any optional local
 copy (`summary.md`, `journal.txt`, OTEL attachments) must be copied to a stable
 location before the script exits, and copy failures must never abort a
 successful gist upload.
+
+### EXIT trap return value becomes the script's exit code (2026-07-29)
+
+`cleanup()` was registered via `trap cleanup EXIT`, and its last statement was
+`[[ -n "$OTEL_STDERR" ]] && rm -f "$OTEL_STDERR"`. `OTEL_STDERR` is always empty
+at exit (reset to `""` after the OTEL block), so the `[[ -n "" ]]` test returned
+1 and `cleanup` returned 1. The happy path has no `trap - EXIT` or `exit 0`
+(unlike every other exit path), so `cleanup`'s return code became the script's
+final exit code. `just` saw exit 1 and printed `recipe 'report' failed with
+exit code 1` even though the report fully succeeded.
+
+**Convention:** any function registered to an `EXIT` trap must end with
+`return 0` so it can never override a successful script's exit status. Do not
+rely on every exit path remembering to `trap - EXIT` first — the trap itself
+must be safe to run.
+
+### Fixes must land in common, not the bonedigger repo (2026-07-29)
+
+`projectbluefin/bonedigger` once held `just/report.just`; PR bonedigger#25
+("fix(report): cleanup trap exits 0 when OTEL was not used") fixed the cleanup
+exit code there and closed common#655. But `just/report.just` in the
+bonedigger repo is now a stale `.gitkeep` — the canonical implementation dakota
+and its siblings ship is `common/system_files/bluefin/usr/libexec/bonedigger-report`,
+which never received the fix. The bug persisted for end users for over a month
+after the "fix" merged.
+
+**Convention:** the real script lives in `common`. A fix to `ujust report`
+behavior must edit `common/system_files/bluefin/usr/libexec/bonedigger-report`
+(and/or `60-bonedigger.just`). The `bonedigger` repo holds lifecycle automation
+and templates, not the shipped script. When closing an issue, verify the fix
+landed in the file that actually ships in the image.

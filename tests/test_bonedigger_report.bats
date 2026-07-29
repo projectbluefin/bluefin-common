@@ -165,3 +165,26 @@ INNER_EOF
     result="$(echo "User /home/alice/ connected from 192.168.1.5 (MAC: AA:BB:CC:DD:EE:FF)" | "$TEST_HELPER" scrub_kernel_log)"
     [ "$result" = "User /home/[REDACTED]/ connected from [IP-REDACTED] (MAC: [MAC-REDACTED])" ]
 }
+
+@test "cleanup trap returns 0 when OTEL was not used (regression for exit-code-1)" {
+    # The happy path leaves OTEL_CONFIG and OTEL_STDERR empty. The EXIT trap
+    # runs cleanup() as the last statement, so its return value becomes the
+    # script's exit code. Before the fix, the final [[ -n "$OTEL_STDERR" ]]
+    # test returned 1, making just print "recipe 'report' failed with exit
+    # code 1" even though the report fully succeeded.
+    CLEANUP_HELPER="$(mktemp)"
+    cat << 'INNER_EOF' > "$CLEANUP_HELPER"
+#!/usr/bin/bash
+set -euo pipefail
+eval "$(sed -n '/^cleanup() {/,/^}/p' "$BONEDIGGER_SCRIPT")"
+REPORT_DIR="$1"
+OTEL_CONFIG=""
+OTEL_STDERR=""
+cleanup
+INNER_EOF
+    chmod +x "$CLEANUP_HELPER"
+
+    run "$CLEANUP_HELPER" "$WORKDIR"
+    [ "$status" -eq 0 ]
+    rm -f "$CLEANUP_HELPER"
+}
