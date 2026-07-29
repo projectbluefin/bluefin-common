@@ -117,9 +117,11 @@ Minimum files:
 
 Reference: [`projectbluefin/common/docs/skills/`](https://github.com/projectbluefin/common/blob/main/docs/skills/)
 
-### `skill-drift.yml` CI check
+### `skill-drift.yml` CI check — currently non-functional, verify before wiring up
 
-Wire the skill-drift check. It warns when a PR changes code without updating a skill file.
+`projectbluefin/actions/.github/workflows/skill-drift-check.yml` — the reusable workflow this check calls — is presently a **no-op stub** (real logic removed in `actions@001ae97`, replaced with a compatibility stub in `actions@a7c230c`). It always succeeds without inspecting any changed paths. Do not wire this up expecting it to actually warn on anything; a passing run currently proves nothing. Full detail: [`skill-drift.md`](./skill-drift.md#current-status-non-functional).
+
+If you still want the placeholder wired up for when the reusable workflow is rebuilt, the shape is:
 
 ```yaml
 name: Skill Drift
@@ -139,6 +141,8 @@ jobs:
       code-paths: '[".github/workflows/**", "Justfile"]'  # adapt to your repo
       skill-paths: '["docs/skills/**", "docs/*.md", "AGENTS.md"]'
 ```
+
+Until `actions` restores real logic, rely on the `skill-improvement.md` self-repair loop (manual, agent-enforced) instead of this CI check for enforcement — see how `common` itself handles this in [`ci-tooling.md`](./ci-tooling.md#skill-drift-detection): it deliberately does not run this workflow at all.
 
 Adjust `code-paths` to match your repo's implementation files. Treat warnings as hard requirements.
 

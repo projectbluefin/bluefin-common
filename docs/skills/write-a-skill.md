@@ -77,6 +77,30 @@ shorten the description.
 If a draft exceeds 200 lines, split rarely-needed detail into a separate
 `references/` file and link to it.
 
+### Per-skill directory migration (Phase E)
+
+For a skill that outgrows a single flat file, migrate it to
+`docs/skills/<name>/SKILL.md` + `docs/skills/<name>/references/*.md`:
+
+- `SKILL.md` keeps the front matter, `## When to Use`, core workflow, and a
+  table pointing to each reference file with a one-line description of what's
+  in it.
+- Each `references/*.md` file gets its own `# Title`, a short intro linking
+  back to `../SKILL.md`, and (if over 300 lines, per the Anthropic Agent
+  Skills convention) a `## Contents` table of contents.
+- Update every inbound link across the repo (`docs/SKILL.md`'s router table,
+  any other skill that references it) from `skills/<name>.md` to
+  `skills/<name>/SKILL.md`.
+- `scripts/check-skill-frontmatter.sh` and `scripts/check-skill-index.sh` both
+  recognize `docs/skills/*/SKILL.md` alongside flat `docs/skills/*.md` — no
+  script changes needed for a new migration.
+- Remove the skill's flat-file entry from the `GRANDFATHERED` array in
+  `check-skill-frontmatter.sh` once the migrated `SKILL.md` is back under the
+  soft/hard line limits.
+
+See [`lab-testing/SKILL.md`](./lab-testing/SKILL.md) for a worked example
+(migrated 2026-07-29 from a 910-line flat file).
+
 ## Link to canonical sources
 
 Do not duplicate facts that live in source files, workflow YAML, or upstream

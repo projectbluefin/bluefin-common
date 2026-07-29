@@ -24,6 +24,13 @@ For a new or relocated agent, follow the copyable
 verifies the target repository first, attaches common as the shared-contract
 sidecar, and requires self-repair and durable learning on every task loop.
 
+### Open proposals awaiting human review
+
+- [`skill-catalog-proposal.md`](skill-catalog-proposal.md) — cross-repo
+  survey of every factory repo's skill-doc system and a proposed shared
+  catalog standard. Not adopted; requires a Design-gate decision before any
+  repo acts on it.
+
 ## Mission and product boundary
 
 - Factory org: `projectbluefin`

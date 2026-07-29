@@ -26,6 +26,10 @@ pre-commit run --all-files # yaml/json/sha/actionlint hygiene
 
 Run `just check` and `pre-commit run --all-files` before every commit.
 
+Full testing contract (what must be tested, hardware gate boundaries, coverage
+targets, exemptions): [`docs/TESTING.md`](docs/TESTING.md). Coding and
+configuration style conventions: [`docs/contributing/style-guide.md`](docs/contributing/style-guide.md).
+
 ## Factory workflow and ownership
 
 Trust the Machines: workflows, branches, assignees, projects, and pull
@@ -143,9 +147,13 @@ system_files/bluefin/**  @castrojo @hanthor @ahmedadan
 | Image registry / tags | `docs/skills/image-registry.md` |
 | Skill improvement mandate | `docs/skills/skill-improvement.md` |
 | PR review checklist | `docs/skills/pr-review.md` |
+| Testing contract | `docs/TESTING.md` |
+| Coding / config style guide | `docs/contributing/style-guide.md` |
 
 ## See also
 
 - [`README.md`](README.md) — project overview for humans.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor quick start.
 - [`docs/skills/workflow-map.md`](docs/skills/workflow-map.md) — workflow index.
+- [`docs/TESTING.md`](docs/TESTING.md) — testing contract and coverage targets.
+- [`docs/contributing/style-guide.md`](docs/contributing/style-guide.md) — coding and configuration style guide.

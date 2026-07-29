@@ -16,7 +16,7 @@ metadata:
 
 This guide documents PR type taxonomy, per-type review checklists, CI gate interpretation, OEM hook review, test quality standards, and the review report template — built from live review sessions on PRs #760, #767, #768, #769, and #785.
 
-> **Lab testing moved (2026-06-24):** The baseline-vs-delta methodology, worked examples (PR #768, #769, #767), quick-start lab YAMLs, and the composed-image testing pattern now live in [`lab-testing.md`](lab-testing.md). This file focuses on review procedure; it links to `lab-testing.md` where lab verification is needed.
+> **Lab testing moved (2026-06-24, restructured 2026-07-29):** Lab verification scope, quick-start YAMLs, and infrastructure live in [`lab-testing/SKILL.md`](lab-testing/SKILL.md). The baseline-vs-delta methodology and worked examples (PR #768, #769, #767) live in [`lab-testing/references/pr-review-baselines.md`](lab-testing/references/pr-review-baselines.md); the composed-image testing pattern lives in [`lab-testing/references/methodology.md`](lab-testing/references/methodology.md). This file focuses on review procedure and links out to those where lab verification is needed.
 
 ---
 
@@ -63,7 +63,7 @@ Identify the PR type first. It determines blast radius, review depth, and whethe
 | `doc / skill update` | `docs/**`, `AGENTS.md` | None | No — doc-only exception, push direct to main |
 | `Containerfile` | `Containerfile` | ALL variants | Yes |
 
-For lab testing scope by changed path, quick-start YAMLs, and the baseline-vs-delta methodology, see [`lab-testing.md`](lab-testing.md).
+For lab testing scope by changed path and quick-start YAMLs, see [`lab-testing/SKILL.md`](lab-testing/SKILL.md); for the baseline-vs-delta methodology, see [`lab-testing/references/pr-review-baselines.md`](lab-testing/references/pr-review-baselines.md).
 
 ---
 
@@ -426,7 +426,7 @@ Before approving any `system_files/` PR:
 - [ ] Per-type checklist completed for all changed paths
 - [ ] CI is green (or transient failures identified and re-triggered)
 - [ ] `ghost-lab` check is not stale-pending (requeue if needed)
-- [ ] Lab verification done or E2E CI pass accepted as equivalent — see [`lab-testing.md`](lab-testing.md) for baseline-vs-delta methodology and quick-start YAMLs
+- [ ] Lab verification done or E2E CI pass accepted as equivalent — see [`lab-testing/SKILL.md`](lab-testing/SKILL.md) for quick-start YAMLs and [`lab-testing/references/pr-review-baselines.md`](lab-testing/references/pr-review-baselines.md) for baseline-vs-delta methodology
 - [ ] Skill file update committed in the same PR if a new pattern was discovered
 - [ ] PR title is Conventional Commits
 - [ ] Attribution trailers present on AI-authored commits (convention, not a gate)

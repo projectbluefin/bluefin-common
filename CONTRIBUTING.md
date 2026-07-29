@@ -49,3 +49,11 @@ taxonomy, slash commands (`/approve`, `/claim`, `/unclaim`), and the agent–hum
 ## CI
 
 PRs require only `validate-just` and `build` to pass — no expensive VM boots. Full layer validation (`common` behave suite via [`projectbluefin/testsuite`](https://github.com/projectbluefin/testsuite)) runs automatically on every merge to main.
+
+## Testing and style
+
+- [`docs/TESTING.md`](docs/TESTING.md) — the testing contract: what must be
+  tested, hardware gate boundaries, coverage targets, and exemptions.
+- [`docs/contributing/style-guide.md`](docs/contributing/style-guide.md) —
+  coding and configuration conventions for shell scripts, Just recipes,
+  JSON/YAML, and the Containerfile.
