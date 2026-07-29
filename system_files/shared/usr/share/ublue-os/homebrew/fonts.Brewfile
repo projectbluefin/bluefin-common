@@ -1,6 +1,7 @@
+tap "colindean/fonts-nonfree", trusted: true
+
 # === Accessibilty fonts ===
 cask "font-opendyslexic"
-cask "themimolet/tap/font-luciole"
 
 # === Office fonts ===
 cask "font-arial"
