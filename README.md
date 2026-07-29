@@ -90,7 +90,8 @@ The `/usr/share/ublue-os/homebrew/` directory contains curated application bundl
 - **`system-flatpaks.Brewfile`** - Default system-wide flatpaks for all Bluefin variants
 - **`system-dx-flatpaks.Brewfile`** - Additional flatpaks for DX (Developer Experience) mode
 - **`full-desktop.Brewfile`** - Comprehensive collection of GNOME Circle and community flatpak applications for a full desktop experience
-- **`fonts.Brewfile`** - Additional monospace fonts for development
+- **`fonts.Brewfile`** - Common fonts for everyday work
+- **`fonts-dev.Brewfile`** - Additional monospace fonts for development
 - **`cli.Brewfile`** - CLI tools and utilities
 - **`ai-tools.Brewfile`** - AI and machine learning tools
 - **`cncf.Brewfile`** - Cloud Native Computing Foundation tools
