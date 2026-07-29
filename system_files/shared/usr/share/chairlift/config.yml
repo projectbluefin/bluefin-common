@@ -12,10 +12,14 @@ system_page:
     app_id: io.missioncenter.MissionCenter
 
 updates_page:
-  # Staged bootc updates need polkit glue Bluefin does not ship yet.
-  # Tracked upstream: https://github.com/frostyard/chairlift/issues/54
+  # frostyard/chairlift#54 resolved via the system-integration split
+  # (frostyard/chairlift#102): the fixed /usr/libexec/bootc-update-stage
+  # path is now backed by an image-side stage script, and the bootc polkit
+  # policy ships in system_files/shared/usr/share/polkit-1/actions/. Staging
+  # only (bootc upgrade --download-only); applying still happens on the
+  # user's own reboot, or via uupd's background policy.
   bootc_updates_group:
-    enabled: false
+    enabled: true
   flatpak_updates_group:
     enabled: true
   brew_updates_group:
@@ -57,8 +61,9 @@ maintenance_page:
     enabled: true
 
 features_page:
-  # updex is not present on Bluefin; the pkexec helper also needs polkit
-  # files a user-scope install cannot provide (frostyard/chairlift#54).
+  # updex is not present on Bluefin. Unlike bootc staging, no updex helper
+  # ships on the image, so this stays off regardless of the polkit fix in
+  # frostyard/chairlift#54 — flip only if/when updex ever ships on Bluefin.
   features_group:
     enabled: false
 

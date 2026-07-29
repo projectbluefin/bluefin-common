@@ -2,8 +2,11 @@
 
 ChairLift (https://github.com/frostyard/chairlift) reads
 /usr/share/chairlift/config.yml for maintainer defaults. These tests pin
-the Bluefin decisions: features that need polkit glue stay disabled until
-frostyard/chairlift#54 is resolved, bundle paths point at Bluefin's
+the Bluefin decisions: frostyard/chairlift#54 resolved via the
+system-integration split (frostyard/chairlift#102), so bootc staging is
+now backed by an image-side polkit policy and stage script and
+bootc_updates_group is enabled. updex (features_group) stays disabled
+because no updex helper ships on Bluefin. Bundle paths point at Bluefin's
 Brewfiles, and help links point at Bluefin resources.
 """
 
@@ -18,6 +21,12 @@ BREWFILE = (
     ROOT
     / "system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/chairlift.Brewfile"
 )
+BOOTC_POLICY = (
+    ROOT
+    / "system_files/shared/usr/share/polkit-1/actions"
+    / "org.frostyard.ChairLift.bootc.policy"
+)
+BOOTC_STAGE_SCRIPT = ROOT / "system_files/shared/usr/libexec/bootc-update-stage"
 
 # Pages and groups documented in upstream CONFIG.md. Anything outside this
 # set is silently ignored by ChairLift, so it is a typo until proven otherwise.
@@ -68,12 +77,51 @@ def test_config_parses_and_uses_known_pages_and_groups():
             )
 
 
-def test_polkit_dependent_groups_stay_disabled():
-    """bootc staging and updex need /usr/share/polkit-1 files Bluefin does
-    not ship. Keep them off until frostyard/chairlift#54 is resolved."""
+def test_bootc_staging_enabled_now_that_polkit_glue_ships():
+    """frostyard/chairlift#54 resolved via the system-integration split
+    (frostyard/chairlift#102): Bluefin now ships the fixed
+    /usr/libexec/bootc-update-stage helper and the bootc polkit policy, so
+    bootc_updates_group can be enabled."""
     data = _load_config()
-    assert data["updates_page"]["bootc_updates_group"]["enabled"] is False
+    assert data["updates_page"]["bootc_updates_group"]["enabled"] is True
+
+
+def test_updex_features_group_stays_disabled():
+    """updex has no Bluefin helper yet, independent of the bootc polkit
+    fix. Keep it off until updex actually ships on Bluefin."""
+    data = _load_config()
     assert data["features_page"]["features_group"]["enabled"] is False
+
+
+def test_bootc_stage_polkit_policy_pins_fixed_helper_path():
+    """The polkit action must annotate the exact fixed path ChairLift's
+    pkexec invocation expects; auth is still required (auth_admin), so no
+    passwordless rules.d bypass should exist alongside it."""
+    content = BOOTC_POLICY.read_text(encoding="utf-8")
+    assert "org.frostyard.ChairLift.bootc.stage" in content
+    assert (
+        '<annotate key="org.freedesktop.policykit.exec.path">'
+        "/usr/libexec/bootc-update-stage</annotate>" in content
+    )
+    assert "<allow_any>auth_admin</allow_any>" in content
+
+
+def test_bootc_stage_script_is_executable_and_stages_only():
+    """The privileged helper must only stage (never auto-apply/reboot) so
+    uupd remains the sole owner of when an update actually takes effect."""
+    assert BOOTC_STAGE_SCRIPT.stat().st_mode & 0o111, (
+        "bootc-update-stage must be executable"
+    )
+    exec_lines = [
+        line
+        for line in BOOTC_STAGE_SCRIPT.read_text(encoding="utf-8").splitlines()
+        if line.strip().startswith("exec ")
+    ]
+    assert len(exec_lines) == 1, "expected exactly one exec invocation"
+    (exec_line,) = exec_lines
+    assert "bootc upgrade" in exec_line
+    assert "--download-only" in exec_line
+    assert "--apply" not in exec_line
 
 
 def test_update_policy_stays_with_uupd():

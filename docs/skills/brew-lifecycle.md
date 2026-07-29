@@ -191,13 +191,19 @@ cask "chairlift"
 ChairLift is a GTK4 system-management GUI (Homebrew, Flatpak, bootc).
 Its Bluefin maintainer config ships at
 `system_files/shared/usr/share/chairlift/config.yml` (admin override:
-`/etc/chairlift/config.yml`); bootc staging and updex stay disabled
-until frostyard/chairlift#54 resolves the polkit integration. Guarded
-by `tests/test_chairlift_config.py`. The cask is now reviewable from the
-common side because the upstream ChairLift release assets include the needed
-`data/` files and arm64 tarballs; the remaining dependency for full Brewfile
-validation is the upstream Homebrew tap PR publishing the cask to the
-Homebrew resolvers that CI uses.
+`/etc/chairlift/config.yml`). frostyard/chairlift#54 resolved via the
+system-integration split (frostyard/chairlift#102): Bluefin now ships the
+fixed `/usr/libexec/bootc-update-stage` helper and the bootc PolicyKit
+policy under `system_files/shared/usr/share/polkit-1/actions/`, so
+`bootc_updates_group` is enabled (staging only —
+`bootc upgrade --download-only`; applying stays with the user's own
+reboot or uupd's background policy). `features_group` (updex) stays
+disabled — no updex helper ships on Bluefin yet, independent of the
+polkit fix. Guarded by `tests/test_chairlift_config.py`. The cask is now
+reviewable from the common side because the upstream ChairLift release
+assets include the needed `data/` files and arm64 tarballs; the remaining
+dependency for full Brewfile validation is the upstream Homebrew tap PR
+publishing the cask to the Homebrew resolvers that CI uses.
 
 ### Add a variant-specific Brewfile
 
