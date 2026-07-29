@@ -2,6 +2,14 @@
 name: ci-tooling
 version: "2.0"
 last_updated: "2026-06-24"
+id: ci-tooling
+one_line_purpose: Apply CI policy for SHA pinning, pre-commit, and Renovate tooling.
+entry_point: docs/skills/ci-tooling.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [ci, workflows, github-actions]
 description: >-
   CI policy and tooling — SHA pinning, pre-commit guards, Renovate digest

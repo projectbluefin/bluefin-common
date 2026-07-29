@@ -2,6 +2,14 @@
 name: devmode
 version: "1.0"
 last_updated: "2026-06-23"
+id: devmode
+one_line_purpose: Configure the Bluefin Developer Mode setup wizard.
+entry_point: docs/skills/devmode.md
+category: test-authoring
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [devmode, development, debugging]
 description: >-
   Bluefin Developer Mode setup wizard. Use when working on devmode docs, UX,

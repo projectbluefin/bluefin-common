@@ -2,12 +2,20 @@
 name: queue-dashboard
 version: "1.0"
 last_updated: "2026-06-23"
+id: queue-dashboard
+one_line_purpose: Triage the PR review and merge queue for common.
+entry_point: docs/skills/queue-dashboard.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [queue, issues, dashboard]
 description: >-
   PR review and merge queue workflow for projectbluefin/common — ruleset,
   triage tiers, rebase patterns, and actions for each PR state. Use when
   reviewing open PRs, understanding the merge ruleset, or deciding how to
-  handle a stalled PR." type: procedure
+  handle a stalled PR.
 metadata:
   type: reference
 ---

@@ -2,11 +2,19 @@
 name: mime-defaults
 version: "1.0"
 last_updated: "2026-07-19"
+id: mime-defaults
+one_line_purpose: Configure shared MIME default-application settings for Bluefin.
+entry_point: docs/skills/mime-defaults.md
+category: test-authoring
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [mime, xdg, defaults, system_files]
 description: >-
   Shared MIME default-application configuration for Bluefin variants. Use
   when adding or changing default apps for file types in
-  system_files/bluefin/etc/xdg/mimeapps.list." type: reference
+  system_files/bluefin/etc/xdg/mimeapps.list.
 metadata:
   type: reference
 ---

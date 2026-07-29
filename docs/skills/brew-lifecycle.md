@@ -2,6 +2,14 @@
 name: brew-lifecycle
 version: "1.0"
 last_updated: "2026-06-23"
+id: brew-lifecycle
+one_line_purpose: Manage OS-managed Homebrew packages and RPM/brew placement.
+entry_point: docs/skills/brew-lifecycle.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [brew, homebrew, packages]
 description: >-
   Manage OS-managed Homebrew packages. Use when adding/removing default brew

@@ -2,6 +2,14 @@
 name: skill-drift
 version: "1.0"
 last_updated: "2026-06-23"
+id: skill-drift
+one_line_purpose: Decide if a PR needs a skill-doc update under the drift waiver process.
+entry_point: docs/skills/skill-drift.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [skills, drift, ci]
 description: >-
   Skill-drift CI check and waiver process. Use when a PR changes

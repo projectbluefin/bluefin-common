@@ -63,6 +63,14 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Handle secrets / Botkube RBAC | [`secrets-policy.md`](skills/secrets-policy.md) |
 | Understand factory topology | [`factory/README.md`](factory/README.md) |
 
+This table is curated by hand for quick scanning. The full, generated catalog
+— every skill's `id`, `category`, `status`, and one-line purpose — lives in
+[`skills/index.json`](skills/index.json) (machine-readable) and
+[`skills/index.md`](skills/index.md) (human-readable mirror). Both are
+produced by `scripts/generate_skill_index.py`; see
+[`write-a-skill.md`](skills/write-a-skill.md) for the required front-matter
+fields and regeneration step.
+
 ## How to load a skill
 
 Read the skill file's front-matter first. If `description` and `tags` match

@@ -2,6 +2,14 @@
 name: nvidia
 version: "1.0"
 last_updated: "2026-06-23"
+id: nvidia
+one_line_purpose: Maintain NVIDIA GPU support architecture and update procedures.
+entry_point: docs/skills/nvidia.md
+category: test-authoring
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [nvidia, gpu, drivers, akmods]
 description: >-
   NVIDIA GPU support architecture and update procedures. Use when editing

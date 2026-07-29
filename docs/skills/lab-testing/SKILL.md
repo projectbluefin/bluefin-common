@@ -2,6 +2,14 @@
 name: lab-testing
 version: "1.1"
 last_updated: "2026-07-29"
+id: lab-testing
+one_line_purpose: Boot images on the KubeVirt lab and collect test logs.
+entry_point: docs/skills/lab-testing/SKILL.md
+category: test-authoring
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [lab, testing, kubevirt]
 description: >-
   KubeVirt lab testing for common. Use when testing a common PR against
@@ -119,4 +127,3 @@ For each failed unit or journal error found:
    - `common` if the unit/config ships from `system_files/`
    - `bluefin`/`bluefin-lts`/`dakota` if it's variant-specific
 4. Include: variant name, kernel version, exact journal lines, workflow name
-

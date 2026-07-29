@@ -334,4 +334,3 @@ gh pr view <N> --repo projectbluefin/common --json mergedAt
 If the containerdisk predates the PR, the lab baseline is stale. Wait for a rebuild (nightly at 02:00 UTC) or note it clearly in the report.
 
 ---
-

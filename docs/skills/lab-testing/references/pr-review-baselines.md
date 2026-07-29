@@ -155,4 +155,3 @@ ls /var/lib/flatpak/.appstream-refreshed 2>/dev/null && echo "EXISTS" || echo "a
 ```
 
 ---
-

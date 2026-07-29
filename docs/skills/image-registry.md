@@ -2,11 +2,19 @@
 name: image-registry
 version: "1.0"
 last_updated: "2026-06-29"
+id: image-registry
+one_line_purpose: Look up projectbluefin OCI image registry paths and tags.
+entry_point: docs/skills/image-registry.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [registry, ghcr, images]
 description: >-
   projectbluefin OCI image registry reference — all production images
   published at ghcr.io/projectbluefin/. Use when looking up image paths,
-  tags, or registry structure." type: reference
+  tags, or registry structure.
 metadata:
   type: reference
 ---

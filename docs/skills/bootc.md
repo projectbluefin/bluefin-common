@@ -2,6 +2,14 @@
 name: bootc
 version: "1.0"
 last_updated: "2026-06-23"
+id: bootc
+one_line_purpose: Work with bootc image build, update, and Containerfile mechanics.
+entry_point: docs/skills/bootc.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [bootc, containers, ostree]
 description: >-
   bootc — foundational OS image tool. Use when working on Containerfiles,

@@ -2,11 +2,19 @@
 name: bazaar
 version: "1.1"
 last_updated: "2026-07-01"
+id: bazaar
+one_line_purpose: Edit Bazaar curated schema, banner conversion, and local preview config.
+entry_point: docs/skills/bazaar.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [bazaar, curated, flatpak, apps]
 description: >-
   Use when editing Bazaar config or hooks in common. Covers curated schema
   migration, JXL→PNG banner conversion, Bluefin-owned files, and local
-  preview workflow." type: procedure
+  preview workflow.
 metadata:
   type: reference
   context7-sources:

@@ -2,12 +2,20 @@
 name: label-workflow
 version: "1.1"
 last_updated: "2026-07-28"
+id: label-workflow
+one_line_purpose: Apply label taxonomy and the issue lifecycle handoff model.
+entry_point: docs/skills/label-workflow.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [labels, issues, workflow, clanker]
 description: >-
   Label taxonomy, issue lifecycle (filed→triage→queued→claimed→done), slash
   commands, and the agent/human handoff model for projectbluefin factory
   repos. Use when understanding the issue lifecycle, triaging work, or using
-  slash commands." type: procedure
+  slash commands.
 metadata:
   type: reference
 ---

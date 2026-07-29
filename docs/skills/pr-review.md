@@ -2,6 +2,14 @@
 name: pr-review
 version: "2.0"
 last_updated: "2026-06-24"
+id: pr-review
+one_line_purpose: Review PRs against common's CI gates and report template.
+entry_point: docs/skills/pr-review.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [review, testing, contributing]
 description: >-
   PR reviewer's guide for projectbluefin/common. Use when reviewing PRs,

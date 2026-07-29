@@ -2,6 +2,14 @@
 name: context7
 version: "1.0"
 last_updated: "2026-07-19"
+id: context7
+one_line_purpose: Look up external tool docs via Context7 before asserting facts.
+entry_point: docs/skills/context7.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [context7, docs, verification, tooling]
 description: >-
   Mandatory first-lookup policy for external tools. Use before asserting

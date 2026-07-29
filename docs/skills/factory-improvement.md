@@ -2,6 +2,14 @@
 name: factory-improvement
 version: "1.0"
 last_updated: "2026-06-23"
+id: factory-improvement
+one_line_purpose: Audit and propose factory self-improvement automation.
+entry_point: docs/skills/factory-improvement.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [factory, automation, improvement]
 description: >-
   Self-improving factory loop for projectbluefin. Use when identifying

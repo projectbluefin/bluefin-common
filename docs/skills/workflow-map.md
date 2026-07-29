@@ -2,6 +2,14 @@
 name: workflow-map
 version: "1.0"
 last_updated: "2026-06-23"
+id: workflow-map
+one_line_purpose: Understand what each GitHub workflow in common does.
+entry_point: docs/skills/workflow-map.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [workflows, ci, reference]
 description: >-
   What each GitHub workflow in common is for. Use when editing workflows,

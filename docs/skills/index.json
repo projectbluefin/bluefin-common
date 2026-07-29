@@ -1,0 +1,683 @@
+{
+  "generated_at": "2026-07-29",
+  "schema_version": "1.0",
+  "skills": [
+    {
+      "id": "bazaar",
+      "name": "bazaar",
+      "one_line_purpose": "Edit Bazaar curated schema, banner conversion, and local preview config.",
+      "entry_point": "docs/skills/bazaar.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "bazaar",
+        "curated",
+        "flatpak",
+        "apps"
+      ],
+      "description": "Use when editing Bazaar config or hooks in common. Covers curated schema migration, JXL\u2192PNG banner conversion, Bluefin-owned files, and local preview workflow.",
+      "version": "1.1",
+      "last_updated": "2026-07-01",
+      "doc_type": "reference"
+    },
+    {
+      "id": "bonedigger",
+      "name": "bonedigger",
+      "one_line_purpose": "Operate bonedigger and kubestellar-bot issue/report automation.",
+      "entry_point": "docs/skills/bonedigger.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "bonedigger",
+        "triage",
+        "automation"
+      ],
+      "description": "bonedigger + kubestellar-bot lifecycle automation. Use when working on ujust report, issue lifecycle, priority escalation, or how fixes ship back to images.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "bootc",
+      "name": "bootc",
+      "one_line_purpose": "Work with bootc image build, update, and Containerfile mechanics.",
+      "entry_point": "docs/skills/bootc.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "bootc",
+        "containers",
+        "ostree"
+      ],
+      "description": "bootc \u2014 foundational OS image tool. Use when working on Containerfiles, image build workflows, update mechanics, or OS image structure.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "brew-lifecycle",
+      "name": "brew-lifecycle",
+      "one_line_purpose": "Manage OS-managed Homebrew packages and RPM/brew placement.",
+      "entry_point": "docs/skills/brew-lifecycle.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "brew",
+        "homebrew",
+        "packages"
+      ],
+      "description": "Manage OS-managed Homebrew packages. Use when adding/removing default brew packages, moving tools between RPM and brew, or auditing image-vs-brew placement.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "procedure"
+    },
+    {
+      "id": "ci-pitfalls",
+      "name": "ci-pitfalls",
+      "one_line_purpose": "Diagnose CI gotchas and silent workflow failures across repos.",
+      "entry_point": "docs/skills/ci-pitfalls.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "ci",
+        "workflows",
+        "github-actions",
+        "pitfalls"
+      ],
+      "description": "Incident log of CI gotchas across projectbluefin repos. Use when debugging silent CI failures, startup_failure, or workflow skip behavior.",
+      "version": "1.0",
+      "last_updated": "2026-07-19",
+      "doc_type": "reference"
+    },
+    {
+      "id": "ci-tooling",
+      "name": "ci-tooling",
+      "one_line_purpose": "Apply CI policy for SHA pinning, pre-commit, and Renovate tooling.",
+      "entry_point": "docs/skills/ci-tooling.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "ci",
+        "workflows",
+        "github-actions"
+      ],
+      "description": "CI policy and tooling \u2014 SHA pinning, pre-commit guards, Renovate digest tracking, and workflow config. Use when editing .github/workflows/ files.",
+      "version": "2.0",
+      "last_updated": "2026-06-24",
+      "doc_type": "reference"
+    },
+    {
+      "id": "containerfile",
+      "name": "containerfile",
+      "one_line_purpose": "Modify and locally test the common Containerfile build.",
+      "entry_point": "docs/skills/containerfile.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "containerfile",
+        "build",
+        "oci"
+      ],
+      "description": "Containerfile build structure and local testing. Use when modifying the Containerfile, adding binaries, updating wallpaper sources, or using just overlay.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "context7",
+      "name": "context7",
+      "one_line_purpose": "Look up external tool docs via Context7 before asserting facts.",
+      "entry_point": "docs/skills/context7.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "context7",
+        "docs",
+        "verification",
+        "tooling"
+      ],
+      "description": "Mandatory first-lookup policy for external tools. Use before asserting anything about bootc, cosign, skopeo, buildah, just, GitHub Actions, or Renovate.",
+      "version": "1.0",
+      "last_updated": "2026-07-19",
+      "doc_type": "reference"
+    },
+    {
+      "id": "dconf-consistency",
+      "name": "dconf-consistency",
+      "one_line_purpose": "Keep GSettings overrides and dconf lock files in parity.",
+      "entry_point": "docs/skills/dconf-consistency.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "dconf",
+        "gnome",
+        "configuration"
+      ],
+      "description": "GSettings override and dconf lock file parity rules \u2014 must edit both files together for locked settings. Use when changing any GSettings key, dconf override, or lock file in system_files/.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "devmode",
+      "name": "devmode",
+      "one_line_purpose": "Configure the Bluefin Developer Mode setup wizard.",
+      "entry_point": "docs/skills/devmode.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "devmode",
+        "development",
+        "debugging"
+      ],
+      "description": "Bluefin Developer Mode setup wizard. Use when working on devmode docs, UX, tool selection, or the canonical ujust devmode command.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "procedure"
+    },
+    {
+      "id": "discord-chatops",
+      "name": "discord-chatops",
+      "one_line_purpose": "Configure Discord ChatOps, Botkube, and release notifications.",
+      "entry_point": "docs/skills/discord-chatops.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "discord",
+        "chatops",
+        "botkube"
+      ],
+      "description": "Documents Discord ChatOps integration for the Bluefin factory, including Botkube lifecycle commands and release notifications. Use when configuring Discord webhooks, Botkube, or Discord-driven factory commands.",
+      "version": "1.0",
+      "last_updated": "2026-07-20",
+      "doc_type": "procedure"
+    },
+    {
+      "id": "e2e-ci",
+      "name": "e2e-ci",
+      "one_line_purpose": "Debug pre/post-merge E2E CI for common.",
+      "entry_point": "docs/skills/e2e-ci.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "e2e",
+        "testing",
+        "ci"
+      ],
+      "description": "Pre/post-merge E2E CI for common. Use when debugging E2E failures, understanding the PR gate flow, or diagnosing masked brew-setup issues.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "factory-improvement",
+      "name": "factory-improvement",
+      "one_line_purpose": "Audit and propose factory self-improvement automation.",
+      "entry_point": "docs/skills/factory-improvement.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "factory",
+        "automation",
+        "improvement"
+      ],
+      "description": "Self-improving factory loop for projectbluefin. Use when identifying automation gaps, proposing workflows, or auditing ACMM maturity.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "factory-onboarding",
+      "name": "factory-onboarding",
+      "one_line_purpose": "Onboard repositories to the Project Bluefin factory model.",
+      "entry_point": "docs/skills/factory-onboarding.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "factory",
+        "onboarding",
+        "setup"
+      ],
+      "description": "How to onboard a repo into the Project Bluefin factory model. The self-improvement mandate, what agents must do, and what is banned. Load when setting up a new repo or auditing factory compliance.",
+      "version": "1.0",
+      "last_updated": "2026-07-29",
+      "doc_type": "reference"
+    },
+    {
+      "id": "governance",
+      "name": "governance",
+      "one_line_purpose": "Manage CODEOWNERS, triager roles, and governance sync.",
+      "entry_point": "docs/skills/governance.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "governance",
+        "issues",
+        "lifecycle"
+      ],
+      "description": "Triagers role, CODEOWNERS sentinel pattern, cross-repo sync workflow, and branch protection matrix for projectbluefin repos. Use when managing CODEOWNERS, adding/removing triager permissions, or syncing governance policy across repos.",
+      "version": "1.0",
+      "last_updated": "2026-07-20",
+      "doc_type": "reference"
+    },
+    {
+      "id": "hardware-testing",
+      "name": "hardware-testing",
+      "one_line_purpose": "File hardware test reports and apply promotion policy.",
+      "entry_point": "docs/skills/hardware-testing.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "hardware",
+        "testing",
+        "promotion"
+      ],
+      "description": "Hardware test report format and promotion policy. Use when filing a hardware test report, triaging hardware blockers, or deciding whether a candidate is safe to promote.",
+      "version": "1.0",
+      "last_updated": "2026-07-20",
+      "doc_type": "runbook"
+    },
+    {
+      "id": "hive",
+      "name": "hive",
+      "one_line_purpose": "Route factory work through Hive coordination and labels.",
+      "entry_point": "docs/skills/hive.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "hive",
+        "multi-repo",
+        "coordination"
+      ],
+      "description": "KubeStellar Hive coordination, Trust the Machines routing, and the canonical seven-label workflow. Use when finding or routing factory work.",
+      "version": "2.2",
+      "last_updated": "2026-07-29",
+      "doc_type": "reference"
+    },
+    {
+      "id": "hive-review",
+      "name": "hive-review",
+      "one_line_purpose": "Review live Hive and GitHub state for actionable work.",
+      "entry_point": "docs/skills/hive-review.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "hive",
+        "review",
+        "code-review"
+      ],
+      "description": "Review live Hive and GitHub state for urgent work, advisory findings, and agent-ready issues without relying on derived local state.",
+      "version": "1.2",
+      "last_updated": "2026-07-29",
+      "doc_type": "reference"
+    },
+    {
+      "id": "hosted-hive",
+      "name": "hosted-hive",
+      "one_line_purpose": "Operate hosted Hive APIs with routing and trust safeguards.",
+      "entry_point": "docs/skills/hosted-hive.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "hive",
+        "github",
+        "hosted",
+        "factory",
+        "agents",
+        "clankers"
+      ],
+      "description": "Manage a hosted Hive through its authenticated API while preserving repository routing, trust tiers, credential redaction, and human gates.",
+      "version": "1.3",
+      "last_updated": "2026-07-29",
+      "doc_type": "runbook"
+    },
+    {
+      "id": "hosted-hive-clankers",
+      "name": "hosted-hive-clankers",
+      "one_line_purpose": "Receive and verify authenticated Hive work via Clankers.",
+      "entry_point": "docs/skills/hosted-hive-clankers.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "clankers",
+        "hive",
+        "websocket",
+        "github"
+      ],
+      "description": "Receive authenticated Hive work through the Clankers contributor WebSocket while verifying task identity, trust-tier permissions, and credentials.",
+      "version": "1.2",
+      "last_updated": "2026-07-29",
+      "doc_type": "runbook"
+    },
+    {
+      "id": "human-gates",
+      "name": "human-gates",
+      "one_line_purpose": "Decide when to stop for Design, Security, Breakage, or Merge review.",
+      "entry_point": "docs/skills/human-gates.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "gates",
+        "approval",
+        "security"
+      ],
+      "description": "The four human decision gates \u2014 Design, Security, Breakage, and Merge \u2014 when an agent must stop and request human input. Use when uncertain whether a change requires human review, or to verify evidence requirements before opening a PR.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "image-registry",
+      "name": "image-registry",
+      "one_line_purpose": "Look up projectbluefin OCI image registry paths and tags.",
+      "entry_point": "docs/skills/image-registry.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "registry",
+        "ghcr",
+        "images"
+      ],
+      "description": "projectbluefin OCI image registry reference \u2014 all production images published at ghcr.io/projectbluefin/. Use when looking up image paths, tags, or registry structure.",
+      "version": "1.0",
+      "last_updated": "2026-06-29",
+      "doc_type": "reference"
+    },
+    {
+      "id": "lab-testing",
+      "name": "lab-testing",
+      "one_line_purpose": "Boot images on the KubeVirt lab and collect test logs.",
+      "entry_point": "docs/skills/lab-testing/SKILL.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "lab",
+        "testing",
+        "kubevirt"
+      ],
+      "description": "KubeVirt lab testing for common. Use when testing a common PR against bluefin, bluefin-lts, or dakota on ghost.",
+      "version": "1.1",
+      "last_updated": "2026-07-29",
+      "doc_type": "reference"
+    },
+    {
+      "id": "label-workflow",
+      "name": "label-workflow",
+      "one_line_purpose": "Apply label taxonomy and the issue lifecycle handoff model.",
+      "entry_point": "docs/skills/label-workflow.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "labels",
+        "issues",
+        "workflow",
+        "clanker"
+      ],
+      "description": "Label taxonomy, issue lifecycle (filed\u2192triage\u2192queued\u2192claimed\u2192done), slash commands, and the agent/human handoff model for projectbluefin factory repos. Use when understanding the issue lifecycle, triaging work, or using slash commands.",
+      "version": "1.1",
+      "last_updated": "2026-07-28",
+      "doc_type": "reference"
+    },
+    {
+      "id": "mime-defaults",
+      "name": "mime-defaults",
+      "one_line_purpose": "Configure shared MIME default-application settings for Bluefin.",
+      "entry_point": "docs/skills/mime-defaults.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "mime",
+        "xdg",
+        "defaults",
+        "system_files"
+      ],
+      "description": "Shared MIME default-application configuration for Bluefin variants. Use when adding or changing default apps for file types in system_files/bluefin/etc/xdg/mimeapps.list.",
+      "version": "1.0",
+      "last_updated": "2026-07-19",
+      "doc_type": "reference"
+    },
+    {
+      "id": "nvidia",
+      "name": "nvidia",
+      "one_line_purpose": "Maintain NVIDIA GPU support architecture and update procedures.",
+      "entry_point": "docs/skills/nvidia.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "nvidia",
+        "gpu",
+        "drivers",
+        "akmods"
+      ],
+      "description": "NVIDIA GPU support architecture and update procedures. Use when editing nvidia files in system_files/nvidia/, bluefin scripts, or dakota elements.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "oem-hardware-hooks",
+      "name": "oem-hardware-hooks",
+      "one_line_purpose": "Add OEM hardware first-boot setup hooks safely.",
+      "entry_point": "docs/skills/oem-hardware-hooks.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "hardware",
+        "oem",
+        "first-boot",
+        "hooks",
+        "shellcheck"
+      ],
+      "description": "OEM hardware first-boot setup hooks in projectbluefin/common. Use when adding hardware-specific setup, understanding hook directories and versioning contract, or applying shellcheck requirements.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "onboarding",
+      "name": "onboarding",
+      "one_line_purpose": "Set up a verified dev environment for projectbluefin repos.",
+      "entry_point": "docs/skills/onboarding.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "onboarding",
+        "setup",
+        "getting-started"
+      ],
+      "description": "Verified setup commands, correct pip/npm flags, and PR branch targets for all projectbluefin repos. Use when setting up a new development environment or writing contributor documentation.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "pr-review",
+      "name": "pr-review",
+      "one_line_purpose": "Review PRs against common's CI gates and report template.",
+      "entry_point": "docs/skills/pr-review.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "review",
+        "testing",
+        "contributing"
+      ],
+      "description": "PR reviewer's guide for projectbluefin/common. Use when reviewing PRs, interpreting CI gates, or following the review report template.",
+      "version": "2.0",
+      "last_updated": "2026-06-24",
+      "doc_type": "reference"
+    },
+    {
+      "id": "qa",
+      "name": "qa",
+      "one_line_purpose": "Run and understand the projectbluefin QA test coverage model.",
+      "entry_point": "docs/skills/qa.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "qa",
+        "testing",
+        "issues"
+      ],
+      "description": "QA model, test coverage matrix, promotion gates by repo, hardware gap, and how to run the test suite for projectbluefin factory repos. Use when understanding QA coverage, running tests, or checking promotion gate status.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "queue-dashboard",
+      "name": "queue-dashboard",
+      "one_line_purpose": "Triage the PR review and merge queue for common.",
+      "entry_point": "docs/skills/queue-dashboard.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "queue",
+        "issues",
+        "dashboard"
+      ],
+      "description": "PR review and merge queue workflow for projectbluefin/common \u2014 ruleset, triage tiers, rebase patterns, and actions for each PR state. Use when reviewing open PRs, understanding the merge ruleset, or deciding how to handle a stalled PR.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "release-promotion",
+      "name": "release-promotion",
+      "one_line_purpose": "Cut releases and verify promotion/hotfix artifacts.",
+      "entry_point": "docs/skills/release-promotion.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "release",
+        "promotion",
+        "staging"
+      ],
+      "description": "Promotion criteria, monthly release cadence, hotfix procedure, and artifact verification for projectbluefin/common. Use when cutting a release, understanding the promotion pipeline, or verifying release artifacts.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "secrets-policy",
+      "name": "secrets-policy",
+      "one_line_purpose": "Verify secrets and credentials against the approved inventory.",
+      "entry_point": "docs/skills/secrets-policy.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "secrets",
+        "security",
+        "ci"
+      ],
+      "description": "Approved secrets inventory for the Bluefin factory. Use when adding a secret, reviewing workflow auth, or verifying whether PATs or a new credential are allowed.",
+      "version": "1.0",
+      "last_updated": "2026-07-20",
+      "doc_type": "policy"
+    },
+    {
+      "id": "shell-scripts",
+      "name": "shell-scripts",
+      "one_line_purpose": "Write and test shell scripts under system_files/.",
+      "entry_point": "docs/skills/shell-scripts.md",
+      "category": "test-authoring",
+      "status": "active",
+      "tags": [
+        "shell",
+        "bash",
+        "testing",
+        "bats",
+        "shellcheck"
+      ],
+      "description": "Shell script authoring and testability. Use when writing or testing shell scripts under system_files/, removing scripts, or adding bats tests.",
+      "version": "1.0",
+      "last_updated": "2026-06-24",
+      "doc_type": "reference"
+    },
+    {
+      "id": "skill-drift",
+      "name": "skill-drift",
+      "one_line_purpose": "Decide if a PR needs a skill-doc update under the drift waiver process.",
+      "entry_point": "docs/skills/skill-drift.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "skills",
+        "drift",
+        "ci"
+      ],
+      "description": "Skill-drift CI check and waiver process. Use when a PR changes implementation files and you need to decide if a skill update is required.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "skill-improvement",
+      "name": "skill-improvement",
+      "one_line_purpose": "Capture durable agent learnings in maintained skill docs.",
+      "entry_point": "docs/skills/skill-improvement.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "skills",
+        "improvement",
+        "documentation"
+      ],
+      "description": "The skill-improvement mandate \u2014 every agent session must produce a skill file update alongside the work. Use when completing a task and deciding whether to write a skill update, or when creating or updating a skill file.",
+      "version": "1.1",
+      "last_updated": "2026-07-29",
+      "doc_type": "reference"
+    },
+    {
+      "id": "submodule-boundary",
+      "name": "submodule-boundary",
+      "one_line_purpose": "Decide where a system_files change belongs across variants.",
+      "entry_point": "docs/skills/submodule-boundary.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "submodules",
+        "git",
+        "architecture"
+      ],
+      "description": "system_files scope boundary. Use when editing system_files/shared/, bluefin/, nvidia/, or deciding where a system file change belongs.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "workflow-map",
+      "name": "workflow-map",
+      "one_line_purpose": "Understand what each GitHub workflow in common does.",
+      "entry_point": "docs/skills/workflow-map.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "workflows",
+        "ci",
+        "reference"
+      ],
+      "description": "What each GitHub workflow in common is for. Use when editing workflows, debugging CI, or understanding pipeline stages.",
+      "version": "1.0",
+      "last_updated": "2026-06-23",
+      "doc_type": "reference"
+    },
+    {
+      "id": "write-a-skill",
+      "name": "write-a-skill",
+      "one_line_purpose": "Author a new skill doc following front-matter and size rules.",
+      "entry_point": "docs/skills/write-a-skill.md",
+      "category": "meta",
+      "status": "active",
+      "tags": [
+        "skills",
+        "authoring",
+        "documentation"
+      ],
+      "description": "Author a new agent skill for projectbluefin/common. Covers front-matter, size budget, canonical linking, verification sections, and the skill-drift mandate. Use when creating a new docs/skills/*.md file or splitting an oversized skill.",
+      "version": "1.0",
+      "last_updated": "2026-07-20",
+      "doc_type": "procedure"
+    }
+  ]
+}

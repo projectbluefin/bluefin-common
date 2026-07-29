@@ -2,6 +2,14 @@
 name: bonedigger
 version: "1.0"
 last_updated: "2026-06-23"
+id: bonedigger
+one_line_purpose: Operate bonedigger and kubestellar-bot issue/report automation.
+entry_point: docs/skills/bonedigger.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [bonedigger, triage, automation]
 description: >-
   bonedigger + kubestellar-bot lifecycle automation. Use when working on
