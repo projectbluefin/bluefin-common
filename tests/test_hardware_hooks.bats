@@ -106,7 +106,7 @@ EOF
 
     run bash "${FRAMEWORK_HOOK}"
     [ "${status}" -eq 0 ]
-    [[ "${output}" == *"Removing legacy grubby karg"* ]]
+    [[ "${output}" == *"Removing obsolete hid_sensor_hub karg"* ]]
     [[ "${output}" == *"mock: grubby update"* ]]
 }
 
