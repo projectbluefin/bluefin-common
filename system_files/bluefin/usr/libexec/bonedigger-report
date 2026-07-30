@@ -94,6 +94,13 @@ route_issue_repo() {
         bluefin-lts*)
             BUG_REPO="projectbluefin/bluefin-lts"
             ;;
+        bluefin)
+            if [[ "$IMAGE_TAG" == lts* ]]; then
+                BUG_REPO="projectbluefin/bluefin-lts"
+            else
+                BUG_REPO="projectbluefin/bluefin"
+            fi
+            ;;
         bluefin*)
             BUG_REPO="projectbluefin/bluefin"
             ;;

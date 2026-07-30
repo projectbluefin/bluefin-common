@@ -38,7 +38,7 @@ teardown() {
 
     run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
         "$BONEDIGGER_SCRIPT" bluefin lts-42
-    [ "$output" = "projectbluefin/bluefin" ]
+    [ "$output" = "projectbluefin/bluefin-lts" ]
 
     run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
         "$BONEDIGGER_SCRIPT" bluefin-lts-hwe stable
