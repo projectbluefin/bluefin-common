@@ -24,6 +24,7 @@ test:
     bats tests/test_oem_brew.bats
     bats tests/test_hardware_hooks.bats
     bats tests/test_nvidia_flatpak_sync.bats
+    bats tests/test_dakota_countme.bats
 
 # Preview Bazaar config from this checkout on the local machine
 bazaar-preview:
