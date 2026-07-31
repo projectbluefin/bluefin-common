@@ -1,14 +1,14 @@
 FROM docker.io/library/golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS umotd-build
 RUN apk add git && \
-  git clone https://github.com/projectbluefin/motd /src && \
-  git -C /src checkout 71e67db8d1c82ac63b8369e2f0632dcbc0ecff56
+    git clone https://github.com/projectbluefin/motd /src && \
+    git -C /src checkout 71e67db8d1c82ac63b8369e2f0632dcbc0ecff56
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /umotd .
 
 FROM docker.io/library/golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS uwelcome-build
 RUN apk add git && \
-  git clone https://github.com/themimolet/uwelcome /src && \
-  git -C /src checkout 4f4b8189ce5f12f26d7ab6a51fb590a095ce9bdc
+    git clone https://github.com/themimolet/uwelcome /src && \
+    git -C /src checkout 4f4b8189ce5f12f26d7ab6a51fb590a095ce9bdc
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /uwelcome .
 
@@ -64,12 +64,12 @@ RUN install -d /tmp/gdu-rules /out/shared/usr/lib/udev/rules.d && \
       echo "4db215f77201f1c2346a513cd1aea077eaf0805887100d9c05c9ae0527d6a171  zeroplus_technology_corporation-gdu.rules"; \
     } > checksums.txt && \
     for file in $(awk '{print $2}' checksums.txt); do \
-    curl -fsSLo "$file" "https://codeberg.org/fabiscafe/game-devices-udev/raw/aaaf684043b33a330630335a3782b02ecf87a52e/src/$file"; \
+      curl -fsSLo "$file" "https://codeberg.org/fabiscafe/game-devices-udev/raw/aaaf684043b33a330630335a3782b02ecf87a52e/src/$file"; \
     done && \
     sha256sum -c checksums.txt && \
     for f in *.rules; do install -Dpm0644 "$f" "/out/shared/usr/lib/udev/rules.d/71-$f"; done && \
-    curl -fsSLo /out/shared/usr/lib/udev/rules.d/70-u2f.rules https://raw.githubusercontent.com/Yubico/libfido2/b974e7cf2ee7392134cc12c08b76a068cf250dd8/udev/70-u2f.rules && \
-      echo "eb5ab4db095e5bbc841b023ad3281a22f6d86fefccfaae06fc3f0e1db6cf8152  /out/shared/usr/lib/udev/rules.d/70-u2f.rules" | sha256sum -c
+  curl -fsSLo /out/shared/usr/lib/udev/rules.d/70-u2f.rules https://raw.githubusercontent.com/Yubico/libfido2/b974e7cf2ee7392134cc12c08b76a068cf250dd8/udev/70-u2f.rules && \
+    echo "eb5ab4db095e5bbc841b023ad3281a22f6d86fefccfaae06fc3f0e1db6cf8152  /out/shared/usr/lib/udev/rules.d/70-u2f.rules" | sha256sum -c
 
 # Convert Bazaar JXL banners to PNG to prevent stable Bazaar v0.8.2 from crashing
 COPY bluefin-branding/system_files/etc/bazaar /tmp/bazaar-banners
