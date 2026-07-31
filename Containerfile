@@ -8,7 +8,7 @@ RUN go build -ldflags="-s -w" -o /umotd .
 FROM docker.io/library/golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS uwelcome-build
 RUN apk add git && \
     git clone https://github.com/themimolet/uwelcome /src && \
-    git -C /src checkout 4f4b8189ce5f12f26d7ab6a51fb590a095ce9bdc
+    git -C /src checkout a7ea7d05e49b9f306fad521954f0a49f52c6b093
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /uwelcome .
 
