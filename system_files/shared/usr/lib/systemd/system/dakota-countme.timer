@@ -2,6 +2,7 @@
 Description=Weekly Dakota Count Me telemetry timer
 ConditionPathExists=/run/ostree-booted
 ConditionPathExists=/usr/share/ublue-os/image-info.json
+ConditionPathExists=!/etc/dakota-countme/disabled
 
 [Timer]
 OnBootSec=10m

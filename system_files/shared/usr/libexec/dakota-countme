@@ -3,10 +3,25 @@
 # Weekly user-counting client for Dakota (bootc) systems
 set -euo pipefail
 
-IMAGE_INFO="/usr/share/ublue-os/image-info.json"
+DISABLED_FILE="${DISABLED_FILE:-/etc/dakota-countme/disabled}"
+IMAGE_INFO="${IMAGE_INFO:-/usr/share/ublue-os/image-info.json}"
 STATE_DIR="${STATE_DIRECTORY:-/var/lib/dakota-countme}"
-NOW=$(date +%s)
 WEEK=604800
+
+# Allow users to opt out without disabling the timer.
+[ -e "$DISABLED_FILE" ] && exit 0
+
+if ! command -v jq >/dev/null; then
+    echo "dakota-countme: jq is unavailable; skipping telemetry" >&2
+    exit 0
+fi
+
+if ! command -v curl >/dev/null; then
+    echo "dakota-countme: curl is unavailable; skipping telemetry" >&2
+    exit 0
+fi
+
+NOW=$(date +%s)
 
 # 1. Enforce that we are running on Dakota
 if [ ! -f "$IMAGE_INFO" ]; then
@@ -41,6 +56,7 @@ if [ -f "$LASTRUN_FILE" ]; then
 fi
 
 # 4. Compute Fedora-style week bucket
+# Source: https://github.com/fedora-infra/mirrors-countme#client-behavior--configuration
 WEEKS=$(( (NOW - EPOCH) / WEEK + 1 ))
 if (( WEEKS == 1 )); then
     BUCKET=1    # First week

@@ -101,12 +101,13 @@ The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpap
 
 ## CountMe telemetry reporting
 
-Our images participate in weekly CountMe telemetry to track installation statistics anonymously:
+Our images participate in weekly CountMe telemetry using coarse installation-age buckets:
 - **Bluefin & Bluefin LTS:** Handled by standard repository configuration, and since CentOS-based bootc images are broken with legacy rpm-ostree countme, they use a dnf5-based helper service.
 - **Dakota:** Since it is based on GNOME OS and has no standard rpm-ostree/dnf packages, it uses a production-grade client-server implementation:
   - **Systemd units:** `dakota-countme.timer` and `dakota-countme.service`, centralized in `common/system_files/shared/`, trigger `/usr/libexec/dakota-countme`.
   - **State directory:** Uses a secure systemd `StateDirectory=/var/lib/dakota-countme/` with `DynamicUser=yes`; the `epoch` and `lastrun` files are stored there to track installation age buckets.
-  - **Server & request format:** Queries our custom Cloudflare Worker at `https://countme.projectbluefin.io/metalink` with query parameters `?repo=${IMAGE_NAME}&tag=${IMAGE_TAG}&flavor=${IMAGE_FLAVOR}&arch=${ARCH}&countme=${BUCKET}` and a `dakota-countme` User-Agent.
+  - **Server & request format:** The client sends a GET request to our custom Cloudflare Worker at `https://countme.projectbluefin.io/metalink` with query parameters `repo`, `tag`, `flavor`, `arch`, and `countme`. Its `dakota-countme` User-Agent includes the image name, OS version, image flavor, and architecture. The client does not add a machine ID, hostname, username, or persistent token to those fields. Server-side request logging and source-IP retention are not specified in this repository.
+  - **Opt out:** Create `/etc/dakota-countme/disabled` (for example, `sudo install -d -m 0755 /etc/dakota-countme && sudo touch /etc/dakota-countme/disabled`). Both the timer and service then skip execution; the script also exits before sending a request if invoked manually.
 
 ### Dashboard processing dependency
 

@@ -4,6 +4,7 @@ Wants=network-online.target
 After=network-online.target
 ConditionPathExists=/run/ostree-booted
 ConditionPathExists=/usr/share/ublue-os/image-info.json
+ConditionPathExists=!/etc/dakota-countme/disabled
 
 [Service]
 Type=oneshot
