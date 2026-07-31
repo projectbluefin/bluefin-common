@@ -1,13 +1,13 @@
 FROM docker.io/library/golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS umotd-build
 RUN apk add git && \
-    git clone https://github.com/projectbluefin/motd /src && \
-    git -C /src checkout 71e67db8d1c82ac63b8369e2f0632dcbc0ecff56
+    git clone https://github.com/projectbluefin/umotd /src && \
+    git -C /src checkout 4e8691cfaa8737cbf7b0c5f0c7ce89c3b8f43801
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /umotd .
 
 FROM docker.io/library/golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS uwelcome-build
 RUN apk add git && \
-    git clone https://github.com/themimolet/uwelcome /src && \
+    git clone https://github.com/projectbluefin/uwelcome /src && \
     git -C /src checkout a7ea7d05e49b9f306fad521954f0a49f52c6b093
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /uwelcome .
@@ -18,7 +18,7 @@ COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:e4d74fa741ce
 
 RUN apk add just curl libjxl-tools
 
-# artwork repo points to ~/.local/share for metadata
+# Artwork repo points to ~/.local/share for metadata
 RUN mkdir -p /out/bluefin/usr/share/backgrounds/bluefin && \
   mv /out/bluefin/usr/share/*.jxl /out/bluefin/usr/share/*.xml /out/bluefin/usr/share/backgrounds/bluefin && \
   sed -i 's|~\/\.local\/share|\/usr\/share|' /out/bluefin/usr/share/backgrounds/bluefin/*.xml /out/bluefin/usr/share/gnome-background-properties/*.xml
