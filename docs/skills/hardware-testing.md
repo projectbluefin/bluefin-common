@@ -2,6 +2,14 @@
 name: hardware-testing
 version: "1.0"
 last_updated: "2026-07-20"
+id: hardware-testing
+one_line_purpose: File hardware test reports and apply promotion policy.
+entry_point: docs/skills/hardware-testing.md
+category: test-authoring
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [hardware, testing, promotion]
 description: >-
   Hardware test report format and promotion policy. Use when filing a hardware

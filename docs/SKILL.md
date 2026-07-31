@@ -3,12 +3,20 @@
 Agent entry point for `projectbluefin/common`. Find the skill that matches
 your task, load only that skill, then act.
 
+For agents entering another factory repository, use
+[`skills/factory-onboarding.md`](skills/factory-onboarding.md) to verify local
+authority, attach common as a shared-contract sidecar, and run the
+self-repair/self-improvement loop on every task.
+
 ## Read order
 
 1. [`AGENTS.md`](../AGENTS.md) — repo contract, build commands, boundaries.
 2. This file — task→skill mapping.
 3. The skill file named in the table below.
 4. [`docs/factory/agentic-model.md`](factory/agentic-model.md) for cross-repo rules.
+
+For routed Hive work, verify the target repository first, then load that
+repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 
 ## Skill index
 
@@ -23,6 +31,8 @@ your task, load only that skill, then act.
 | Check PR queue or merge ruleset | [`queue-dashboard.md`](skills/queue-dashboard.md) |
 | Review an incoming PR | [`pr-review.md`](skills/pr-review.md) |
 | Understand the hive / kubestellar-bot loop | [`hive.md`](skills/hive.md) |
+| Manage the canonical hosted Project Bluefin Hive | [`hosted-hive.md`](skills/hosted-hive.md) |
+| Receive work through the Clankers relay | [`hosted-hive-clankers.md`](skills/hosted-hive-clankers.md) |
 | Improve factory automation or audit gaps | [`factory-improvement.md`](skills/factory-improvement.md) |
 | Onboard a new repo into the factory | [`factory-onboarding.md`](skills/factory-onboarding.md) |
 | Change a GNOME setting or dconf key | [`dconf-consistency.md`](skills/dconf-consistency.md) |
@@ -37,7 +47,7 @@ your task, load only that skill, then act.
 | Understand release / promotion | [`release-promotion.md`](skills/release-promotion.md) |
 | Understand QA coverage or run tests | [`qa.md`](skills/qa.md) |
 | Submit a hardware test report | [`hardware-testing.md`](skills/hardware-testing.md) |
-| Lab-test a common PR on ghost | [`lab-testing.md`](skills/lab-testing.md) |
+| Lab-test a common PR on ghost | [`lab-testing/SKILL.md`](skills/lab-testing/SKILL.md) |
 | Write or test shell scripts | [`shell-scripts.md`](skills/shell-scripts.md) |
 | Work on brew / preinstall packages | [`brew-lifecycle.md`](skills/brew-lifecycle.md) |
 | Work on `ujust devmode` | [`devmode.md`](skills/devmode.md) |
@@ -52,6 +62,14 @@ your task, load only that skill, then act.
 | Use Discord ChatOps / Botkube | [`discord-chatops.md`](skills/discord-chatops.md) |
 | Handle secrets / Botkube RBAC | [`secrets-policy.md`](skills/secrets-policy.md) |
 | Understand factory topology | [`factory/README.md`](factory/README.md) |
+
+This table is curated by hand for quick scanning. The full, generated catalog
+— every skill's `id`, `category`, `status`, and one-line purpose — lives in
+[`skills/index.json`](skills/index.json) (machine-readable) and
+[`skills/index.md`](skills/index.md) (human-readable mirror). Both are
+produced by `scripts/generate_skill_index.py`; see
+[`write-a-skill.md`](skills/write-a-skill.md) for the required front-matter
+fields and regeneration step.
 
 ## How to load a skill
 

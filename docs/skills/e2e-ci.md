@@ -2,6 +2,14 @@
 name: e2e-ci
 version: "1.0"
 last_updated: "2026-06-23"
+id: e2e-ci
+one_line_purpose: Debug pre/post-merge E2E CI for common.
+entry_point: docs/skills/e2e-ci.md
+category: test-authoring
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [e2e, testing, ci]
 description: >-
   Pre/post-merge E2E CI for common. Use when debugging E2E failures,

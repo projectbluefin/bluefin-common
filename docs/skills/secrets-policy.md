@@ -2,6 +2,14 @@
 name: secrets-policy
 version: "1.0"
 last_updated: "2026-07-20"
+id: secrets-policy
+one_line_purpose: Verify secrets and credentials against the approved inventory.
+entry_point: docs/skills/secrets-policy.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [secrets, security, ci]
 description: >-
   Approved secrets inventory for the Bluefin factory. Use when adding a secret,

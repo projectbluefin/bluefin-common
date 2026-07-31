@@ -2,6 +2,14 @@
 name: submodule-boundary
 version: "1.0"
 last_updated: "2026-06-23"
+id: submodule-boundary
+one_line_purpose: Decide where a system_files change belongs across variants.
+entry_point: docs/skills/submodule-boundary.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [submodules, git, architecture]
 description: >-
   system_files scope boundary. Use when editing system_files/shared/,

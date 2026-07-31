@@ -2,12 +2,20 @@
 name: governance
 version: "1.0"
 last_updated: "2026-07-20"
+id: governance
+one_line_purpose: Manage CODEOWNERS, triager roles, and governance sync.
+entry_point: docs/skills/governance.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [governance, issues, lifecycle]
 description: >-
   Triagers role, CODEOWNERS sentinel pattern, cross-repo sync workflow, and
   branch protection matrix for projectbluefin repos. Use when managing
   CODEOWNERS, adding/removing triager permissions, or syncing governance
-  policy across repos." type: reference
+  policy across repos.
 metadata:
   type: reference
 ---

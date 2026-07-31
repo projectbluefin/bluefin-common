@@ -2,6 +2,14 @@
 name: ci-pitfalls
 version: "1.0"
 last_updated: "2026-07-19"
+id: ci-pitfalls
+one_line_purpose: Diagnose CI gotchas and silent workflow failures across repos.
+entry_point: docs/skills/ci-pitfalls.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [ci, workflows, github-actions, pitfalls]
 description: >-
   Incident log of CI gotchas across projectbluefin repos. Use when debugging

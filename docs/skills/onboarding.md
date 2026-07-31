@@ -2,11 +2,19 @@
 name: onboarding
 version: "1.0"
 last_updated: "2026-06-23"
+id: onboarding
+one_line_purpose: Set up a verified dev environment for projectbluefin repos.
+entry_point: docs/skills/onboarding.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [onboarding, setup, getting-started]
 description: >-
   Verified setup commands, correct pip/npm flags, and PR branch targets for
   all projectbluefin repos. Use when setting up a new development environment
-  or writing contributor documentation." type: procedure
+  or writing contributor documentation.
 metadata:
   type: reference
 ---

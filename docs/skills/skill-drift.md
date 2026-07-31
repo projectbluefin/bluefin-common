@@ -2,6 +2,14 @@
 name: skill-drift
 version: "1.0"
 last_updated: "2026-06-23"
+id: skill-drift
+one_line_purpose: Decide if a PR needs a skill-doc update under the drift waiver process.
+entry_point: docs/skills/skill-drift.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [skills, drift, ci]
 description: >-
   Skill-drift CI check and waiver process. Use when a PR changes
@@ -12,13 +20,21 @@ metadata:
 
 # Skill Drift
 
-`skill-drift.yml` warns when a PR changes implementation files without updating the matching skill documentation. The goal: keep agent-facing docs in sync with real repo behavior while the implementation context is still fresh.
+`skill-drift.yml` is meant to warn when a PR changes implementation files without updating the matching skill documentation, keeping agent-facing docs in sync with real repo behavior while the implementation context is still fresh. **`common` does not run this workflow at all** — see [`ci-tooling.md`](./ci-tooling.md#skill-drift-detection) for why. This page documents the check as it exists in the other factory repos that do wire it up (bluefin, bluefin-lts, dakota, knuckle, testsuite).
 
 The mandate for *why* you must write skill updates is in [`skill-improvement.md`](./skill-improvement.md).
 
 ---
 
-## How it works
+## Current status: non-functional
+
+**`projectbluefin/actions`' `skill-drift-check.yml` reusable workflow is currently a no-op stub.** Its real drift-detection logic was removed (`actions@001ae97 chore: remove skill-drift and skill-audit workflows`) and later replaced with a stub kept only for caller compatibility (`actions@a7c230c fix: restore skill-drift-check.yml as a no-op stub for consumer compat`). The stub's own job step just echoes `"Skill drift check removed. Delete skill-drift.yml from consumer repo."` and exits successfully — it does not inspect changed paths and cannot warn on anything.
+
+Practical effect: every repo below that still has a local `skill-drift.yml` calling `projectbluefin/actions/.github/workflows/skill-drift-check.yml@v1` (or a pinned SHA) is currently getting a silent, always-green no-op on every PR. **Do not treat "no skill-drift warning" as evidence a skill update wasn't needed.** The self-repair/write-back discipline in [`skill-improvement.md`](./skill-improvement.md) is the only thing actually enforcing this right now — CI is not.
+
+Until the reusable workflow is rebuilt with real logic (or every consumer repo removes its now-decorative `skill-drift.yml` per the stub's own comment), the rest of this page describes the *intended design*, not current behavior.
+
+### How it was designed to work
 
 ```
 PR opened
@@ -27,22 +43,23 @@ PR opened
        └─ if code-paths hit and no skill-paths hit → WARN
 ```
 
-Currently advisory (warns but does not block merge). Treat warnings as hard requirements — the check is expected to harden into a block.
+The design was always advisory (warn, don't block merge). That intent is unchanged by the stub — there is simply nothing running it right now.
 
 ---
 
 ## Path mapping by repo
 
+Repos below opted in by adding their own `.github/workflows/skill-drift.yml` calling the shared workflow. `common` is intentionally not listed — it does not run this check (see [`ci-tooling.md`](./ci-tooling.md#skill-drift-detection)).
+
 | Repo | code-paths | skill-paths |
 |---|---|---|
-| common | `.github/workflows/**`, `system_files/**`, `Containerfile`, `Justfile` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
 | bluefin | `.github/workflows/**`, `build_files/**`, `Justfile`, `recipes/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
 | bluefin-lts | `.github/workflows/**`, `build_files/**`, `Justfile` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
 | dakota | `.github/workflows/**`, `build_files/**`, `Justfile`, `elements/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
 | knuckle | `.github/workflows/**`, `cmd/**`, `internal/**`, `Justfile`, `scripts/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
 | testsuite | `.github/workflows/**`, `.github/actions/**`, `tests/**`, `scripts/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
 
-The workflow calls the reusable `projectbluefin/actions/.github/workflows/skill-drift-check.yml` at a pinned SHA (so the floating-tag guard does not reject the caller).
+Each repo's `skill-drift.yml` calls the reusable `projectbluefin/actions/.github/workflows/skill-drift-check.yml`, currently the no-op stub described above.
 
 ---
 
@@ -82,6 +99,8 @@ A passing update must:
 
 ## Waiver process
 
+Moot while the workflow is a no-op stub — nothing is currently firing to waive. Kept below for when the reusable workflow is rebuilt.
+
 For refactoring changes with no functional impact:
 
 1. Add to your PR description:
@@ -100,3 +119,4 @@ For refactoring changes with no functional impact:
 - Updating the wrong skill file for the behavior that changed
 - Adding a placeholder doc that does not explain the change
 - Assuming advisory = optional
+- **Assuming a green `skill-drift.yml` run means a skill update wasn't needed** — right now it means nothing, since the shared workflow is a no-op stub (see "Current status" above)

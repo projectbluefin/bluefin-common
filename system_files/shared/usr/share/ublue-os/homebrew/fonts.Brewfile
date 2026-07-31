@@ -1,12 +1,21 @@
+tap "colindean/fonts-nonfree", trusted: true
+
+# === Accessibilty fonts ===
 cask "font-opendyslexic"
-cask "font-caskaydia-mono-nerd-font"
-cask "font-comic-shanns-mono-nerd-font"
-cask "font-droid-sans-mono-nerd-font"
-cask "font-go-mono-nerd-font"
-cask "font-blex-mono-nerd-font"
-cask "font-sauce-code-pro-nerd-font"
-cask "font-source-code-pro"
-cask "font-ubuntu-nerd-font"
-cask "font-fira-code-nerd-font"
-cask "font-0xproto-nerd-font"
-cask "font-jetbrains-mono-nerd-font"
+
+# === Office fonts ===
+cask "font-arial"
+cask "font-arial-black"
+cask "font-comic-sans-ms"
+cask "font-impact"
+cask "colindean/fonts-nonfree/font-microsoft-aptos"
+cask "colindean/fonts-nonfree/font-microsoft-fluent"
+cask "colindean/fonts-nonfree/font-microsoft-office"
+
+# === Other common fonts ===
+cask "font-dejavu"
+cask "font-fira-sans"
+cask "font-montserrat"
+cask "font-noto-sans"
+cask "font-roboto"
+cask "font-ubuntu"

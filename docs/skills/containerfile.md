@@ -2,6 +2,14 @@
 name: containerfile
 version: "1.0"
 last_updated: "2026-06-23"
+id: containerfile
+one_line_purpose: Modify and locally test the common Containerfile build.
+entry_point: docs/skills/containerfile.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [containerfile, build, oci]
 description: >-
   Containerfile build structure and local testing. Use when modifying the

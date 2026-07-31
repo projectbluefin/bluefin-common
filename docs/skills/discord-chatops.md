@@ -2,12 +2,19 @@
 name: discord-chatops
 version: "1.0"
 last_updated: "2026-07-20"
+id: discord-chatops
+one_line_purpose: Configure Discord ChatOps, Botkube, and release notifications.
+entry_point: docs/skills/discord-chatops.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [discord, chatops, botkube]
 description: >-
   Documents Discord ChatOps integration for the Bluefin factory, including
   Botkube lifecycle commands and release notifications. Use when configuring
-  Discord webhooks, Botkube, or Discord-driven factory commands." type:
-  procedure
+  Discord webhooks, Botkube, or Discord-driven factory commands.
 metadata:
   type: procedure
 ---

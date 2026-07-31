@@ -3,6 +3,21 @@
 Cross-repo agent rules. Every agent working in any factory repo MUST read this.
 Per-repo specifics live in that repo's `AGENTS.md` — start there, then load this.
 
+## Agent onboarding and self-repair
+
+The canonical downstream onboarding sequence is
+[`factory-onboarding.md`](../skills/factory-onboarding.md). Every agent starts
+with the target repository's `AGENTS.md` and local catalog, verifies its Hive
+and GitHub assignment, then loads common as a pinned shared-contract sidecar.
+Repositories should link to that procedure rather than copying common policy.
+
+Every task loop performs preflight, detects stale or contradictory guidance,
+repairs the nearest authoritative contract when safe and source-backed,
+validates the repair, and records durable learning and evidence. Silent
+fallback, wrong-repository work, repeated failures without a skill update, and
+unrecorded learnings are failures. Self-repair never bypasses design, security,
+cross-repository breakage, merge, or production human gates.
+
 ## Hard rules
 
 - **The standard is the codebase itself.** Use what is in production already. When making technical decisions (like choosing a GitHub Action or CLI tool), your first step is to grep the existing codebase. If a tool (e.g., `ublue-os/remove-unwanted-software`) is already heavily used across the org's repos, that is the standard. Use it.

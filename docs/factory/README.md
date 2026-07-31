@@ -19,6 +19,18 @@ New workflows must self-heal: retry on transient failures, fast-fail on bad toke
 3. [`docs/factory/agentic-model.md`](agentic-model.md) — cross-repo hard rules, branch targets, PR policy, session start
 4. Relevant `docs/skills/*` files — lazy-load for the specific task; use [`docs/SKILL.md`](../SKILL.md) as the router
 
+For a new or relocated agent, follow the copyable
+[`factory-onboarding.md`](../skills/factory-onboarding.md) procedure. It
+verifies the target repository first, attaches common as the shared-contract
+sidecar, and requires self-repair and durable learning on every task loop.
+
+### Open proposals awaiting human review
+
+- [`skill-catalog-proposal.md`](skill-catalog-proposal.md) — cross-repo
+  survey of every factory repo's skill-doc system and a proposed shared
+  catalog standard. Not adopted; requires a Design-gate decision before any
+  repo acts on it.
+
 ## Mission and product boundary
 
 - Factory org: `projectbluefin`

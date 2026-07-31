@@ -55,3 +55,9 @@ repos:
         entry: python3 scripts/check-doc-links.sh
         pass_filenames: false
         always_run: true
+      - id: check-skill-catalog
+        name: Validate docs/skills/index.json is up to date
+        language: system
+        entry: python3 scripts/generate_skill_index.py --check
+        pass_filenames: false
+        always_run: true

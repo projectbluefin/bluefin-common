@@ -9,7 +9,6 @@ rc=0
 
 # Grandfathered oversized skills; per-skill directory migration will retire these.
 GRANDFATHERED=(
-    lab-testing.md
     label-workflow.md
     pr-review.md
     release-promotion.md
@@ -33,7 +32,13 @@ is_grandfathered() {
     return 1
 }
 
-for f in docs/skills/*.md; do
+shopt -s nullglob
+skill_files=(docs/skills/*.md docs/skills/*/SKILL.md)
+shopt -u nullglob
+
+for f in "${skill_files[@]}"; do
+    # index.md is a generated catalog mirror, not a skill page.
+    [ "$(basename "$f")" = "index.md" ] && continue
     # Extract front-matter between the first two '---' lines
     fm=$(awk '
         BEGIN { in_fm=0 }

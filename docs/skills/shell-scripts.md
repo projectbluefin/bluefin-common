@@ -2,6 +2,14 @@
 name: shell-scripts
 version: "1.0"
 last_updated: "2026-06-24"
+id: shell-scripts
+one_line_purpose: Write and test shell scripts under system_files/.
+entry_point: docs/skills/shell-scripts.md
+category: test-authoring
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [shell, bash, testing, bats, shellcheck]
 description: >-
   Shell script authoring and testability. Use when writing or testing shell

@@ -1,127 +1,129 @@
 ---
 name: hive
-version: "1.0"
-last_updated: "2026-06-23"
+version: "2.2"
+last_updated: "2026-07-29"
+id: hive
+one_line_purpose: Route factory work through Hive coordination and labels.
+entry_point: docs/skills/hive.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [hive, multi-repo, coordination]
 description: >-
-  The Hive system — bonedigger/kubestellar-bot self-improvement loop, hive
-  label taxonomy, sync schedule, and how to find agent-ready work. Use when
-  understanding the KubeStellar Hive system or how the self-improvement loop
-  operates." type: reference
+  KubeStellar Hive coordination, Trust the Machines routing, and the canonical
+  seven-label workflow. Use when finding or routing factory work.
 metadata:
   type: reference
+  context7-sources:
+    - /websites/github_en_rest
 ---
 
 # The Hive
 
-## Contents
-- [What the hive is](#what-the-hive-is)
-- [Label taxonomy](#label-taxonomy)
-- [Hive sync workflows](#hive-sync-workflows)
-- [Finding work](#finding-work)
-- [Setting hive labels](#setting-hive-labels)
+The Hive coordinates GitHub work across the Project Bluefin factory. GitHub is
+the authority for issues, pull requests, assignments, projects, branches, and
+labels. The Hive API is the authority only for configured Hive scope, live
+governor and agent state, and contributor or federation state exposed by the
+checked-in API. Do not infer repository scope or workflow state from a
+hostname, cached output, dashboard chrome, or an agent message.
 
----
+## Canonical workflow labels
 
-## What the hive is
+The only labels are:
 
-The hive is the agentic operations layer for the projectbluefin factory. It combines three components to form a closed self-improvement loop:
-
-```
-┌─────────────────────────────────────────────────────┐
-│  KubeStellar Hive                                   │
-│  ACMM orchestration — agents at increasing autonomy │
-└────────────────┬────────────────────────────────────┘
-                 │
-     ┌───────────┴───────────┐
-     ▼                       ▼
-bonedigger              kubestellar-bot
-(client + lifecycle)    (implementation agent)
-
-ujust report            picks up status/queued issues
-└─ agent collects  ───▶ implements fixes, ships PRs
-   system diagnostics   back to the image repos
-   humans can't
-└─ files structured          │
-   issue to image repo       ▼
-                        better OS
-                             │
-                             ▼
-                        better bonedigger
-                             │
-                             └─── loop
-```
-
-**bonedigger** runs on user systems. `ujust report` triggers it: an agent collects diagnostics, scrubs PII on-device, files a structured issue. Priority auto-escalates from `ujust confirm` counts (3+ → `priority/p1`, 5+ → `priority/p0`).
-
-**kubestellar-bot** picks up `status/queued` issues from across the factory repos and dispatches agents to implement fixes. It ships PRs back and manages the claim lifecycle.
-
-**The hive** (KubeStellar Hive dashboard at https://kubestellar.io/live/hive/bluefin/) provides the orchestration layer, ACMM scoring, and the agent dispatch queue.
-
-The org board mirrors the queue: https://todo.projectbluefin.io
-
----
-
-## Label taxonomy
-
-### Hive labels (dynamic)
-Reset each cycle by hive agents and human triage.
-
-| Label | Color | When to use |
-|---|---|---|
-| `hive/p0` | 🔴 `#d93f0b` | Release blocker — must be fixed before next image promotion |
-| `hive/p1` | 🟠 `#e4a117` | Must land this cycle |
-
-**`hive/*` vs `priority/*`:** `priority/p0` is the repo's static backlog ordering. `hive/p0` means the hive is **actively tracking this as a blocker right now**. An issue can have both.
-
-### Queue labels
 | Label | Meaning |
 |---|---|
-| `status/queued` | Ready for an agent to pick up — no blockers |
-| `status/claimed` | Agent has claimed this, work in progress |
-| `status/hold` | Do not close or auto-merge yet |
-| `agent/blocked` | Agent hit a blocker — needs human input before continuing |
+| `1-triage` | New work awaiting triage |
+| `2-discussing` | Discussion or design clarification |
+| `3-human-queue` | Human-maintained queue |
+| `3-clanker-queue` | Agent-maintained queue |
+| `4-review` | Pull request awaiting review |
+| `blocked` | Waiting on human input or an external dependency |
+| `hold` | Intentionally paused |
 
----
-
----
+Workflows own these labels. Never invent, add, remove, or hand-edit workflow
+state. Put component, severity, source, and other descriptive facts in the
+issue body or Hive metadata.
 
 ## Finding work
 
-```bash
-# P0 blockers — start here every session
-gh search issues --label "hive/p0" --owner projectbluefin --state open --json number,title,repository
+Read GitHub's live issue and pull-request state for the affected organization,
+including open work assigned to the agent or routed through the relevant
+project. Verify the repository, issue number, title, assignee, and current
+labels before acting. The repository named by the work item is the destination;
+a Hive control variable is not a destination.
 
-# P1 this-cycle
-gh search issues --label "hive/p1" --owner projectbluefin --state open --json number,title,repository
+If GitHub data is missing, stale, or contradictory, stop and request
+verification. Do not guess an issue, repository, assignee, or queue.
 
-# Ready for agent pickup
-gh search issues --label "status/queued" --owner projectbluefin --state open --json number,title,repository
+## Hive reads
 
-# Live snapshot (from ~/src)
-just hive
-```
+Use Hive reads to corroborate scope and runtime state, not to replace GitHub
+state:
 
-Or run `~/src/hive-status` for the full P0/P1 + advisory summary — mandatory at session start.
+| Request | Intent | Evidence to inspect | Stop when |
+|---|---|---|---|
+| `GET /api/config` | confirm organization and repository scope | common checked-in fields include `org` and `primaryRepo`; some deployments also return `repos`, `hive_id`, `hub_url`, `github_base_url`, `eval_interval_s`, `projectName`, or `dashboardTitle` | the response omits the routing fields you need or conflicts with GitHub |
+| `GET /api/status` | inspect live governor, agent, and repository state | `agents`, `governor`, and `repos`; some deployments also include `timestamp`, `hiveId`, `health`, `hold`, `acmmLevel`, contributor, or alert data | the status is stale, lacks freshness evidence, or does not match GitHub |
+| `GET /api/summaries` | inspect per-agent task, progress, and result evidence | the returned summary object for the specific agent or issue under review | an agent record is absent, truncated, or ambiguous enough that you would have to guess |
 
----
+Use only the fields actually returned by the deployment you are reading. If a
+field is absent, treat that fact as unknown rather than empty or false. When a
+status response includes a timestamp, inspect it. When it does not, treat
+freshness as unknown and corroborate with a second read or direct GitHub state.
 
-## Setting hive labels
+Use authenticated requests as required by the deployment. Never print,
+persist, or include tokens in logs, prompts, issue bodies, or task reports.
 
-Hive labels are set by:
-1. Human triage at cycle start
-2. Automated hive agents reviewing open issue queues
-3. Agents self-escalating via `gh issue edit --add-label "hive/p0"`
+## Ownership and gates
 
-Labels are reset between cycles — stale hive labels should be removed when an issue is resolved or deprioritized.
+`projectbluefin/actions` owns reusable lifecycle automation and
+`projectbluefin/bonedigger` owns report intake. This repository documents the
+contract; it does not own those implementations.
 
----
+Agents act only on assigned or project-routed work. Design, security,
+cross-repository breakage, approval, review, and merge decisions remain human
+gates. Pull requests must link their issue with `Closes #NNN`.
 
-## Org board fields
+## Verification
 
-| Field | Options |
-|---|---|
-| Status | Todo / In Progress / Blocked / Backlog / Done |
-| Priority | P0 (release blocker) / P1 (this cycle) / P2 (backlog) |
-| Size | XS / S / M / L / XL |
-| Component | Core OS / Dakota / Installer / Homelab / Dev Experience / Documentation / Infrastructure |
+- [ ] GitHub identifies the affected repository and issue.
+- [ ] Live Hive config or status corroborates the intended repository scope.
+- [ ] Missing, stale, or contradictory API fields were escalated instead of guessed.
+- [ ] Only canonical workflow labels are present.
+- [ ] Trust tier and permissions are sufficient for the requested action.
+- [ ] Human gates have not been bypassed.
+
+## When to Use
+
+Use this skill when discovering, routing, or verifying factory work across
+Project Bluefin repositories.
+
+## When NOT to Use
+
+Do not use it to mutate labels, claim work, bypass review, or operate a hosted
+Hive without the relevant hosted-Hive skill.
+
+## Core Process
+
+1. Read GitHub state for the affected repository.
+2. Verify issue, assignment, project, and pull-request identity.
+3. Use Hive reads only to corroborate orchestration context and live state.
+4. Escalate stale, incomplete, or contradictory API evidence.
+5. Preserve workflow ownership and human gates.
+
+## Common Rationalizations
+
+- **"The Hive message names the repository."** Verify the repository in the
+  source issue and GitHub API instead.
+- **"A legacy label is close enough."** Use only the canonical seven labels.
+- **"The missing field probably means none."** Missing Hive data is ambiguity,
+  not permission to infer state.
+
+## Red Flags
+
+- Queue state inferred from cached output or an agent message.
+- More than one numbered workflow label.
+- A label or slash command used as an unverified state transition.

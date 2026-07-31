@@ -1,13 +1,21 @@
 ---
 name: skill-improvement
 version: "1.1"
-last_updated: "2026-07-20"
+last_updated: "2026-07-29"
+id: skill-improvement
+one_line_purpose: Capture durable agent learnings in maintained skill docs.
+entry_point: docs/skills/skill-improvement.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [skills, improvement, documentation]
 description: >-
   The skill-improvement mandate — every agent session must produce a skill
   file update alongside the work. Use when completing a task and deciding
   whether to write a skill update, or when creating or updating a skill
-  file." type: procedure
+  file.
 metadata:
   type: reference
   context7-sources:
@@ -24,6 +32,28 @@ Every agent session produces two outputs:
 2. **The learning** — what a future agent should know
 
 Output 1 without Output 2 leaves the factory no smarter. The loop only compounds if agents write back.
+
+## Every-Loop Repair Contract
+
+Run this contract at task start, after failures or discoveries, and before
+handoff:
+
+1. Verify the target repository, issue, branch, catalog ref, and loaded skill
+   set against source.
+2. Identify stale, contradictory, missing, or failed guidance instead of
+   silently adapting around it.
+3. Repair the nearest authoritative skill or contract when the fix is
+   source-backed and within scope.
+4. Validate the repair with the repository's existing checks and regenerate
+   generated documentation outputs when required.
+5. Record evidence, confidence, durable learning, and unresolved gaps for the
+   successor agent.
+6. Escalate named human gates rather than turning uncertainty into autonomous
+   policy or approval.
+
+This loop is the factory's self-repair mechanism. It applies even when the
+implementation succeeds: a successful task still checks for reusable learning
+and documentation drift before completion.
 
 ## Contents
 - [Before You Mark Work Complete](#before-you-mark-work-complete)
@@ -106,7 +136,9 @@ Changed CI gates?            → e2e-ci.md
 New domain entirely?         → create docs/skills/<area>.md
 ```
 
-When in doubt, file a GitHub issue in `projectbluefin/common` with `kind/improvement` + `area/agent` labels. Add `ai-context` if it's a context gap affecting agent reliability. Do **not** add it to `factory-improvement.md` as a running list.
+When in doubt, file a GitHub issue in `projectbluefin/common` with the
+component, evidence, and agent-context gap described in the body. Do **not**
+add it to `factory-improvement.md` as a running list.
 
 ---
 

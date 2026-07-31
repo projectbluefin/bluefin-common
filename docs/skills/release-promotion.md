@@ -2,12 +2,19 @@
 name: release-promotion
 version: "1.0"
 last_updated: "2026-06-23"
+id: release-promotion
+one_line_purpose: Cut releases and verify promotion/hotfix artifacts.
+entry_point: docs/skills/release-promotion.md
+category: ci-ops
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [release, promotion, staging]
 description: >-
   Promotion criteria, monthly release cadence, hotfix procedure, and artifact
   verification for projectbluefin/common. Use when cutting a release,
-  understanding the promotion pipeline, or verifying release artifacts."
-  type: runbook
+  understanding the promotion pipeline, or verifying release artifacts.
 metadata:
   type: reference
 ---

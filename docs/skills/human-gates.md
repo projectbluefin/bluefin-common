@@ -2,12 +2,20 @@
 name: human-gates
 version: "1.0"
 last_updated: "2026-06-23"
+id: human-gates
+one_line_purpose: Decide when to stop for Design, Security, Breakage, or Merge review.
+entry_point: docs/skills/human-gates.md
+category: meta
+mcp_compliance_level: partial
+optimization_status: draft
+status: active
+dependencies: []
 tags: [gates, approval, security]
 description: >-
   The four human decision gates — Design, Security, Breakage, and Merge —
   when an agent must stop and request human input. Use when uncertain whether
   a change requires human review, or to verify evidence requirements before
-  opening a PR." type: procedure
+  opening a PR.
 metadata:
   type: reference
 ---
