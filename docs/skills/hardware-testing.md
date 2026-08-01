@@ -37,8 +37,8 @@ These are poor fits for KubeVirt and other VM-only gates because they depend on 
 
 ## Report path
 
-File a **Hardware test report** issue in `projectbluefin/common` using `.github/ISSUE_TEMPLATE/hardware-test-report.yml`.
-Include:
+File an issue in `projectbluefin/common` using the repository issue form and
+select **Hardware test result**. Include:
 
 - exact image digest or tag tested
 - hardware make/model/generation
@@ -47,18 +47,19 @@ Include:
 - pstore/kdump evidence, pasted inline or linked
 - severity: `all-clear`, `degraded`, or `blocker`
 
-The template adds `hardware/test-report` and `source:manual` automatically. Maintainers can add `hardware/all-clear` or `hardware/blocker` after triage.
+The form applies `1-triage`. Maintainers record the outcome — all-clear, degraded,
+or blocker — in the issue itself during triage.
 
 ## Promotion policy
 
-A candidate should **not** be promoted while there is an open `hardware/blocker` issue for that candidate digest or tag.
-A degraded report is signal, but not an automatic stop unless triage upgrades it to a blocker.
-An all-clear report should be labeled `hardware/all-clear` so the candidate has explicit real-hardware evidence in the queue.
+A candidate should **not** be promoted while there is an open hardware blocker
+report for that candidate digest or tag. A degraded report is signal, but not an
+automatic stop unless triage upgrades it to a blocker.
 
-Find open blockers with:
+Find open hardware reports with:
 
 ```bash
-gh search issues --label "hardware/blocker" --owner projectbluefin --state open
+gh search issues --owner projectbluefin --state open "hardware test result"
 ```
 
 When possible, include the candidate digest in the issue title or body so blocker searches and promotion review stay unambiguous.

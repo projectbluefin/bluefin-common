@@ -78,7 +78,7 @@ triage permissions.
 - Skips repos where the block is already identical (no noise commits)
 - Uses **mergeraptor** (`MERGERAPTOR_APP_ID` / `MERGERAPTOR_PRIVATE_KEY` org secrets) for cross-repo writes
 
-> ⚠️ **Secret required:** Both `sync-codeowners.yml` and `sync-labels.yml` need `MERGERAPTOR_APP_ID` and `MERGERAPTOR_PRIVATE_KEY` set as org or repo secrets. Without them the workflows will fail. See issue #511 for tracking.
+> **Secret required:** `sync-codeowners.yml` needs `MERGERAPTOR_APP_ID` and `MERGERAPTOR_PRIVATE_KEY` set as org or repo secrets. Without them the workflow will fail.
 
 Force a resync anytime:
 ```bash
@@ -97,14 +97,7 @@ Hive progress sync now covers all five `projectbluefin` repos on staggered cron 
 | `knuckle` | `:30` |
 | `bluefin-lts` | `:45` |
 
-The sync jobs count slash-separated labels (`hive/p0`, `hive/p1`) across the full repo set.
-Older references to dotted labels are stale.
-
-## Template sync namespace
-
-bonedigger's `sync-templates.yml` now targets the `projectbluefin/*` namespace,
-not the old `ublue-os/*` pre-migration namespace. `projectbluefin/knuckle` is
-included in that sync set.
+The sync jobs read the seven canonical lifecycle labels across the full repo set.
 
 ## Branch protection
 
@@ -141,16 +134,20 @@ This includes skill updates, `docs/SKILL.md` changes, and any other `docs/` cont
 
 ## Lifecycle automation
 
-| Repo | Workflow | State |
+Issue intake automation lives in
+[`projectbluefin/bonedigger`](https://github.com/projectbluefin/bonedigger) and is
+consumed through a `bonedigger.yml` caller:
+
+| Repo | Caller | State |
 |---|---|---|
-| `bluefin` | `lifecycle-caller.yml` | ✅ live |
-| `common` | `lifecycle-caller.yml` | ✅ live |
-| `bluefin-lts` | `lifecycle-caller.yml` | ✅ live |
-| `dakota` | `lifecycle-caller.yml` | ✅ live |
-| `knuckle` | `lifecycle-caller.yml` | ✅ live |
+| `bluefin` | `bonedigger.yml` | live |
+| `bluefin-lts` | `bonedigger.yml` | live |
+| `dakota` | `bonedigger.yml` | live |
+| `knuckle` | `bonedigger.yml` | live |
+| `common` | none | intentional — no lifecycle caller here |
 
-`common` owns the reusable `.github/workflows/lifecycle.yml`. Each repo's `lifecycle-caller.yml` calls that workflow at a pinned `common` commit SHA.
-
-Lifecycle labels now come from `labels.json` and are synced by `sync-labels.yml` across the factory.
+`common` does not own or run lifecycle automation. The seven canonical labels are
+documented in [`label-workflow.md`](label-workflow.md) and applied per repository;
+there is no cross-repo label sync workflow.
 
 Full unification (claim TTL, heartbeat, linked-PR requirement, stale-claim recovery across all engines) was tracked in projectbluefin/common#409 — **closed/resolved**.

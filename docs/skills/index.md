@@ -30,7 +30,7 @@ Generated: 2026-08-01 · schema 1.0 · 39 skills
 | [human-gates](human-gates.md) | meta | active | Decide when to stop for Design, Security, Breakage, or Merge review. |
 | [image-registry](image-registry.md) | ci-ops | active | Look up projectbluefin OCI image registry paths and tags. |
 | [lab-testing](lab-testing/SKILL.md) | test-authoring | active | Boot images on the KubeVirt lab and collect test logs. |
-| [label-workflow](label-workflow.md) | meta | active | Apply label taxonomy and the issue lifecycle handoff model. |
+| [label-workflow](label-workflow.md) | meta | active | Route factory work using the canonical label workflow. |
 | [mime-defaults](mime-defaults.md) | test-authoring | active | Configure shared MIME default-application settings for Bluefin. |
 | [nvidia](nvidia.md) | test-authoring | active | Maintain NVIDIA GPU support architecture and update procedures. |
 | [oem-hardware-hooks](oem-hardware-hooks.md) | test-authoring | active | Add OEM hardware first-boot setup hooks safely. |

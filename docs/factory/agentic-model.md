@@ -38,7 +38,7 @@ cross-repository breakage, merge, or production human gates.
   git diff --cached --name-only     # verify only intended files are staged
   ```
   Nested `.git` directories (worktrees, auxiliary clones) stage as gitlinks and silently corrupt history.
-- **Never push directly to a protected branch.** Always open a PR. PRs require `lgtm` from a human.
+- **Never push directly to a protected branch.** Always open a PR. PRs require approval from a human reviewer.
 - **Doc-only exception in `common`:** `docs/` edits and `AGENTS.md` changes may be pushed directly to `main` — no PR required. Before using this exception, confirm every changed path is under `docs/` or is `AGENTS.md`:
   ```bash
   git diff --cached --name-only  # must show only docs/* or AGENTS.md
@@ -194,10 +194,9 @@ Changes to these paths require maintainer review before merge:
 When you discover something broken or missing in the factory during a session:
 
 1. File a GitHub issue in `projectbluefin/common`
-2. Required labels: one `kind/*` + at least one `area/*` (lifecycle guard enforces this)
-3. Add `ai-context` if the gap affects how AI agents reason about the factory
-4. **Do not** self-apply `hive/p0`, `hive/p1`, or `status/queued` — priority and queue admission are human decisions
-5. **Do not** add it to a static doc section — docs are operating procedure, not backlogs
+2. Describe the gap in the issue body — scope, impact, and what "fixed" looks like
+3. **Do not** self-apply a queue label — triage and queue admission are human decisions
+4. **Do not** add it to a static doc section — docs are operating procedure, not backlogs
 
 See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the full label taxonomy and filing workflow.
 
@@ -212,11 +211,8 @@ See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the full 
 ## Finding work
 
 ```bash
-# P0 blockers across org
-gh search issues --label "hive/p0" --owner projectbluefin --state open
-
-# Ready for agent pickup
-gh search issues --label "status/queued" --owner projectbluefin --state open
+# Work admitted to the agent queue
+gh search issues --label "3-clanker-queue" --owner projectbluefin --state open
 ```
 
-See [`docs/skills/hive.md`](../skills/hive.md) for the full hive label taxonomy and org board fields.
+See [`docs/skills/label-workflow.md`](../skills/label-workflow.md) for the seven-label contract.

@@ -64,11 +64,11 @@ Never automate these. Never propose automating them without explicit maintainer 
 
 | Gate | Why it must be human |
 |---|---|
-| `/approve` comment — lifecycle moves the issue directly to `status/queued` | Prioritization judgment; agent scope assignment |
+| Admitting an issue to a queue (`3-human-queue` / `3-clanker-queue`) | Prioritization judgment; agent scope assignment |
 | PR merge approval (1 human reviewer per CODEOWNERS) | Accountability; trust for org-critical changes |
-| `hive/p0` and `hive/p1` label assignment | Release impact judgment |
+| Release blocker calls during a promotion window | Release impact judgment |
 | Production promotion decisions (Tuesday 06:00 UTC, N=7 floor) | Final go/no-go for user-facing changes — automation handles the gate, but human review of the e2e results is the last word |
-| `/unclaim` on stale PRs | Judgment on abandoned vs. still-active claim |
+| Reassigning or closing a stale PR | Judgment on abandoned vs. still-active work |
 | Any write or automated action to `ublue-os/*` namespace | Absolute prohibition — includes issues, PRs, reports, webhooks, dispatch. Reads only. |
 
 Everything else is automatable.
@@ -86,16 +86,12 @@ MEASURE → TRIAGE → IMPLEMENT → CAPTURE → VERIFY → LOOP
 ```bash
 ~/src/hive-status
 
-# P0 blockers across the factory
-gh search issues --label "hive/p0" --owner projectbluefin --state open \
+# Everything awaiting triage across the factory
+gh search issues --label "1-triage" --owner projectbluefin --state open \
   --json number,title,repository
 
-# P1 this cycle
-gh search issues --label "hive/p1" --owner projectbluefin --state open \
-  --json number,title,repository
-
-# All open factory gaps (not yet hive-escalated)
-gh search issues --label "ai-context" --owner projectbluefin --state open \
+# Work already admitted to the agent queue
+gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
@@ -104,10 +100,11 @@ gh search issues --label "ai-context" --owner projectbluefin --state open \
 For each open gap:
 - Human gate? → **SKIP** (log it, do not touch)
 - Doc gap? → **IMMEDIATE** (cheapest fix, push directly to main)
-- CI/tooling gap? → file as GitHub issue (`kind/improvement`, `area/ci`); humans set priority
+- CI/tooling gap? → file as a GitHub issue and let triage route it
 - Cross-repo gap? → assess blast radius before acting
 
-> ⚠️ Do **not** self-apply `hive/p0`, `hive/p1`, or `status/queued` labels. Priority and queue admission are human decisions; agents file the issue and stop.
+> Do **not** self-apply a queue label. Triage and queue admission are human
+> decisions; agents file the issue and stop.
 
 ### IMPLEMENT
 
@@ -121,16 +118,13 @@ For each open gap:
 When you discover a gap:
 
 1. File a GitHub issue in `projectbluefin/common`
-2. Required: exactly one `kind/*` label + at least one `area/*` label (lifecycle guard enforces this before any `/approve`)
-3. Add `ai-context` if the gap is an AI/LLM context blindspot that affects agent reliability
-4. Write a clear description — what is broken, what the fix looks like, whether it's automatable
-5. Stop. Do not self-apply `hive/p*` or `status/queued` — priority and queue admission are human decisions
+2. Write a clear description — what is broken, what the fix looks like, whether it's automatable
+3. Stop. Do not self-apply a queue label — triage and queue admission are human decisions
 
 ```bash
 # Example: file a factory CI gap
 gh issue create --repo projectbluefin/common \
   --title "ci: pre-commit not wired in testsuite" \
-  --label "kind/improvement,area/ci" \
   --body "..."
 ```
 
@@ -149,7 +143,7 @@ must have ALL of:
 | Requirement | Check command |
 |---|---|
 | `AGENTS.md` present | `gh api repos/projectbluefin/{repo}/contents/AGENTS.md` |
-| `lifecycle-caller.yml` wired | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/lifecycle-caller.yml` |
+| `bonedigger.yml` wired (image repos only) | `gh api repos/projectbluefin/{repo}/contents/.github/workflows/bonedigger.yml` |
 | Hive labels present | `gh label list --repo projectbluefin/{repo} \| grep hive` |
 | pre-commit config present | `gh api repos/projectbluefin/{repo}/contents/.pre-commit-config.yaml` |
 | Squash-only merge | `gh repo view projectbluefin/{repo} --json squashMergeAllowed,mergeCommitAllowed` |
@@ -191,20 +185,12 @@ Each rule must exist in exactly ONE location. Other files should have a one-line
 Factory gaps are tracked as GitHub issues. Do not maintain gap lists in this doc — they drift. Always query GitHub for the current state:
 
 ```bash
-# P0 blockers (fix before next promotion)
-gh search issues --label "hive/p0" --owner projectbluefin --state open \
+# Everything awaiting triage
+gh search issues --label "1-triage" --owner projectbluefin --state open \
   --json number,title,repository
 
-# P1 this cycle
-gh search issues --label "hive/p1" --owner projectbluefin --state open \
-  --json number,title,repository
-
-# AI/LLM context gaps (affect agent reliability)
-gh search issues --label "ai-context" --owner projectbluefin --state open \
-  --json number,title,repository
-
-# Ready-to-claim CI improvements
-gh search issues --label "status/queued,area/ci" --owner projectbluefin --state open \
+# Work admitted to the agent queue
+gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 
@@ -212,7 +198,7 @@ gh search issues --label "status/queued,area/ci" --owner projectbluefin --state 
 
 ## What "Done" Looks Like
 
-- [ ] Every factory repo has identical infrastructure (AGENTS.md, lifecycle-caller.yml, hive labels, pre-commit, squash-only)
+- [ ] Every factory repo has identical infrastructure (AGENTS.md, the seven labels, pre-commit, squash-only)
 - [ ] Every pipeline stage has a gate: pre-merge CI, post-merge e2e, promotion smoke
 - [ ] All rules exist in exactly one canonical location with one-line pointers elsewhere
 - [ ] Renovate is running across all repos

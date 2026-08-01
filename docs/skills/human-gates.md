@@ -83,7 +83,7 @@ Examples:
 
 **Stop when:** Your PR is ready for final review and merge.
 
-This gate is always human. CI passing + `lgtm` label from a human reviewer is required before merge. Auto-merge fires only after both conditions are met.
+This gate is always human. CI passing plus an approving review from a human reviewer is required before merge. Auto-merge fires only after both conditions are met.
 
 Agents never self-merge, never bypass branch protection, and never force-push to a protected branch.
 

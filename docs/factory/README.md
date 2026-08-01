@@ -93,9 +93,9 @@ Hard rules, branch targets, PR comment policy, session start: [`docs/factory/age
 The following are wired across the factory today (applies to core pipeline repos unless noted):
 
 - **AGENTS.md** — per-repo operating contract (all repos including extended)
-- **Label taxonomy** — canonical definitions in `labels.json` (67 labels; includes `hardware/*` for promotion gates), synced to all repos by `sync-labels.yml` (⚠️ requires `MERGERAPTOR_APP_ID`/`MERGERAPTOR_PRIVATE_KEY` secrets — issue #511); key labels: `hive/p0`, `hive/p1`, `status/queued`, `status/claimed`, `agent/blocked`, `source:*`, `hardware/blocker`
+- **Label taxonomy** — the seven canonical lifecycle labels defined in [`docs/skills/label-workflow.md`](../skills/label-workflow.md). Applied per repo; there is no cross-repo label sync.
 - **Squash-only merge + delete-branch-on-merge**
-- **5 standard issue templates**
+- **One issue form per repo**, which also introduces the filer to the label workflow
 - **CODEOWNERS** with triage sentinel — synced from `common` to downstream repos via `sync-codeowners.yml`
 - **bonedigger lifecycle** — issue intake, `ujust report` handling, and priority escalation. Owned by `projectbluefin/bonedigger`; consumed by `bluefin`, `bluefin-lts`, and `dakota` via `bonedigger.yml`. Not present in `common`, `actions`, or `testsuite`.
 - **bonedigger** — scoped to ujust report filing and priority auto-escalation only
@@ -135,14 +135,12 @@ Factory ACMM status: **Level 3 (Instructed)** as of 2026-06-06.
 Factory gaps are tracked as GitHub issues — not in this doc. Query GitHub for the live state:
 
 ```bash
-# P0 and P1 this cycle (all factory repos)
-gh search issues --label "hive/p0" --owner projectbluefin --state open \
-  --json number,title,repository
-gh search issues --label "hive/p1" --owner projectbluefin --state open \
+# Everything still awaiting triage across the factory
+gh search issues --label "1-triage" --owner projectbluefin --state open \
   --json number,title,repository
 
-# AI/LLM context blindspots affecting agents
-gh search issues --label "ai-context" --owner projectbluefin --state open \
+# Work admitted to the agent queue
+gh search issues --label "3-clanker-queue" --owner projectbluefin --state open \
   --json number,title,repository
 ```
 

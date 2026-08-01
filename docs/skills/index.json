@@ -403,20 +403,19 @@
     {
       "id": "label-workflow",
       "name": "label-workflow",
-      "one_line_purpose": "Apply label taxonomy and the issue lifecycle handoff model.",
+      "one_line_purpose": "Route factory work using the canonical label workflow.",
       "entry_point": "docs/skills/label-workflow.md",
       "category": "meta",
       "status": "active",
       "tags": [
         "labels",
         "issues",
-        "workflow",
-        "clanker"
+        "workflow"
       ],
-      "description": "Label taxonomy, issue lifecycle (filed\u2192triage\u2192queued\u2192claimed\u2192done), slash commands, and the agent/human handoff model for projectbluefin factory repos. Use when understanding the issue lifecycle, triaging work, or using slash commands.",
-      "version": "1.1",
+      "description": "The canonical Trust the Machines workflow and seven-label contract for projectbluefin factory repositories. Use when triaging, routing, or reviewing work.",
+      "version": "2.0",
       "last_updated": "2026-07-28",
-      "doc_type": "reference"
+      "doc_type": "procedure"
     },
     {
       "id": "mime-defaults",

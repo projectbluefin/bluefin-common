@@ -44,9 +44,9 @@ Hive may select work for another monitored repository. Clankers is only the
 authenticated relay for that assignment; verify the assigned repository and
 issue before acting. It does not bypass human approval, review, or merge gates.
 
-Issue templates are owned by
-[`projectbluefin/bonedigger`](https://github.com/projectbluefin/bonedigger) and
-synced downstream. The triager section of CODEOWNERS is owned here and synced
+This repository owns its own issue forms in `.github/ISSUE_TEMPLATE/`; there is
+one form, and it doubles as the contributor's introduction to the label
+workflow. The triager section of CODEOWNERS is owned here and synced
 to downstream factory repositories; edit downstream copies only when the
 repository-specific section is explicitly in scope. Never write to
 `ublue-os/*`.
@@ -65,9 +65,10 @@ The factory is automation-first: workflows, branches, assignees, projects,
 PR linkages, and merge queues advance active work. Do not simulate workflow
 state by hand or invent transitions that are not implemented in the checkout.
 
-- The only labels are the seven names in `labels.json`. Select at most one
-  numbered workflow label, with `blocked` or `hold` as an optional overlay;
-  automation enforces the combination and routes the next action.
+- The only labels are the seven names in
+  [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md). Select at
+  most one numbered workflow label, with `blocked` or `hold` as an optional
+  overlay; automation enforces the combination and routes the next action.
 - Humans provide intent through issue content, form fields, Hive metadata,
   review, and explicit hold or routing decisions.
 - Agents implement assigned work and link it to a PR with `Closes #NNN`; they
