@@ -37,26 +37,6 @@ body:
         The clearer the finish line you describe, the sooner it can be picked
         up. Vague reports sit in triage.
 
-  - type: checkboxes
-    id: checks
-    attributes:
-      label: "Before submitting"
-      options:
-        - label: "I searched existing issues and this is not a duplicate"
-          required: true
-
-  - type: dropdown
-    id: kind
-    attributes:
-      label: "What kind of report is this?"
-      options:
-        - "Something is broken"
-        - "I want a new capability"
-        - "Hardware test result"
-        - "Package pin request"
-    validations:
-      required: true
-
   - type: textarea
     id: what
     attributes:
@@ -80,8 +60,8 @@ body:
     id: image
     attributes:
       label: "Image and version"
-      description: "Output of `rpm-ostree status` or the tag you booted. Skip if not applicable."
-      placeholder: "ghcr.io/ublue-os/bluefin:stable"
+      description: "Output of `bootc status -v` or the tag you booted. Skip if not applicable."
+      placeholder: "ghcr.io/projectbluefin/bluefin:stable"
     validations:
       required: false
 
