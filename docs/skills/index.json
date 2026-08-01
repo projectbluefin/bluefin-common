@@ -658,8 +658,8 @@
         "reference"
       ],
       "description": "What each GitHub workflow in common is for. Use when editing workflows, debugging CI, or understanding pipeline stages.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "2.0",
+      "last_updated": "2026-08-01",
       "doc_type": "reference"
     },
     {
