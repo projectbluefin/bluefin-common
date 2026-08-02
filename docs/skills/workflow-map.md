@@ -16,6 +16,8 @@ description: >-
   debugging CI, or understanding pipeline stages.
 metadata:
   type: reference
+  context7-sources:
+    - /websites/cli_github_manual
 ---
 
 # Common workflow map

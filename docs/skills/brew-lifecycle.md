@@ -20,6 +20,7 @@ metadata:
   context7-sources:
     - /bootc-dev/bootc
     - /homebrew/brew
+    - /websites/cli_github_manual
 ---
 
 # brew-lifecycle — Homebrew Package Lifecycle for Bluefin
