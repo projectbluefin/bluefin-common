@@ -19,6 +19,9 @@ on:
       - main
     paths-ignore:
       - "*.md"
+      - "**.md"
+      - "docs/**"
+      - "AGENTS.md"
       - "LICENSE"
       - ".gitignore"
       - ".gitattributes"
