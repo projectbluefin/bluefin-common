@@ -18,4 +18,9 @@ set -euo pipefail
 # --download-only stages the update without applying it or rebooting;
 # --apply/--from-downloaded remain the user's own action (or uupd's), not
 # this helper's.
-exec /usr/bin/bootc upgrade --quiet --download-only
+#
+# Progress output is deliberately NOT suppressed: ChairLift's StageUpdate
+# merges this process's stdout and stderr and streams each line into its
+# progress view, so `--quiet` would leave the user staring at an empty
+# dialog for the length of an image pull.
+exec /usr/bin/bootc upgrade --download-only

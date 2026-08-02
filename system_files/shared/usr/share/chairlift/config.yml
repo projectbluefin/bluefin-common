@@ -27,11 +27,13 @@ updates_page:
   brew_trust_group:
     enabled: true
   # Update policy on Bluefin belongs to uupd (silent background staging,
-  # 6-hour timer + AC connect; user reboots on their own schedule). Keep
-  # any in-app update scheduling knobs hidden so nothing competes with it
-  # or prompts the user.
-  updates_settings_group:
-    enabled: false
+  # 6-hour timer + AC connect; user reboots on their own schedule).
+  # ChairLift has no update-scheduling group to disable here: upstream's
+  # updates_page schema is exactly the four groups above. Its bootc group
+  # is a manual "stage now" action only, so nothing competes with uupd.
+  # Do NOT invent a group to express this policy — an unknown group key
+  # fails ChairLift's strict schema validation and disables the entire
+  # app (see docs/skills/brew-lifecycle.md).
 
 applications_page:
   applications_installed_group:

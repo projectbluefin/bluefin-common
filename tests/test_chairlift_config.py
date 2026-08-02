@@ -8,6 +8,13 @@ now backed by an image-side polkit policy and stage script and
 bootc_updates_group is enabled. updex (features_group) stays disabled
 because no updex helper ships on Bluefin. Bundle paths point at Bluefin's
 Brewfiles, and help links point at Bluefin resources.
+
+Note on strictness: ChairLift does not ignore unknown configuration keys.
+internal/config/validate.go classifies an unrecognised page, group, or
+field as KindSchema, and internal/config/config.go::Load() answers that
+with disabledConfig() -- every group on every page forced off, plus a
+persistent configuration-error toast. So a typo in this config is not a
+cosmetic defect; it ships an empty app to every user.
 """
 
 from pathlib import Path
@@ -28,8 +35,17 @@ BOOTC_POLICY = (
 )
 BOOTC_STAGE_SCRIPT = ROOT / "system_files/shared/usr/libexec/bootc-update-stage"
 
-# Pages and groups documented in upstream CONFIG.md. Anything outside this
-# set is silently ignored by ChairLift, so it is a typo until proven otherwise.
+# The canonical page -> group map, mirrored from upstream
+# internal/config/config.go::defaultConfig(). ChairLift validates configs
+# STRICTLY: internal/config/validate.go classifies any page, group, or
+# field name it does not recognise as KindSchema, which makes Load()
+# return disabledConfig() -- every group on every page forced off, plus a
+# persistent "Configuration error" toast. A typo here is not a silent
+# no-op, it bricks the whole app.
+#
+# This list is an offline pin. The authoritative check against upstream
+# lives in .github/workflows/validate-chairlift-config.yaml, which fetches
+# upstream's config.yml and fails on drift.
 KNOWN_GROUPS = {
     "system_page": {"system_info_group", "bootc_status_group", "health_group"},
     "updates_page": {
@@ -37,7 +53,6 @@ KNOWN_GROUPS = {
         "flatpak_updates_group",
         "brew_updates_group",
         "brew_trust_group",
-        "updates_settings_group",
     },
     "applications_page": {
         "applications_installed_group",
@@ -108,7 +123,10 @@ def test_bootc_stage_polkit_policy_pins_fixed_helper_path():
 
 def test_bootc_stage_script_is_executable_and_stages_only():
     """The privileged helper must only stage (never auto-apply/reboot) so
-    uupd remains the sole owner of when an update actually takes effect."""
+    uupd remains the sole owner of when an update actually takes effect,
+    and must not suppress progress output: ChairLift streams the helper's
+    merged stdout+stderr into its progress view, so --quiet would leave
+    the user with an empty dialog."""
     assert BOOTC_STAGE_SCRIPT.stat().st_mode & 0o111, (
         "bootc-update-stage must be executable"
     )
@@ -122,14 +140,46 @@ def test_bootc_stage_script_is_executable_and_stages_only():
     assert "bootc upgrade" in exec_line
     assert "--download-only" in exec_line
     assert "--apply" not in exec_line
+    assert "--quiet" not in exec_line, (
+        "--quiet blanks ChairLift's streaming progress view"
+    )
 
 
-def test_update_policy_stays_with_uupd():
-    """Bluefin updates are silent and background-staged by uupd; the user
-    reboots on their own schedule. ChairLift must not surface update
-    scheduling knobs that compete with uupd or prompt the user."""
+def test_config_uses_only_upstream_schema_keys():
+    """Every page and group we set must exist in ChairLift's schema.
+
+    This is the regression test for the bug this file previously shipped:
+    config.yml declared an `updates_settings_group` that upstream never
+    defined. Unknown keys are not ignored -- validate.go classifies them
+    as KindSchema, Load() falls back to disabledConfig(), and the user
+    gets an empty app with a configuration-error toast. Assert a strict
+    subset rather than equality, since omitting a group is legitimate
+    (it just inherits upstream's default).
+    """
     data = _load_config()
-    assert data["updates_page"]["updates_settings_group"]["enabled"] is False
+
+    unknown_pages = set(data) - set(KNOWN_GROUPS)
+    assert not unknown_pages, f"pages absent from ChairLift's schema: {unknown_pages}"
+
+    for page, groups in data.items():
+        unknown_groups = set(groups) - KNOWN_GROUPS[page]
+        assert not unknown_groups, (
+            f"{page}: groups absent from ChairLift's schema: {unknown_groups}; "
+            "an unknown group disables every feature group in the app"
+        )
+
+
+def test_update_scheduling_is_not_expressed_as_a_config_group():
+    """Bluefin's update policy belongs to uupd, but that intent must not be
+    encoded as a made-up group. upstream's updates_page is exactly the four
+    groups in KNOWN_GROUPS; anything settings-shaped here is an invention
+    that would fail strict validation."""
+    updates = _load_config()["updates_page"]
+    invented = {name for name in updates if "setting" in name or "schedul" in name}
+    assert not invented, (
+        f"invented update-scheduling groups: {invented}; "
+        "document the uupd policy in a comment instead"
+    )
 
 
 def test_bundles_paths_point_at_bluefin_brewfiles():

@@ -207,11 +207,64 @@ policy under `system_files/shared/usr/share/polkit-1/actions/`, so
 `bootc upgrade --download-only`; applying stays with the user's own
 reboot or uupd's background policy). `features_group` (updex) stays
 disabled — no updex helper ships on Bluefin yet, independent of the
-polkit fix. Guarded by `tests/test_chairlift_config.py`. The cask is now
-reviewable from the common side because the upstream ChairLift release
-assets include the needed `data/` files and arm64 tarballs; the remaining
-dependency for full Brewfile validation is the upstream Homebrew tap PR
-publishing the cask to the Homebrew resolvers that CI uses.
+polkit fix. Guarded by `tests/test_chairlift_config.py` (wired into
+`just test` and `unit-tests.yml`) and
+`scripts/check-chairlift-config.py` (upstream schema drift).
+
+#### ChairLift config keys fail closed — never invent one
+
+**An unknown page, group, or field key in `config.yml` disables the entire
+application.** This is not a silent no-op. Upstream
+`internal/config/validate.go` classifies any name it does not recognise as
+`KindSchema`; `internal/config/config.go::Load()` answers that with
+`disabledConfig()`, which forces `enabled: false` on *every group on every
+page* and raises a persistent "Configuration error … All feature groups are
+disabled" toast.
+
+Because Bluefin preinstalls ChairLift silently at next login, a single typo
+ships an empty, broken app to every user of `bluefin`, `bluefin-lts`, and
+`dakota` at once. This exact bug reached review once: an invented
+`updates_page.updates_settings_group` was added to express "uupd owns update
+scheduling". That group has never existed upstream — `updates_page` is
+exactly `bootc_updates_group`, `flatpak_updates_group`, `brew_updates_group`,
+`brew_trust_group`.
+
+Rules:
+
+- **Express policy in a YAML comment, not in a made-up key.** If there is no
+  group for the behaviour you want to suppress, the behaviour does not exist.
+- **Derive key names from upstream source**, `internal/config/config.go::defaultConfig()`,
+  not from memory, not from our own docs, and not from our own tests.
+- **A hand-written allowlist in our own test file proves nothing.** The
+  original bug passed CI because the test's `KNOWN_GROUPS` set was edited in
+  the same PR to include the invented group. `scripts/check-chairlift-config.py`
+  exists because of this: it fetches upstream's `config.yml` (a complete
+  enumeration, kept in lockstep with `defaultConfig()`) and fails on any key we
+  use that upstream does not define. It runs on PRs touching the config and
+  weekly, since upstream can drift without us touching anything.
+
+#### Stage helper must not suppress output
+
+`/usr/libexec/bootc-update-stage` deliberately omits `--quiet`.
+`bootc.StageUpdate` merges the helper's stdout and stderr and streams each
+line into ChairLift's progress view, so `--quiet` leaves the user watching an
+empty dialog for the length of an image pull.
+
+#### Cask pinning caveat
+
+The upstream tap cask currently targets the rolling `dev` tag with
+`sha256 :no_check`, so the preinstalled payload is mutable and unverified even
+though tagged releases with per-arch checksums exist. Accepted deliberately for
+the initial rollout; bumping the tap to a pinned version is tracked separately.
+
+#### polkit file overlap
+
+Our `org.frostyard.ChairLift.bootc.policy` is a byte-identical copy of
+upstream's. Upstream's `chairlift-system-integration` package ships the same
+file, so layering that RPM on a Bluefin image would collide. Upstream
+intentionally does *not* ship the stage script — "Distros enabling bootc
+staging must separately provide `/usr/libexec/bootc-update-stage`" — which is
+why Bluefin ships its own.
 
 ### Add a variant-specific Brewfile
 
