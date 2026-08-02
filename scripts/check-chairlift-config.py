@@ -11,10 +11,15 @@ So a single invented key in our maintainer config does not degrade one
 feature: it ships an empty application to every Bluefin user. Bluefin
 preinstalls ChairLift silently at login, so nobody opts into that.
 
-Source of truth: upstream's own config.yml, which enumerates every page and
-every group and is kept in lockstep with defaultConfig() in
-internal/config/config.go. Do not update the expectations in this file from
-memory -- this script reads upstream directly, on purpose.
+Sources of truth, both read live from upstream:
+  * pages and groups -- upstream's own config.yml, which enumerates every
+    page and group and is kept in lockstep with defaultConfig().
+  * group and action FIELD names -- the yaml struct tags on GroupConfig and
+    ActionConfig in internal/config/config.go. config.yml cannot supply
+    these, because it only exercises a subset of the optional fields.
+
+Do not update the expectations in this file from memory -- this script
+reads upstream directly, on purpose.
 
 Network access is required. Set GITHUB_TOKEN (or GH_TOKEN) to avoid rate
 limits; in CI, github.token is available automatically.
@@ -22,30 +27,40 @@ limits; in CI, github.token is available automatically.
 
 from pathlib import Path
 import os
+import re
 import sys
 import urllib.error
 import urllib.request
 
 import yaml
 
-UPSTREAM_URL = (
+UPSTREAM_CONFIG_URL = (
     "https://raw.githubusercontent.com/frostyard/chairlift/main/config.yml"
+)
+UPSTREAM_SCHEMA_URL = (
+    "https://raw.githubusercontent.com/frostyard/chairlift/main/"
+    "internal/config/config.go"
 )
 
 ROOT = Path(__file__).resolve().parent.parent
 OUR_CONFIG = ROOT / "system_files/shared/usr/share/chairlift/config.yml"
 
+STRUCT_RE = r"type\s+%s\s+struct\s*\{(.*?)\}"
+YAML_TAG_RE = re.compile(r'yaml:"([^",]+)')
 
-def fetch_upstream_schema() -> dict[str, set[str]]:
-    """Return upstream's canonical page -> {group} map."""
-    request = urllib.request.Request(UPSTREAM_URL)
+
+def _fetch(url: str) -> str:
+    request = urllib.request.Request(url)
     token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
     if token:
         request.add_header("Authorization", f"Bearer {token}")
-
     with urllib.request.urlopen(request, timeout=30) as response:
-        raw = response.read().decode("utf-8")
+        return response.read().decode("utf-8")
 
+
+def fetch_upstream_schema() -> dict[str, set[str]]:
+    """Return upstream's canonical page -> {group} map."""
+    raw = _fetch(UPSTREAM_CONFIG_URL)
     parsed = yaml.safe_load(raw)
     if not isinstance(parsed, dict) or not parsed:
         raise ValueError(f"upstream config.yml did not parse as a mapping: {raw[:200]}")
@@ -58,6 +73,22 @@ def fetch_upstream_schema() -> dict[str, set[str]]:
     return schema
 
 
+def _struct_fields(source: str, struct: str) -> set[str]:
+    match = re.search(STRUCT_RE % struct, source, re.DOTALL)
+    if not match:
+        raise ValueError(f"could not find {struct} in upstream config.go")
+    fields = set(YAML_TAG_RE.findall(match.group(1)))
+    if not fields:
+        raise ValueError(f"{struct} in upstream config.go exposed no yaml tags")
+    return fields
+
+
+def fetch_upstream_fields() -> tuple[set[str], set[str]]:
+    """Return (group field names, action field names) from upstream structs."""
+    source = _fetch(UPSTREAM_SCHEMA_URL)
+    return _struct_fields(source, "GroupConfig"), _struct_fields(source, "ActionConfig")
+
+
 def main() -> int:
     if not OUR_CONFIG.exists():
         print(f"✗ missing {OUR_CONFIG.relative_to(ROOT)}")
@@ -65,6 +96,7 @@ def main() -> int:
 
     try:
         upstream = fetch_upstream_schema()
+        group_fields, action_fields = fetch_upstream_fields()
     except (urllib.error.URLError, ValueError, yaml.YAMLError) as err:
         print(f"✗ could not read upstream ChairLift schema: {err}")
         return 1
@@ -86,23 +118,51 @@ def main() -> int:
         if not isinstance(groups, dict):
             failures.append(f'page "{page}" must be a mapping of groups')
             continue
-        for group in groups:
+        for group, settings in groups.items():
             if group not in upstream[page]:
                 failures.append(
                     f'group "{page}.{group}" does not exist in ChairLift\'s schema '
                     f"(known groups for {page}: {', '.join(sorted(upstream[page]))})"
                 )
+                continue
+            if not isinstance(settings, dict):
+                failures.append(f'group "{page}.{group}" must be a mapping of fields')
+                continue
+            # Field names matter as much as group names: validateGroupFieldEntries
+            # classifies an unknown field as KindSchema too, so a typo such as
+            # `bundle_paths` for `bundles_paths` disables the whole app.
+            for field, value in settings.items():
+                if field not in group_fields:
+                    failures.append(
+                        f'field "{page}.{group}.{field}" does not exist in '
+                        f"ChairLift's schema (known fields: "
+                        f"{', '.join(sorted(group_fields))})"
+                    )
+                elif field == "actions" and isinstance(value, list):
+                    for index, action in enumerate(value):
+                        if not isinstance(action, dict):
+                            continue
+                        for action_field in action:
+                            if action_field not in action_fields:
+                                failures.append(
+                                    f'field "{page}.{group}.actions[{index}].'
+                                    f'{action_field}" does not exist in '
+                                    f"ChairLift's schema (known action fields: "
+                                    f"{', '.join(sorted(action_fields))})"
+                                )
 
     for page, groups in sorted(upstream.items()):
         print(f"  {page}: {', '.join(sorted(groups))}")
+    print(f"  group fields: {', '.join(sorted(group_fields))}")
+    print(f"  action fields: {', '.join(sorted(action_fields))}")
 
     if failures:
         print()
         print("✗ ChairLift config uses keys absent from upstream's schema.")
-        print("  ChairLift fails closed on unknown keys: an unrecognised page or")
-        print("  group makes Load() return disabledConfig(), which disables EVERY")
-        print("  feature group and shows a configuration-error toast. Remove the")
-        print("  key and express the intent in a comment instead.")
+        print("  ChairLift fails closed on unknown keys: an unrecognised page,")
+        print("  group, or field makes Load() return disabledConfig(), which")
+        print("  disables EVERY feature group and shows a configuration-error")
+        print("  toast. Remove the key and express the intent in a comment.")
         print()
         for failure in failures:
             print(f"    - {failure}")
