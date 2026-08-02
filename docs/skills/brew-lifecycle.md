@@ -209,7 +209,7 @@ reboot or uupd's background policy). `features_group` (updex) stays
 disabled — no updex helper ships on Bluefin yet, independent of the
 polkit fix. Guarded by `tests/test_chairlift_config.py` (wired into
 `just test` and `unit-tests.yml`) and
-`scripts/check-chairlift-config.py` (upstream schema drift).
+`tests/check-chairlift-config` (upstream schema drift).
 
 #### ChairLift config keys fail closed — never invent one
 
@@ -237,7 +237,7 @@ Rules:
   not from memory, not from our own docs, and not from our own tests.
 - **A hand-written allowlist in our own test file proves nothing.** The
   original bug passed CI because the test's `KNOWN_GROUPS` set was edited in
-  the same PR to include the invented group. `scripts/check-chairlift-config.py`
+  the same PR to include the invented group. `tests/check-chairlift-config`
   exists because of this: it fetches upstream's `config.yml` (a complete
   enumeration, kept in lockstep with `defaultConfig()`) and fails on any key we
   use that upstream does not define. It runs on PRs touching the config and
@@ -482,6 +482,46 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 - [ ] `just test` passes (bats tests in `tests/test_brew_preinstall.bats`)
 - [ ] If removing a package: confirmed it was in the previous managed state — it will be auto-uninstalled for existing users on next login
 - [ ] Merging order followed if the change spans repos: common → bluefin → bluefin-lts → dakota
+
+### Re-deriving the ChairLift facts in this document
+
+Every project-internal claim above about ChairLift can be re-derived. Run these
+rather than trusting the prose — the bug that motivated this section survived a
+green test suite precisely because nobody re-derived anything.
+
+```bash
+# What we ship, and where
+ls system_files/shared/usr/share/chairlift/config.yml \
+   system_files/shared/usr/libexec/bootc-update-stage \
+   system_files/shared/usr/share/polkit-1/actions/org.frostyard.ChairLift.bootc.policy \
+   system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/chairlift.Brewfile
+
+# The privileged command, in full (must be exactly: bootc upgrade --download-only)
+grep '^exec ' system_files/shared/usr/libexec/bootc-update-stage
+
+# The polkit action pins that exact path and requires auth
+grep -E 'exec.path|allow_' system_files/shared/usr/share/polkit-1/actions/org.frostyard.ChairLift.bootc.policy
+
+# No passwordless rule anywhere re-grants the staging action
+grep -rn 'ChairLift\|bootc-update-stage' system_files/*/usr/share/polkit-1/rules.d/ || echo "none (expected)"
+
+# Our config uses only keys upstream defines (network; the CI job runs this)
+python3 tests/check-chairlift-config
+
+# Upstream's canonical groups and field names, straight from source
+gh api repos/frostyard/chairlift/contents/internal/config/config.go --jq .content \
+  | base64 -d | sed -n '/func defaultConfig/,/^}/p'
+gh api repos/frostyard/chairlift/contents/internal/config/config.go --jq .content \
+  | base64 -d | sed -n '/type GroupConfig struct/,/^}/p'
+
+# Unknown keys really are fatal, not ignored
+gh api repos/frostyard/chairlift/contents/internal/config/validate.go --jq .content \
+  | base64 -d | grep -n 'KindSchema'
+
+# The tests actually run in CI and locally
+grep -n 'test_chairlift_config' Justfile .github/workflows/unit-tests.yml
+python3 -m pytest tests/test_chairlift_config.py -v
+```
 
 ## Brewfile scope: shared/ vs bluefin/ for all-variant packages
 

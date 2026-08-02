@@ -7,14 +7,14 @@ on:
   pull_request:
     paths:
       - "system_files/shared/usr/share/chairlift/**"
-      - "scripts/check-chairlift-config.py"
+      - "tests/check-chairlift-config"
       - ".github/workflows/validate-chairlift-config.yaml"
   push:
     branches:
       - main
     paths:
       - "system_files/shared/usr/share/chairlift/**"
-      - "scripts/check-chairlift-config.py"
+      - "tests/check-chairlift-config"
   # Upstream can change its schema without us touching anything, and an
   # unknown key disables the whole app. Catch that drift on a schedule
   # instead of on the next unrelated PR.
@@ -40,4 +40,4 @@ jobs:
       - name: Validate ChairLift config against upstream schema
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: python3 scripts/check-chairlift-config.py
+        run: python3 tests/check-chairlift-config

@@ -122,3 +122,29 @@ When editing workflows here, preserve the repo boundary:
 - `common` validates the **shared layer**
 - downstream image repos validate their **image-specific** behavior
 - reusable CI logic should live in `projectbluefin/actions`, not be duplicated inline unless the logic is truly `common`-specific
+
+## Verification
+
+Re-derive this table rather than trusting it — workflows change without this
+file being touched.
+
+```bash
+# The actual set of workflows, and their names as they appear in checks
+ls .github/workflows/
+grep -H '^name:' .github/workflows/*.yml .github/workflows/*.yaml
+
+# What triggers a given workflow (events, path filters, schedules)
+sed -n '/^on:/,/^jobs:/p' .github/workflows/validate-chairlift-config.yaml
+
+# Every scheduled workflow in the repo
+grep -l 'schedule:' .github/workflows/* | xargs -r grep -H -A2 'cron:'
+
+# What a workflow actually runs, as opposed to what it is described as doing
+grep -n 'run:\|uses:' .github/workflows/validate-chairlift-config.yaml
+
+# Which checks are required to merge, per the live ruleset
+gh api repos/projectbluefin/common/rulesets --jq '.[].name'
+
+# Recent results for a workflow
+gh run list --repo projectbluefin/common --workflow "Validate ChairLift Config" --limit 5
+```

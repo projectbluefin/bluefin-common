@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate Bluefin's ChairLift config against upstream ChairLift's schema.
+"""Validate the ChairLift config against upstream's live schema.
 
 ChairLift does not ignore unknown configuration keys. Upstream
 internal/config/validate.go classifies any page, group, or group field name
