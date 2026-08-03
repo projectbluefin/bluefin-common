@@ -80,17 +80,22 @@ Key files (all live in `system_files/shared/`):
 
 ### Service ordering (critical — do not change without understanding this)
 
-As of [common#530](https://github.com/projectbluefin/common/pull/530), the service must run with:
+The service must run with:
 
 ```ini
 DefaultDependencies=no
-Wants=local-fs.target
-After=local-fs.target
 After=bootc-sysusers-shadow-sync.service
 Before=systemd-sysusers.service
 ```
 
-**Why:** `systemd-sysusers` is what fails if gshadow is corrupt. The service must run *before* sysusers, not after. `bootc-sysusers-shadow-sync.service` is the upstream fix shipped in bootc ≥1.16 ([bootc#2207](https://github.com/bootc-dev/bootc/pull/2207), merged May 2025); our service must run after it so they coexist correctly. `DefaultDependencies=no` is required for any early-boot unit.
+It must **not** pull in or order after `local-fs.target`: that target waits on
+parts of the sysusers/tmpfiles path this migration aid must repair first, and
+those edges create an ordering cycle during upgrades from legacy rechunked
+images. `systemd-sysusers` is what fails if gshadow is corrupt, so the service
+must run *before* sysusers. `bootc-sysusers-shadow-sync.service` is the upstream
+fix shipped in bootc ≥1.16 ([bootc#2207](https://github.com/bootc-dev/bootc/pull/2207),
+merged May 2025); our service must run after it so they coexist correctly.
+`DefaultDependencies=no` is required for this early-boot unit.
 
 ### flock on gshadow writes (required)
 

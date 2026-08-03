@@ -51,6 +51,15 @@ Neither replaces the other. Lab tests run on demand; E2E runs on every push.
 | `just/`, `Justfile`, `*.just` | all three (ujust ships to all variants) |
 | `Containerfile` changes | all three |
 
+### PR candidate preflight
+
+Before treating a PR-triggered lab workflow as evidence, confirm that the
+workflow's image reference or digest resolves to the PR candidate. A workflow
+may carry the PR SHA in metadata while still using the regular `:testing`
+image when its candidate digest is empty; that run is a baseline smoke test,
+not validation of the PR. Do not start a migration or boot-ordering VM test
+until a candidate image containing the PR commit is available.
+
 ## Posting lab results
 
 When you verify a PR through the ghost cluster, the result must be posted as a
