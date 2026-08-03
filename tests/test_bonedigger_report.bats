@@ -137,6 +137,20 @@ EOF
     [ "$status" -eq 0 ]
 }
 
+@test "persist_local_copy skips missing report files and keeps available copies" {
+    mkdir -p "$WORKDIR/draft"
+    printf 'summary\n' > "$WORKDIR/draft/issue.md"
+    printf 'projectbluefin/common\n' > "$WORKDIR/draft/repo.txt"
+    export DRAFT_DIR="$WORKDIR/draft"
+    export LOCAL_REPORT_ROOT="$WORKDIR/state/ujust-report"
+
+    run bash -c 'source "$1"; persist_local_copy' _ "$BONEDIGGER_SCRIPT"
+
+    [ "$status" -eq 0 ]
+    [ "$(cat "$LOCAL_REPORT_ROOT/last/summary.md")" = "summary" ]
+    [ ! -e "$LOCAL_REPORT_ROOT/last/journal.txt" ]
+}
+
 @test "issue creation uses direct gh arguments and one queue label" {
     cat << 'EOF' > "$WORKDIR/bin/gh"
 #!/usr/bin/bash

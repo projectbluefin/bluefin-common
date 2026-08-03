@@ -5,6 +5,7 @@ set -euo pipefail
 IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
 BONEDIGGER_BRAND="${BONEDIGGER_BRAND:-🫐 Bluefin Bug Report}"
 DRAFT_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/ujust-report/drafts"
+LOCAL_REPORT_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/ujust-report"
 MAX_BASELINE_BYTES=$((64 * 1024))
 MAX_BASELINE_CONTENT_BYTES=$((60 * 1024))
 MAX_PROFILE_BYTES=$((500 * 1024))
@@ -348,6 +349,28 @@ keep_draft() {
     printf 'Resume with: ujust report --resume %q\n' "$draft_dir"
 }
 
+persist_local_copy() {
+    local file
+    local source
+    local destination
+
+    destination="$LOCAL_REPORT_ROOT/last"
+    rm -rf "$destination"
+    mkdir -p "$destination"
+
+    if [[ -f "$DRAFT_DIR/issue.md" ]]; then
+        cp -f -- "$DRAFT_DIR/issue.md" "$destination/summary.md"
+    fi
+    if [[ -f "$DRAFT_DIR/journal.txt" ]]; then
+        cp -f -- "$DRAFT_DIR/journal.txt" "$destination/journal.txt"
+    fi
+
+    for source in "$DRAFT_DIR"/*.md; do
+        [[ -f "$source" && "$(basename "$source")" != issue.md ]] || continue
+        cp -f -- "$source" "$destination/$(basename "$source")"
+    done
+}
+
 load_draft() {
     local filename
 
@@ -498,6 +521,12 @@ submit_draft() {
     if ! issue_url="$(create_issue)"; then
         keep_draft "$DRAFT_DIR"
         return 1
+    fi
+
+    if ! persist_local_copy; then
+        printf 'Report submitted, but the local copy could not be saved.\n' >&2
+    else
+        printf 'Local copy kept at: %s/\n' "$LOCAL_REPORT_ROOT/last"
     fi
 
     printf '\nReport submitted successfully.\n%s\n' "$issue_url"
