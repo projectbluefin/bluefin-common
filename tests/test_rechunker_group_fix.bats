@@ -94,6 +94,7 @@ teardown() {
     SERVICE="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/systemd/system/rechunker-group-fix.service"
 
     ! grep -qE '^(Wants|Requires|After)=local-fs\.target$' "${SERVICE}"
+    grep -q '^DefaultDependencies=no$' "${SERVICE}"
     grep -q '^Before=systemd-sysusers\.service$' "${SERVICE}"
     grep -q '^After=bootc-sysusers-shadow-sync\.service$' "${SERVICE}"
 }
