@@ -84,11 +84,11 @@ As of [common#530](https://github.com/projectbluefin/common/pull/530), the servi
 
 ```ini
 DefaultDependencies=no
-Wants=local-fs.target
-After=local-fs.target
 After=bootc-sysusers-shadow-sync.service
 Before=systemd-sysusers.service
 ```
+
+Do **not** add `Wants=local-fs.target` or `After=local-fs.target`: this is an early-boot bridge and those edges can create an ordering cycle through `local-fs-pre.target`, `systemd-tmpfiles-setup-dev.service`, and `systemd-sysusers.service` during upgrades from legacy-rechunked images. The service's `/etc` file operations do not require all filesystem mounts to be complete.
 
 **Why:** `systemd-sysusers` is what fails if gshadow is corrupt. The service must run *before* sysusers, not after. `bootc-sysusers-shadow-sync.service` is the upstream fix shipped in bootc ≥1.16 ([bootc#2207](https://github.com/bootc-dev/bootc/pull/2207), merged May 2025); our service must run after it so they coexist correctly. `DefaultDependencies=no` is required for any early-boot unit.
 

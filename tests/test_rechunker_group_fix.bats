@@ -4,6 +4,7 @@
 # Run: bats tests/test_rechunker_group_fix.bats
 
 SCRIPT="$BATS_TEST_DIRNAME/../system_files/shared/usr/bin/rechunker-group-fix"
+UNIT="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/systemd/system/rechunker-group-fix.service"
 WORKDIR=""
 
 setup() {
@@ -14,6 +15,18 @@ setup() {
 
 teardown() {
     rm -rf "${WORKDIR}"
+}
+
+# ---------------------------------------------------------------------------
+# Unit ordering
+# ---------------------------------------------------------------------------
+
+@test "rechunker-group-fix service avoids local-fs ordering edges" {
+    ! grep -q '^Wants=local-fs\.target$' "${UNIT}"
+    ! grep -q '^After=local-fs\.target$' "${UNIT}"
+    grep -q '^DefaultDependencies=no$' "${UNIT}"
+    grep -q '^After=bootc-sysusers-shadow-sync\.service$' "${UNIT}"
+    grep -q '^Before=systemd-sysusers\.service$' "${UNIT}"
 }
 
 # ---------------------------------------------------------------------------
