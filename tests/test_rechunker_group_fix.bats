@@ -89,3 +89,11 @@ teardown() {
     grep -q "^beta:" "${GSHADOW_FILE}"
     grep -q "^gamma:" "${GSHADOW_FILE}"
 }
+
+@test "rechunker-group-fix.service: does not create a local-fs ordering edge" {
+    SERVICE="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/systemd/system/rechunker-group-fix.service"
+
+    ! grep -qE '^(Wants|Requires|After)=local-fs\.target$' "${SERVICE}"
+    grep -q '^Before=systemd-sysusers\.service$' "${SERVICE}"
+    grep -q '^After=bootc-sysusers-shadow-sync\.service$' "${SERVICE}"
+}

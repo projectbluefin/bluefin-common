@@ -16,8 +16,9 @@
 Description=Fix groups for Legacy rechunker
 ConditionPathExists=/run/ostree-booted
 DefaultDependencies=no
-Wants=local-fs.target
-After=local-fs.target
+# Do not pull in or order after local-fs.target: that target waits on the
+# sysusers/tmpfiles path this migration aid must run before, which creates an
+# ordering cycle on upgrades from legacy rechunked images.
 After=bootc-sysusers-shadow-sync.service
 Before=systemd-sysusers.service
 
