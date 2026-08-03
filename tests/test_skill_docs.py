@@ -12,6 +12,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CHECK_DOC_LINKS = REPO_ROOT / "scripts/check-doc-links.sh"
 CHECK_SKILL_FRONTMATTER = REPO_ROOT / "scripts/check-skill-frontmatter.sh"
+CHECK_SKILL_INDEX = REPO_ROOT / "scripts/check-skill-index.sh"
 GENERATE_SKILL_INDEX = REPO_ROOT / "scripts/generate_skill_index.py"
 
 
@@ -228,6 +229,41 @@ def test_check_skill_frontmatter_reports_missing_front_matter(
 
     assert result.returncode == 1
     assert "has no front-matter" in result.stdout
+
+
+def test_check_skill_index_passes_with_complete_links(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    skills = docs / "skills"
+    (skills / "nested").mkdir(parents=True)
+    (skills / "alpha.md").write_text("alpha\n")
+    (skills / "nested" / "SKILL.md").write_text("nested\n")
+    (docs / "SKILL.md").write_text(
+        "[Alpha](skills/alpha.md)\n[Nested](skills/nested/SKILL.md)\n"
+    )
+
+    result = run_script("bash", CHECK_SKILL_INDEX, tmp_path)
+
+    assert result.returncode == 0
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_check_skill_index_reports_missing_flat_and_nested_links(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    skills = docs / "skills"
+    (skills / "nested").mkdir(parents=True)
+    (skills / "alpha.md").write_text("alpha\n")
+    (skills / "nested" / "SKILL.md").write_text("nested\n")
+    (docs / "SKILL.md").write_text("# empty table\n")
+
+    result = run_script("bash", CHECK_SKILL_INDEX, tmp_path)
+
+    assert result.returncode == 1
+    assert "error: docs/SKILL.md is missing a link to skills/alpha.md" in result.stdout
+    assert (
+        "error: docs/SKILL.md is missing a link to skills/nested/SKILL.md"
+        in result.stdout
+    )
 
 
 def test_generate_skill_index_round_trip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
