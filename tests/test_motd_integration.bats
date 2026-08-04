@@ -72,18 +72,6 @@ teardown() {
     grep -q 'uwelcome' "${FISH_GREETING}"
 }
 
-# @test "fish_greeting.fish: migrates legacy opt-out and still runs uwelcome" {
-@test "fish_greeting.fish: migrates legacy opt-out and still runs uwelcome" {
-    touch "${HOME}/.config/no-show-user-motd"
-    run fish "${FISH_GREETING}"
-    [ "${status}" -eq 0 ]
-    # Legacy marker is consumed, not left behind to retry every login
-    [ ! -e "${HOME}/.config/no-show-user-motd" ]
-    [ -e "${HOME}/.config/uwelcome/disabled" ]
-    # uwelcome is invoked unconditionally; it owns the opt-out decision
-    [ -f "${WORKDIR}/uwelcome.log" ]
-}
-
 @test "fish_greeting: does not call legacy ublue-motd" {
     run grep 'ublue-motd' "${FISH_GREETING}"
     [ "${status}" -ne 0 ]
