@@ -36,6 +36,12 @@ jobs:
         with:
           submodules: recursive
 
+      # Keep large image/layer extraction from exhausting the hosted runner.
+      - name: Free disk space
+        uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6 # v10
+        with:
+          extra-squeeze: "true"
+
       - name: Generate tags
         id: generate-tags
         shell: bash
