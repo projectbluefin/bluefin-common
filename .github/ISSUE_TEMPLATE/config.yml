@@ -1,8 +1,11 @@
 blank_issues_enabled: true
 contact_links:
-  - name: "Bluefin Flow — work queue"
+  - name: "Questions and troubleshooting"
+    url: https://github.com/ublue-os/bluefin/discussions
+    about: "Not sure it is a bug? Ask here first — most questions are answered faster than issues."
+  - name: "todo.projectbluefin.io — the work board"
     url: https://github.com/orgs/projectbluefin/projects/2
-    about: "Left-to-right board showing every issue from New to Shipped. Find something to work on."
-  - name: "Contribution guide"
-    url: https://github.com/projectbluefin/common/blob/main/AGENTS.md
-    about: "Build, validation, and workflow rules — read before opening a PR."
+    about: "Every open issue, left to right, from triage to shipped. Find something to work on."
+  - name: "Contributing guide"
+    url: https://docs.projectbluefin.io/contributing
+    about: "How the project is built and how to get a change merged."

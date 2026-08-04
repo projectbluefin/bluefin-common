@@ -93,12 +93,12 @@ verified fact.
    `optimization_status`/`dependencies`/`status`/`id`/`one_line_purpose`/
    `entry_point`) **optional and additive** so a repo can adopt the catalog
    without being forced to restructure front matter it doesn't use.
-4. **Rebuild or remove `skill-drift-check.yml`.** Either restore real
-   drift-detection logic in `actions`, or have every consumer repo delete its
-   now-decorative `skill-drift.yml` per the stub's own comment
-   (`# Consumer repos should delete their skill-drift.yml on next maintenance
-   pass.`). Leaving it as a silently-passing no-op is worse than having no
-   check at all, because it looks like enforcement.
+4. **~~Rebuild or remove `skill-drift-check.yml`.~~ RESOLVED — removed.** The
+   factory chose removal: every consumer repo deleted its `skill-drift.yml`
+   and the stub was deleted from `actions`. Leaving it as a silently-passing
+   no-op was worse than having no check at all, because it looked like
+   enforcement. Retirement record:
+   [`skill-drift.md`](../skills/skill-drift.md).
 5. **Genericize `bluefin-lts`'s `check-skill-docs.py`.** It's the only real
    link-integrity + directory/name-consistency validator anywhere in the
    factory. `common`'s own `check-skill-frontmatter.sh` /

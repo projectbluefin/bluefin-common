@@ -162,7 +162,6 @@ SHA-pinning internal `projectbluefin/` workflow refs causes a factory cascade: e
 
 | Caller file | Repo(s) | Calls | Ref |
 |---|---|---|---|
-| `lifecycle-caller.yml` | common | `projectbluefin/actions/.github/workflows/lifecycle.yml` | `@main` |
 | `bonedigger.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml` | `@v1` |
 | `run-testsuite.yml` | bluefin, bluefin-lts, dakota | `projectbluefin/testsuite/.github/workflows/e2e.yml` | `@main` |
 
@@ -204,7 +203,7 @@ uses: projectbluefin/testsuite/.github/workflows/e2e.yml@main  # CORRECT — int
 ### Repos with managed tags (exempt)
 
 All `projectbluefin/` internal refs are exempt from the hook. Current usage:
-- `projectbluefin/actions` — `@v1` (common, bluefin, bluefin-lts, dakota build workflows) or `@main` (lifecycle-caller)
+- `projectbluefin/actions` — `@v1` (common, bluefin, bluefin-lts, dakota build workflows)
 - `projectbluefin/bonedigger` — `@v1` maintained by bonedigger release process
 - `projectbluefin/testsuite` — `@main` (managed floating tag, same policy as all internal refs)
 
@@ -246,29 +245,26 @@ Pinning the raw URL to a commit avoids silent schema drift on the next pre-commi
 
 ## Skill drift detection
 
-**`common` does not run `skill-drift.yml`.** Do not add it.
+**Retired across the factory. Do not re-add it in any repo.**
 
-Reason: AGENTS.md policy — *"Process conventions are self-enforced by agents. Never implement a process convention as a CI gate."* Skill update discipline lives in the agentic review loop, not in CI exit codes. A PR that ships a valid OCI improvement without a skill-doc update should not be blocked.
+`skill-drift.yml` never enforced anything. It called the reusable workflow
+`projectbluefin/actions/.github/workflows/skill-drift-check.yml`, whose real
+logic was removed in `actions@001ae97` and replaced with a compatibility stub
+in `actions@a7c230c`. The stub echoed `"Skill drift check removed. Delete
+skill-drift.yml from consumer repo."` and exited successfully without
+inspecting a single changed path.
 
-Other projectbluefin repos (bluefin, bluefin-lts, dakota, knuckle, testsuite) run their own `skill-drift.yml` — that is their choice. The rule above applies only to `common`, so `common` is intentionally absent from the repo path mapping below.
+Five repos (bluefin, bluefin-lts, dakota, knuckle, testsuite) called that stub
+on every PR and received a silent green result regardless of what changed.
+`common` never wired it up. The callers and the stub have since been deleted.
 
-**Workflow (other repos):** `skill-drift.yml` calls the reusable workflow `projectbluefin/actions/.github/workflows/skill-drift-check.yml` at a pinned commit SHA (so the local floating-tag guard does not reject the caller). **That reusable workflow is currently a no-op stub** — its real logic was removed (`actions@001ae97`) and replaced with a compatibility stub (`actions@a7c230c`) that always succeeds without checking anything. Full detail: [`skill-drift.md`](./skill-drift.md#current-status-non-functional).
+Skill-update discipline is enforced at developer time by `pre-commit` and by
+the self-repair loop in [`skill-improvement.md`](./skill-improvement.md) — not
+by a CI exit code. Per [`agentic-model.md`](../factory/agentic-model.md), the
+aggregate `pre-commit` step is the only place a process convention may fail a
+build; bespoke per-convention CI jobs are banned.
 
-### Repo path mapping (other repos only — not `common`)
-
-| Repo | code-paths | skill-paths |
-|---|---|---|
-| bluefin | `.github/workflows/**`, `build_files/**`, `Justfile`, `recipes/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
-| bluefin-lts | `.github/workflows/**`, `build_files/**`, `Justfile` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
-| dakota | `.github/workflows/**`, `build_files/**`, `Justfile`, `elements/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
-| knuckle | `.github/workflows/**`, `cmd/**`, `internal/**`, `Justfile`, `scripts/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
-| testsuite | `.github/workflows/**`, `.github/actions/**`, `tests/**`, `scripts/**` | `docs/skills/**`, `docs/*.md`, `AGENTS.md` |
-
-### When it fires
-
-Designed to fire when a PR touches any repo's `code-paths` without also touching one of its `skill-paths`. **Right now it cannot fire at all** — the shared workflow is a no-op stub, so every consuming repo gets a silent, always-green result regardless of what changed. Do not treat it as enforcement until the reusable workflow is rebuilt.
-
-Full path-to-skill mapping and waiver process: [`skill-drift.md`](./skill-drift.md)
+Retirement record: [`skill-drift.md`](./skill-drift.md)
 
 ---
 

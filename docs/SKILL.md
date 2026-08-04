@@ -55,7 +55,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Work with NVIDIA GPU support | [`nvidia.md`](skills/nvidia.md) |
 | Work with OEM first-boot hooks | [`oem-hardware-hooks.md`](skills/oem-hardware-hooks.md) |
 | Understand MIME defaults | [`mime-defaults.md`](skills/mime-defaults.md) |
-| Understand skill-drift CI check | [`skill-drift.md`](skills/skill-drift.md) |
+| Understand why skill-drift was retired | [`skill-drift.md`](skills/skill-drift.md) |
 | Decide whether / how to update a skill | [`skill-improvement.md`](skills/skill-improvement.md) |
 | Author a new skill | [`write-a-skill.md`](skills/write-a-skill.md) |
 | Understand bonedigger lifecycle | [`bonedigger.md`](skills/bonedigger.md) |

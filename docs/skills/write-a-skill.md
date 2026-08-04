@@ -13,7 +13,7 @@ dependencies: []
 tags: [skills, authoring, documentation]
 description: >-
   Author a new agent skill for projectbluefin/common. Covers front-matter,
-  size budget, canonical linking, verification sections, and the skill-drift
+  size budget, canonical linking, verification sections, and the skill-update
   mandate. Use when creating a new docs/skills/*.md file or splitting an
   oversized skill.
 metadata:
@@ -168,14 +168,17 @@ A well-formed skill contains:
 3. `## Red Flags` — mistakes that violate repo policy.
 4. `## Verification` — commands to self-check project-internal facts.
 
-## The skill-drift mandate
+## The skill-update mandate
 
 Every implementation PR must include a matching skill update in the same PR.
-The skill-drift CI check warns when code paths change without a corresponding
-skill-path change. Treat warnings as hard requirements.
+
+There is no CI check for this. The `skill-drift.yml` workflow was retired
+across the factory because it never enforced anything — see
+[`skill-drift.md`](./skill-drift.md). The obligation is enforced by review, by
+`pre-commit`, and by the self-repair loop.
 
 - Why: [`skill-improvement.md`](./skill-improvement.md)
-- How the check works and waiver process: [`skill-drift.md`](./skill-drift.md)
+- Why the CI check was retired: [`skill-drift.md`](./skill-drift.md)
 
 ## Verification
 

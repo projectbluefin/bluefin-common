@@ -12,13 +12,11 @@ Closes #
 ## PR pipeline
 
 ```
-opened ──▶ review ──▶ approved ──▶ merged
-                    [lgtm]      auto-merge
-                                when CI green
+opened ──▶ 4-review ──▶ approved ──▶ merged
 ```
 
-> Add `do-not-merge` at any time to block automation.
-> `/approve` or `lgtm` from a maintainer triggers merge queue.
+> A maintainer reviews and approves; merge goes through the merge queue.
+> Select `blocked` or `hold` to pause the work.
 
 ## Checklist
 

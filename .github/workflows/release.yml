@@ -44,16 +44,16 @@ jobs:
             fi
           fi
 
-          # Skip if do-not-merge PRs are open against main
+          # Skip if any PR against main is intentionally paused
           DNM_COUNT=$(gh pr list \
             --repo "$GITHUB_REPOSITORY" \
-            --label "do-not-merge" \
+            --search "label:hold" \
             --base main \
             --json number \
             --jq 'length')
 
           if [ "$DNM_COUNT" -gt 0 ]; then
-            echo "::warning::${DNM_COUNT} do-not-merge PRs open — skipping release"
+            echo "::warning::${DNM_COUNT} PRs on hold — skipping release"
             echo "due=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi

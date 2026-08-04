@@ -42,7 +42,7 @@ A `common` release is safe when **all** of the following are true:
 | Criterion | How to verify |
 |---|---|
 | Post-merge E2E is green | Check `.github/workflows/e2e.yml` run on latest `main` commit |
-| No open `do-not-merge` PRs targeting `main` | `gh pr list --repo projectbluefin/common --label do-not-merge` |
+| No PRs on `hold` targeting `main` | `gh pr list --repo projectbluefin/common --search "label:hold" --base main` |
 | No open P0 issues | `~/src/hive-status` — zero 🔴 blockers |
 | Promotion-candidate E2E passed this week | Check `.github/workflows/promotion-candidate-e2e.yml` (runs Tuesdays) — no open blocker issue from it |
 

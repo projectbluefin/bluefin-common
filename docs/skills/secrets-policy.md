@@ -48,7 +48,7 @@ Additions require a **security review issue** in `projectbluefin/common` before 
 ## Rules
 
 1. **No new PATs.** If you think you need a PAT, you don't. Use `GITHUB_TOKEN` or a GitHub App token.
-2. **No new secrets without a security review issue.** File an issue in `projectbluefin/common` tagged `kind/security` before provisioning or referencing any new secret name.
+2. **No new secrets without a security review issue.** File an issue in `projectbluefin/common` describing the security review before provisioning or referencing any new secret name.
 3. **GitHub App tokens for cross-repo bot operations.** MERGERAPTOR and BLUEFINBOT are the approved bots. Adding a new bot requires maintainer approval.
 4. **`SIGNING_SECRET` is frozen.** It will be removed when keyless signing migration (#513) lands. Do not reference it in any new workflow.
 5. **Infrastructure keys** (`CASD_CLIENT_KEY`, Cloudflare R2 keys) are reviewed at provisioning time by org admins and frozen thereafter.

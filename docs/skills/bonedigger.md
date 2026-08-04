@@ -51,7 +51,7 @@ user runs ujust report
        └─ scrubs PII on-device and previews the payload
             └─ creates a structured issue in the target image repo
                  └─ lifecycle bot moves issue through pipeline
-                      └─ kubestellar-bot picks up status/queued issue
+                      └─ kubestellar-bot picks up 3-clanker-queue issue
                            └─ dispatches agent to implement fix
                                 └─ PR shipped back to image repo
                                      └─ merged → better OS
@@ -63,10 +63,11 @@ user runs ujust report
 
 bonedigger has two functions:
 
-1. **ujust report detection** - when an issue is filed via `ujust report` on a live system, bonedigger detects the diagnostic signature and sets `source:ujust-report`
-2. **Priority auto-escalation** - tracks `ujust confirm` counts and escalates:
-   - 3+ confirms → adds `priority/p1`
-   - 5+ confirms → adds `priority/p0`
+1. **ujust report intake** - detects the diagnostic signature of an issue filed
+   via `ujust report` on a live system
+2. **Confirmation tracking** - records `ujust report --confirm` counts on the
+   issue so triage can see how many machines are affected. Confirmations are
+   evidence for a human priority call, not a label transition.
 
 **Packaging note:** in common, keep `ujust report` as a thin recipe wrapper in
 `system_files/bluefin/usr/share/ublue-os/just/60-bonedigger.just` and put the
@@ -98,7 +99,7 @@ required and authenticated; if it is absent, the user can consent to
 `brew install gh`. Failed or declined submissions retain a draft and print its
 exact `ujust report --resume …` command. The visible `ujust report` report
 heading remains the intake compatibility marker rather than making issue
-creation depend on a `source:ujust-report` label.
+creation depend on a label.
 
 ### Confirm an existing issue
 
@@ -120,19 +121,17 @@ QR login is intentionally out of scope.
 
 ## bonedigger — what it does NOT do
 
-The **full** issue lifecycle (slash commands, pipeline widget, label
-transitions, stale sweep, auto-merge on lgtm) lives in
-`projectbluefin/actions/.github/workflows/lifecycle.yml` and serves the factory
-as a single reusable workflow.
-
-bonedigger **does** still provide its own slim `lifecycle.yml` for bonedigger-specific features: agent donation fast-track and ujust-report intake. This is called separately from the actions lifecycle — see Integration status below.
+bonedigger does not own the seven-label workflow. It provides a slim
+`lifecycle.yml` scoped to ujust-report intake, which `bluefin`, `bluefin-lts`,
+`dakota`, and `knuckle` call through their own `bonedigger.yml`. `common` has no
+lifecycle caller.
 
 See [`label-workflow.md`](./label-workflow.md) for the full lifecycle reference.
 
 ## kubestellar-bot - what it does
 
 kubestellar-bot is the implementation agent layer. It:
-- Monitors `status/queued` issues across all factory repos
+- Monitors `3-clanker-queue` issues across all factory repos
 - Dispatches agents to claim and implement fixes
 - Manages the PR lifecycle from claim → ship
 - Reports progress back to the hive dashboard
@@ -145,12 +144,12 @@ The factory has two lifecycle workflows serving different purposes:
 
 | Workflow | Location | Called by | Purpose |
 |---|---|---|---|
-| Full lifecycle | `projectbluefin/actions/.github/workflows/lifecycle.yml@main` | `common` via `lifecycle-caller.yml` | Pipeline widget, slash commands, label transitions, stale sweep, auto-merge |
+| ujust-report intake | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` | `bluefin`, `bluefin-lts`, `dakota`, `knuckle` via `bonedigger.yml` | Report detection and confirmation tracking |
 | bonedigger slim | `projectbluefin/bonedigger/.github/workflows/lifecycle.yml@main` | `bluefin`, `bluefin-lts`, `dakota` via `bonedigger.yml` | Agent donation fast-track, ujust-report intake |
 
 All internal `projectbluefin/` workflow refs use `@main` — **not SHA pins**. SHA pins on internal refs caused repeated `startup_failure` cascades when pins drifted; the pre-commit floating-tag guard already exempts `projectbluefin/*`. See [`ci-tooling.md`](./ci-tooling.md) § Internal refs.
 
-If you find a `lifecycle-caller.yml` still pointing at `projectbluefin/common`, it is stale — delete it or update the target to `projectbluefin/actions`.
+There is no `lifecycle-caller.yml` in the factory. If you find one, it is stale — delete it.
 
 bonedigger’s `sync-templates.yml` continues to propagate issue templates to factory repos.
 
