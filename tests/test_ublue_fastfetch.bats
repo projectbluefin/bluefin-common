@@ -50,6 +50,14 @@ teardown() {
     rm -rf "${WORKDIR}"
 }
 
+@test "ublue-fastfetch: exits cleanly when fastfetch is unavailable" {
+    mkdir -p "${WORKDIR}/empty-bin"
+    run env PATH="${WORKDIR}/empty-bin:/usr/bin:/bin" \
+        /bin/bash "${SCRIPT_UNDER_TEST}"
+    [ "${status}" -eq 0 ]
+    [ ! -f "${WORKDIR}/fastfetch.log" ]
+}
+
 @test "ublue-fastfetch: invokes fastfetch without --logo when shuffle disabled" {
     run bash "${SCRIPT_UNDER_TEST}"
     [ "${status}" -eq 0 ]
