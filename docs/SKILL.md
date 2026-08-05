@@ -29,6 +29,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Know when to stop and ask a human | [`human-gates.md`](skills/human-gates.md) |
 | Understand issue lifecycle / labels | [`label-workflow.md`](skills/label-workflow.md) |
 | Check PR queue or merge ruleset | [`queue-dashboard.md`](skills/queue-dashboard.md) |
+| Validate the Project Bluefin static pull-request queue feed | [`queue-feed.md`](skills/queue-feed.md) |
 | Review an incoming PR | [`pr-review.md`](skills/pr-review.md) |
 | Understand the hive / kubestellar-bot loop | [`hive.md`](skills/hive.md) |
 | Manage the canonical hosted Project Bluefin Hive | [`hosted-hive.md`](skills/hosted-hive.md) |
