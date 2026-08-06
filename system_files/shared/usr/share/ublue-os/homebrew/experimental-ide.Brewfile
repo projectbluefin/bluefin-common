@@ -1,4 +1,4 @@
-tap "ublue-os/experimental-tap"
+tap "ublue-os/experimental-tap", trusted: true
 cask "ublue-os/experimental-tap/cursor-linux"
 cask "ublue-os/experimental-tap/clion-linux"
 cask "ublue-os/experimental-tap/datagrip-linux"
@@ -12,3 +12,4 @@ cask "ublue-os/experimental-tap/rider-linux"
 cask "ublue-os/experimental-tap/rubymine-linux"
 cask "ublue-os/experimental-tap/rustrover-linux"
 cask "ublue-os/experimental-tap/webstorm-linux"
+cask "ublue-os/experimental-tap/zed-linux"

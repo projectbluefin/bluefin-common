@@ -1,104 +1,160 @@
-# bluefin-common — Fork Workflow Notes
+# bluefin-common — Agent Operating Contract
 
-> Project instructions (build, structure, labels): see upstream AGENTS.md (injected from system_files context).
-> This file adds fork-specific workflow context for castrojo/common.
+`bluefin-common` is the shared OCI layer consumed by `bluefin`, `bluefin-lts`,
+and `dakota`. Changes here propagate to every variant. Stay surgical.
 
-## Fork Identity
+## Read order
 
-- **Upstream:** projectbluefin/common
-- **Fork:** castrojo/common
-- **Role:** Primary planning hub and label authority for ALL bluefin ecosystem repos
+1. This file — repo rules, build commands, and boundaries.
+2. [`docs/SKILL.md`](docs/SKILL.md) — find the skill for your task and load it.
+3. [`docs/factory/agentic-model.md`](docs/factory/agentic-model.md) — cross-repo
+   rules if the task spans repos.
 
-## Critical Context
+For downstream factory onboarding, follow
+[`docs/skills/factory-onboarding.md`](docs/skills/factory-onboarding.md):
+target-repository authority comes first, common is a shared sidecar, and every
+task loop must self-repair safely and write back durable learning.
 
-This repo is the **source of truth** for:
-1. GitHub label schema across `projectbluefin/*` and `ublue-os/bluefin*` repos
-2. The GitHub Projects planning board for the entire Bluefin ecosystem
-3. Shared OCI configuration layer consumed by all Bluefin image variants
-
-**Label management scope** (only these repos — no others):
-- @projectbluefin/common
-- @projectbluefin/dakota (formerly distroless)
-- @ublue-os/bluefin
-- @ublue-os/bluefin-lts
-
-**Label rules:**
-- NEVER touch issues themselves — only labels
-- Colors must remain consistent across all four repos
-- `projectbluefin/common` is canonical; sync others to match it
-- Known drift exists — see project-notes.md for the full inventory
-
-## Session Start
+## Build, test, and lint
 
 ```bash
-git fetch upstream
-git log --oneline upstream/main..main   # must show ≤1 commit (this file)
-git rebase upstream/main && git push origin main --force-with-lease
-git submodule update --init --recursive
+just check                 # lint Justfile
+just test                  # pytest + bats
+just build                 # full OCI build (slow, requires podman + network)
+pre-commit run --all-files # yaml/json/sha/actionlint hygiene
 ```
 
-## Validation
+Run `just check` and `pre-commit run --all-files` before every commit.
+
+Full testing contract (what must be tested, hardware gate boundaries, coverage
+targets, exemptions): [`docs/TESTING.md`](docs/TESTING.md). Coding and
+configuration style conventions: [`docs/contributing/style-guide.md`](docs/contributing/style-guide.md).
+
+## Factory workflow and ownership
+
+Trust the Machines: workflows, branches, assignees, projects, and pull
+requests carry active state. Labels describe the next workflow step. A
+contributor or maintainer may select one canonical label to express intent;
+automation validates it, removes invalid combinations, and performs the
+resulting triage. Agents do not claim work with slash commands. Use the
+canonical contract in
+[`docs/skills/label-workflow.md`](docs/skills/label-workflow.md).
+
+Hive may select work for another monitored repository. Clankers is only the
+authenticated relay for that assignment; verify the assigned repository and
+issue before acting. It does not bypass human approval, review, or merge gates.
+
+This repository owns its own issue forms in `.github/ISSUE_TEMPLATE/`; there is
+one form, and it doubles as the contributor's introduction to the label
+workflow. The triager section of CODEOWNERS is owned here and synced
+to downstream factory repositories; edit downstream copies only when the
+repository-specific section is explicitly in scope. Never write to
+`ublue-os/*`.
+
+## Agent fast path
+
+- Read source before asserting project-internal facts (image names, tags,
+  workflow outputs). Use `gh api` to inspect workflows, not memory.
+- Look up external tool docs via Context7 first — see `docs/skills/context7.md`.
+- When a session surfaces a non-obvious pattern or workaround, update the
+  matching `docs/skills/*.md` file in the same PR.
+
+## Trust the Machines
+
+The factory is automation-first: workflows, branches, assignees, projects,
+PR linkages, and merge queues advance active work. Do not simulate workflow
+state by hand or invent transitions that are not implemented in the checkout.
+
+- The only labels are the seven names in
+  [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md). Select at
+  most one numbered workflow label, with `blocked` or `hold` as an optional
+  overlay; automation enforces the combination and routes the next action.
+- Humans provide intent through issue content, form fields, Hive metadata,
+  review, and explicit hold or routing decisions.
+- Agents implement assigned work and link it to a PR with `Closes #NNN`; they
+  do not manufacture queue state.
+- Reusable lifecycle automation belongs to `projectbluefin/actions`; bonedigger
+  owns report intake and report-specific automation. `common` documents and
+  consumes these contracts; it does not own their implementations.
+
+See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
+[`docs/factory/agentic-model.md`](docs/factory/agentic-model.md).
+
+## What agents may touch
+
+- `system_files/shared/` — global config (also consumed by Aurora).
+- `system_files/bluefin/` — GNOME/Bluefin-specific config only.
+- `system_files/nvidia/` — NVIDIA overlay.
+- `Justfile`, `Containerfile`, tests, `docs/`, `AGENTS.md`, and
+  `.github/workflows/`.
+
+## What agents must not touch
+
+- Any `ublue-os/*` repository (read-only; no writes of any kind).
+- Vendored files under `system_files/bluefin/usr/share/gnome-shell/extensions/`.
+- Org/app credential pairs; use `GITHUB_TOKEN` or provisioned GitHub Apps.
+
+## Doc-only push exception
+
+Changes that touch only `docs/**` and/or `AGENTS.md` may be pushed directly to
+`main` without a PR. Verify first:
 
 ```bash
-just check      # lint Justfile and all .just files
-just build      # full container build (slow — requires podman + network)
+git diff --cached --name-only  # must show only docs/* or AGENTS.md
 ```
 
-## Work Branch Flow
+**Everything else requires a branch + PR targeting `main`.**
 
-```bash
-git worktree add .worktrees/<branch> -b <type>/description
+## PR rules
+
+- Conventional Commits title (`feat:`, `fix:`, `docs:`, `ci:`, `refactor:`).
+- One logical change per PR.
+- Skill doc updated in the same PR when implementation context changed.
+- AI-authored commits include both attribution trailers as a convention:
+  ```
+  Assisted-by: <Model> via GitHub Copilot
+  Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+  ```
+- Ask before opening PRs autonomously; prepare the branch and diff first.
+- After pushing, verify CI is green:
+  `gh run list --repo projectbluefin/common --limit 5`.
+
+## Human decision gates
+
+Stop and request human input before: Design, Security, Breakage (cross-repo
+breaking changes), or Merge review. See `docs/skills/human-gates.md`.
+
+## Scope warning
+
+A broken change in `system_files/shared/` breaks `bluefin`, `bluefin-lts`,
+and `dakota` simultaneously. Test locally where possible.
+
+## Code ownership
+
+```
+system_files/shared/**   @inffy @renner0e @ledif @castrojo @hanthor @ahmedadan
+system_files/bluefin/**  @castrojo @hanthor @ahmedadan
+**/*.md                  @repires @KiKaraage @projectbluefin/maintainers
 ```
 
-Changes here propagate to ALL downstream Bluefin variants. Keep changes surgical.
+## Canonical sources
 
-## Submodule
+| Topic | Source |
+|---|---|
+| Factory org structure | `docs/factory/README.md` |
+| Cross-repo agent hard rules | `docs/factory/agentic-model.md` |
+| Issue lifecycle / labels | `docs/skills/label-workflow.md` |
+| CI tooling / SHA pinning | `docs/skills/ci-tooling.md` |
+| Image registry / tags | `docs/skills/image-registry.md` |
+| Skill improvement mandate | `docs/skills/skill-improvement.md` |
+| PR review checklist | `docs/skills/pr-review.md` |
+| Testing contract | `docs/TESTING.md` |
+| Coding / config style guide | `docs/contributing/style-guide.md` |
 
-`bluefin-branding` → projectbluefin/branding (wallpapers, logos).
-`just build` initializes it automatically.
+## See also
 
-## Ecosystem Fork Discipline
-
-All `ublue-os` and `projectbluefin` repos worked on must have a fork in the `castrojo` namespace.
-
-**Known bluefin ecosystem repos:**
-
-| Upstream | Fork | Local path |
-|---|---|---|
-| `ublue-os/bluefin` | `castrojo/bluefin` | `~/src/bluefin` |
-| `ublue-os/bluefin-lts` | `castrojo/bluefin-lts` | `~/src/bluefin-lts` |
-| `ublue-os/bluefin-docs` | `castrojo/bluefin-docs` | `~/src/bluefin-docs` |
-| `projectbluefin/common` | `castrojo/common` | `~/src/bluefin-common` |
-
-Fork `main` (and `lts` where applicable) must always be **at most 1 commit ahead of upstream** — that commit being the fork-only `AGENTS.md` + `.gitattributes` commit.
-
-For any repo not yet forked, run the `onboarding-a-repository` skill first.
-
-### Sync after upstream moves
-
-```bash
-git fetch upstream
-git rebase upstream/main
-git push origin main --force-with-lease
-```
-
-Work branches are rebased onto freshly-synced `main` — never merged.
-
-### Signs a fork needs cleanup (hard-reset if any are true)
-
-- `git log upstream/main..main` shows more than 1 commit
-- Renovate bot commits appear on fork `main`
-- Old merge commits (`Merge branch 'ublue-os:main' into main`) are present
-
-```bash
-git fetch upstream
-git reset --hard upstream/main
-# re-apply fork-only commit
-git cherry-pick <agents-md-commit-sha>   # or re-create it
-git push origin main --force
-```
-
-## Extended Notes
-
-> Full architecture, label schema, drift inventory, and session reference:
-> `~/.config/opencode/plans/common/project-notes.md`
+- [`README.md`](README.md) — project overview for humans.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor quick start.
+- [`docs/skills/workflow-map.md`](docs/skills/workflow-map.md) — workflow index.
+- [`docs/TESTING.md`](docs/TESTING.md) — testing contract and coverage targets.
+- [`docs/contributing/style-guide.md`](docs/contributing/style-guide.md) — coding and configuration style guide.

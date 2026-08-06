@@ -9,9 +9,8 @@ jetbrains-toolbox:
 [group('Apps')]
 install-jetbrains-toolbox:
     #!/usr/bin/env bash
-    brew tap ublue-os/homebrew-tap
-    brew install --cask jetbrains-toolbox-linux
-
+    brew tap --trust ublue-os/tap
+    brew install --cask ublue-os/tap/jetbrains-toolbox-linux
 
 # Install OpenTabletDriver, an open source, cross-platform, user-mode tablet driver
 [group('Apps')]
@@ -26,8 +25,8 @@ install-opentabletdriver:
       OTD_TMPDIR="$(mktemp -d)"
 
       curl -s "https://api.github.com/repos/OpenTabletDriver/OpenTabletDriver/releases/latest" \
-        | jq -r '.assets | sort_by(.created_at) | .[] | select (.name|test("opentabletdriver.*tar.gz$")) | .browser_download_url' \
-        | wget -qi - -O - \
+        | jq -r '.assets[] | select(.name | test("opentabletdriver.*tar.gz$")) | .browser_download_url' \
+        | xargs curl -L -s \
         | tar --strip-components=1 -xvzf - -C "${OTD_TMPDIR}"
 
       # https://opentabletdriver.net/Wiki/Documentation/RequiredPermissions
@@ -48,28 +47,30 @@ install-opentabletdriver:
       flatpak --system remove -y flathub net.opentabletdriver.OpenTabletDriver
     fi
 
-# Install applications from curated Brewfiles (includes full-desktop.Brewfile with GNOME Circle apps)
-bbrew:
-    #!/usr/bin/env bash
-    if ! command -v bbrew &>/dev/null ; then
-        if gum confirm "Bold Brew is not installed, would you like to install it?" ; then
-            set -e
-            brew install Valkyrie00/homebrew-bbrew/bbrew
-            set +e
-        else
-            exit 0
-        fi
-    fi
-    echo "Note: Some of these take a while to load, we'll keep working on it."
-    bbrew -f "/usr/share/ublue-os/homebrew/$(gum choose $(find "/usr/share/ublue-os/homebrew"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile"
-
+# Install CNCF tools from curated Brewfile | run: bctl --screen developer
+[group('Apps')]
 cncf:
     #!/usr/bin/env bash
-    if ! command -v bbrew &>/dev/null ; then
-        if gum confirm "Bold Brew is not installed, would you like to install it?" ; then
-            brew install Valkyrie00/homebrew-bbrew/bbrew
-        else
-            exit 0
-        fi
-    fi
-    bbrew -f "/usr/share/ublue-os/homebrew/cncf.Brewfile"
+    brew bundle --file=/usr/share/ublue-os/homebrew/cncf.Brewfile
+    [[ -t 0 ]] && ujust --choose || true
+
+# Install ASUS laptop tools (asusctl daemon + ROG Control Center) | https://gitlab.com/asus-linux/asusctl
+[group('Apps')]
+install-asus:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "Installing ASUS laptop tools..."
+    brew tap --trust ublue-os/tap
+    brew install --cask ublue-os/tap/asusctl-linux
+    brew install --cask ublue-os/tap/rog-control-center-linux
+    echo ""
+    echo "Enabling system services..."
+    sudo systemctl enable --now asusd.service asus-shutdown.service
+    sudo udevadm control --reload
+    sudo udevadm trigger
+    echo ""
+    echo "Enabling user daemon..."
+    systemctl --user daemon-reload
+    systemctl --user enable --now asusd-user.service
+    echo ""
+    echo "ASUS tools installed! Run 'rog-control-center' or find it in your app launcher."

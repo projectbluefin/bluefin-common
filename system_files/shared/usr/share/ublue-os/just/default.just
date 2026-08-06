@@ -29,14 +29,26 @@ bios-info:
 clean-system:
     #!/usr/bin/bash
     if gum confirm "Prune all Podman images and volumes?"; then
-        podman image prune -af
-        podman volume prune -f
+        echo "Images that would be pruned:"
+        podman image ls --filter dangling=true --format "{{{{.Repository}}}}:{{{{.Tag}}}}  {{{{.ID}}}}" 2>/dev/null | head -20
+        echo "Volumes that would be pruned:"
+        podman volume ls --filter dangling=true --quiet 2>/dev/null | head -20
+        if gum confirm "Proceed with pruning Podman images and volumes?"; then
+            podman image prune -af
+            podman volume prune -f
+        fi
     fi
 
     if command -v docker >/dev/null 2>&1; then
       if gum confirm "Prune all Docker images and volumes?"; then
-        docker image prune -af
-        docker volume prune -f
+        echo "Images that would be pruned:"
+        docker image ls --filter dangling=true --format "{{{{.Repository}}}}:{{{{.Tag}}}}  {{{{.ID}}}}" 2>/dev/null | head -20
+        echo "Volumes that would be pruned:"
+        docker volume ls --filter dangling=true --quiet 2>/dev/null | head -20
+        if gum confirm "Proceed with pruning Docker images and volumes?"; then
+            docker image prune -af
+            docker volume prune -f
+        fi
       fi
     fi
 
@@ -66,21 +78,10 @@ enroll-secure-boot-key:
     echo 'At next reboot, the mokutil UEFI menu UI will be displayed (*QWERTY* keyboard input and navigation).\nThen, select "Enroll MOK", and input "universalblue" as the password'
 
 # Toggle display of the user-motd in terminal
+# Note: umotd manages its own state. Users who previously opted out via
+# ~/.config/no-show-user-motd will need to run this once to re-disable.
 toggle-user-motd:
-    #!/usr/bin/bash
-    if [ -e "${HOME}/.config/no-show-user-motd" ] ; then
-      if gum confirm "Would you like to enable the MOTD?" ; then
-        rm -f "${HOME}/.config/no-show-user-motd"
-        echo "MOTD will now be shown on login."
-        exit 0
-      fi
-    fi
-    if gum confirm "Would you like to disable the MOTD?" ; then
-      mkdir -p "${HOME}/.config"
-      touch "${HOME}/.config/no-show-user-motd"
-      echo "MOTD will not be shown anynow"
-      exit 0
-    fi
+    umotd toggle
 
 # Check for local overrides
 check-local-overrides:

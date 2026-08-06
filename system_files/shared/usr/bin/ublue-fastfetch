@@ -26,5 +26,3 @@ if [ "$SHUFFLE_LOGO" == "true" ] ; then
 else
   exec fastfetch --color "$(ublue-bling-fastfetch)" --config "${FASTFETCH_CONFIG}" "${@}"
 fi
-
-

@@ -1,0 +1,95 @@
+# Testing in `projectbluefin/common`
+
+This document is the testing contract for the `common` repo. Read it before
+adding a new script to `system_files/`.
+
+## Quick Start
+
+```bash
+just test          # run full test suite (pytest + bats)
+just check         # lint Justfile
+pre-commit run --all-files  # hygiene checks (shellcheck, yaml, sha-pinning)
+```
+
+## What Must Be Tested
+
+### Rule: new script in `system_files/*/usr/bin/` → new test file in `tests/`
+
+Every script added to `system_files/*/usr/bin/` must have either:
+1. A `tests/test_<scriptname>.bats` file covering its branching logic, OR
+2. A documented exemption in this file explaining why tests are not feasible.
+
+Profile scripts (`etc/profile.d/*.sh`) are **shellcheck-only** — they run on login
+and have no testable logic beyond syntax.
+
+## Test Frameworks
+
+| Language | Framework | File pattern |
+|----------|-----------|-------------|
+| Shell scripts | [bats-core](https://bats-core.readthedocs.io/) | `tests/test_*.bats` |
+| Python hooks | pytest | `tests/test_*.py` |
+
+**Do not introduce additional frameworks.** `bats` for shell, `pytest` for Python.
+
+## Hardware Gate Boundary
+
+Some scripts interact with hardware that cannot be present in CI:
+
+| Script | Hardware dependency | Test boundary |
+|--------|--------------------|--------------------|
+| `luks-tpm2-autounlock` | TPM2 chip | Test UUID parsing, device resolution, flag construction. Mock `gum` and `systemd-cryptenroll` via PATH. Full integration: `projectbluefin/testsuite`. |
+| Any script using `gum` | Interactive TTY | Mock `gum` via PATH stub in `tests/` setup. |
+
+**Never block CI on hardware.** Extract hardware-dependent calls behind mocked
+system boundaries.
+
+## Bats patterns and testability idioms
+
+Shell-specific bats patterns live in [`docs/skills/shell-scripts.md`](skills/shell-scripts.md).
+
+## Exemptions
+
+Scripts exempt from behavioral testing (shellcheck-only):
+
+| Script | Reason |
+|--------|--------|
+| `etc/profile.d/caffeinate.sh` | Profile.d sourced script — sets aliases only, no branching logic |
+| `etc/profile.d/uutils.sh` | Profile.d sourced script — PATH manipulation only |
+| `etc/profile.d/ublue-fastfetch.sh` | Profile.d sourced script — display only |
+| `etc/profile.d/ublue-motd.sh` | Profile.d sourced script — display only |
+| `etc/profile.d/umotd.sh` | Profile.d sourced script — display only |
+| `usr/share/ublue-os/bling/bling.sh` | Sourced helper — sets aliases/functions, no side effects |
+| `usr/share/ublue-os/bling/env.sh` | Sourced helper — sets env vars only |
+| `usr/share/ublue-os/user-setup.hooks.d/20-dynamic-wallpaper.sh` | One-shot hook — logic tested indirectly via setup integration tests |
+| `usr/bin/ublue-motd` | Display-only wrapper — cosmetic tput/glow call, no decision logic |
+| `usr/bin/ublue-image-info.sh` | Read-only reporting wrapper — jq + rpm-ostree status, no branching that affects system state |
+
+**Adding an exemption:** add a row to this table with a one-sentence justification.
+Do not add exemptions for scripts with branching logic.
+
+## Coverage Targets
+
+| Layer | Tool | Current target |
+|-------|------|---------------|
+| Python hooks | pytest-cov | 80% via `--cov-fail-under=80` gate in CI |
+| Shell scripts | shellcheck | 100% of all `.sh` + `usr/bin` scripts |
+| Shell behavior | bats | All `usr/bin` scripts with branching logic |
+
+## Test Files Reference
+
+| File | What it covers |
+|------|---------------|
+| `tests/test_hooks.py` | `system_files/bluefin/etc/bazaar/hooks.py` — Bazaar transaction hooks |
+| `tests/test_libsetup.bats` | `libsetup.sh` — `version-script()` function |
+| `tests/test_setup_scripts.bats` | `ublue-system-setup`, `ublue-user-setup` — hook runner logic |
+| `tests/test_privileged_setup.bats` | `ublue-privileged-setup` — privileged hook runner logic |
+| `tests/test_bling.bats` | `ublue-bling` — shell config injection install/uninstall |
+| `tests/test_luks_tpm2.bats` | `luks-tpm2-autounlock` — UUID parsing, device resolution, cryptenroll flag construction |
+| `tests/test_rechunker_group_fix.bats` | `rechunker-group-fix` — group/gshadow append, duplicate detection, format |
+| `tests/test_bling_fastfetch.bats` | `ublue-bling-fastfetch` — all 9 accent colors, dconf/gsettings fallback chain, FASTFETCH_FORCE_THEME override |
+| `tests/test_changelog.bats` | `changelog.just` — LTS/non-LTS repo selection, URL construction, exit behaviour |
+| `tests/test_ublue_fastfetch.bats` | `ublue-fastfetch` — config reads, shuffle branch, DEFAULT_THEME export to ublue-bling-fastfetch |
+
+## Quality Epic
+
+Ongoing test coverage improvement is tracked in [#553](https://github.com/projectbluefin/common/issues/553).
