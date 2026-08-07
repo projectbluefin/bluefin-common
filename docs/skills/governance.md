@@ -1,7 +1,7 @@
 ---
 name: governance
-version: "1.0"
-last_updated: "2026-07-20"
+version: "1.1"
+last_updated: "2026-08-06"
 id: governance
 one_line_purpose: Manage CODEOWNERS, triager roles, and governance sync.
 entry_point: docs/skills/governance.md
@@ -107,12 +107,19 @@ code-owner review is active.
 
 | Repo | Mechanism | Required approvals |
 |---|---|---|
-| `common` | Ruleset `main-review-required-with-renovate-bypass` | 1 |
+| `common` | Ruleset `main-review-required-with-renovate-bypass` | 0; no code-owner review required (verified live, see [Verification](#verification)) |
 | `bluefin` | Branch protection on `main` | 1 |
 | `bluefin-lts` | Branch protection on `main` | 1 |
 | `dakota` | Branch protection on `main` | 1 |
 | `knuckle` | Ruleset `main — merge queue` | 1 (merge queue) |
 | `lab` | Ruleset `main — merge queue` | 0; `lint` is required |
+
+`common`'s ruleset name says "review-required" but the live rule sets
+`required_approving_review_count: 0` and `require_code_owner_review: false`.
+The name is aspirational/historical — do not trust it over the live API
+response. The ruleset still blocks non-fast-forward pushes and branch
+deletion, and a separate `main — merge queue` ruleset enforces the
+`validate` and `Build and push image (x86_64|aarch64)` status checks.
 
 For any repository using a GitHub merge queue, every required check workflow must
 also subscribe to the `merge_group` event with `types: [checks_requested]`.
@@ -151,3 +158,19 @@ documented in [`label-workflow.md`](label-workflow.md) and applied per repositor
 there is no cross-repo label sync workflow.
 
 Full unification (claim TTL, heartbeat, linked-PR requirement, stale-claim recovery across all engines) was tracked in projectbluefin/common#409 — **closed/resolved**.
+
+## Verification
+
+- [ ] `common`'s live approval requirement matches the ruleset API, not the ruleset name:
+
+  ```bash
+  gh api repos/projectbluefin/common/rulesets --jq '.[] | {id, name}'
+  gh api repos/projectbluefin/common/rulesets/<id> \
+    --jq '.rules[] | select(.type == "pull_request") | .parameters | {required_approving_review_count, require_code_owner_review}'
+  ```
+
+  Expected today: `required_approving_review_count: 0`, `require_code_owner_review: false`
+  (verified 2026-08-06 against ruleset `main-review-required-with-renovate-bypass`,
+  id `17070417`).
+- [ ] `pre-commit run check-skill-frontmatter --all-files` passes.
+- [ ] `pre-commit run check-skill-index --all-files` passes.
