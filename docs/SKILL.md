@@ -29,7 +29,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Know when to stop and ask a human | [`human-gates.md`](skills/human-gates.md) |
 | Understand issue lifecycle / labels | [`label-workflow.md`](skills/label-workflow.md) |
 | Check PR queue or merge ruleset | [`queue-dashboard.md`](skills/queue-dashboard.md) |
-| Review an incoming PR | [`pr-review.md`](skills/pr-review.md) |
+| Review the PR / issue backlog (human-decides, agent-lands) | [`pr-review.md`](skills/pr-review.md) |
 | Understand the hive / kubestellar-bot loop | [`hive.md`](skills/hive.md) |
 | Manage the canonical hosted Project Bluefin Hive | [`hosted-hive.md`](skills/hosted-hive.md) |
 | Receive work through the Clankers relay | [`hosted-hive-clankers.md`](skills/hosted-hive-clankers.md) |
