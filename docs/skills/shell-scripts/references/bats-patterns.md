@@ -103,3 +103,29 @@ setup() {
     unset UWELCOME_SHOWN
 }
 ```
+
+## Bash DEBUG traps are invisible inside functions
+
+Without `set -o functrace`, bash does **not** inherit the `DEBUG` trap into
+shell functions. Two consequences bite when testing or writing prompt hooks:
+
+```bash
+f() { echo "[$(trap -p DEBUG)]"; }   # always prints [] — even when a trap is set
+g() { trap - DEBUG; }                # does NOT clear the caller's DEBUG trap
+h() { trap 'cmd' DEBUG; }            # DOES set the caller's DEBUG trap
+```
+
+So `trap -p DEBUG` is useless as a detector from inside a function, while
+`trap ... DEBUG` from inside a function is a reliable way to (re-)install one.
+
+For bats: `PROMPT_COMMAND` entries execute at **top level** in a real shell.
+Simulate a prompt cycle with a top-level loop, never a helper function —
+wrapping the cycle in a function hides `trap - DEBUG` clobbers entirely and
+makes the test pass vacuously.
+
+```bash
+CYCLE='for __e in "${PROMPT_COMMAND[@]}"; do eval "$__e"; done'
+```
+
+See `tests/test_bling_preexec_rearm.bats` and
+[#869](https://github.com/projectbluefin/common/issues/869).
