@@ -198,6 +198,23 @@ SETUP_CONFIG_FILE="${SETUP_CONFIG_FILE:-/etc/ublue-os/setup.json}"
 Tests export the override before running: `export CMDLINE_FILE="${WORKDIR}/cmdline"`.
 Used in: `luks-tpm2-autounlock` (CMDLINE_FILE, DISK_BY_UUID_DIR, DEV_DIR), `ublue-*-setup` (SETUP_CONFIG_FILE), `ublue-bling` (BLING_CLI_DIRECTORY, BLING_ENV_SCRIPT).
 
+### Guard optional runtime commands before doing work
+
+A shared wrapper may be copied into images whose package set does not include the
+command it delegates to. Check the executable before reading configuration or
+invoking helper commands so the wrapper remains a harmless no-op in those
+consumers:
+
+```bash
+if ! command -v fastfetch >/dev/null 2>&1; then
+    exit 0
+fi
+```
+
+Test the missing-command path with a restricted `PATH` and assert both a zero
+status and that the delegated command was not invoked. Keep the normal path
+covered separately with a PATH stub for the delegated executable.
+
 ### PATH-stub mocking for interactive commands
 
 ```bash

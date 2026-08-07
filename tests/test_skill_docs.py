@@ -12,6 +12,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CHECK_DOC_LINKS = REPO_ROOT / "scripts/check-doc-links.sh"
 CHECK_SKILL_FRONTMATTER = REPO_ROOT / "scripts/check-skill-frontmatter.sh"
+CHECK_SKILL_INDEX = REPO_ROOT / "scripts/check-skill-index.sh"
 GENERATE_SKILL_INDEX = REPO_ROOT / "scripts/generate_skill_index.py"
 
 
@@ -230,6 +231,41 @@ def test_check_skill_frontmatter_reports_missing_front_matter(
     assert "has no front-matter" in result.stdout
 
 
+def test_check_skill_index_passes_with_complete_links(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    skills = docs / "skills"
+    (skills / "nested").mkdir(parents=True)
+    (skills / "alpha.md").write_text("alpha\n")
+    (skills / "nested" / "SKILL.md").write_text("nested\n")
+    (docs / "SKILL.md").write_text(
+        "[Alpha](skills/alpha.md)\n[Nested](skills/nested/SKILL.md)\n"
+    )
+
+    result = run_script("bash", CHECK_SKILL_INDEX, tmp_path)
+
+    assert result.returncode == 0
+    assert result.stdout == ""
+    assert result.stderr == ""
+
+
+def test_check_skill_index_reports_missing_flat_and_nested_links(tmp_path: Path) -> None:
+    docs = tmp_path / "docs"
+    skills = docs / "skills"
+    (skills / "nested").mkdir(parents=True)
+    (skills / "alpha.md").write_text("alpha\n")
+    (skills / "nested" / "SKILL.md").write_text("nested\n")
+    (docs / "SKILL.md").write_text("# empty table\n")
+
+    result = run_script("bash", CHECK_SKILL_INDEX, tmp_path)
+
+    assert result.returncode == 1
+    assert "error: docs/SKILL.md is missing a link to skills/alpha.md" in result.stdout
+    assert (
+        "error: docs/SKILL.md is missing a link to skills/nested/SKILL.md"
+        in result.stdout
+    )
+
+
 def test_generate_skill_index_round_trip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo_root = make_skill_tree(tmp_path)
     mod = load_generate_skill_index()
@@ -249,6 +285,62 @@ def test_generate_skill_index_round_trip(tmp_path: Path, monkeypatch: pytest.Mon
 
     monkeypatch.setattr(sys, "argv", ["generate_skill_index.py", "--check"])
     assert mod.main() == 0
+
+
+def test_generate_skill_index_check_tolerates_stale_generated_at(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A `--check` run must not fail purely because `generated_at` no longer
+    matches today's date. Real-world PR CI runs on a different calendar day
+    than the last regeneration on main, and that alone is not staleness.
+    """
+    repo_root = make_skill_tree(tmp_path)
+    mod = load_generate_skill_index()
+    patch_skill_index_paths(mod, repo_root)
+
+    monkeypatch.setattr(sys, "argv", ["generate_skill_index.py", "--write"])
+    assert mod.main() == 0
+
+    index_path = repo_root / "docs" / "skills" / "index.json"
+    md_path = repo_root / "docs" / "skills" / "index.md"
+
+    # Simulate calendar drift: back-date the committed files without
+    # touching any skill content.
+    data = json.loads(index_path.read_text())
+    data["generated_at"] = "2020-01-01"
+    index_path.write_text(json.dumps(data, indent=2) + "\n")
+    md_text = md_path.read_text().replace(
+        f"Generated: {mod.date.today().isoformat()}", "Generated: 2020-01-01"
+    )
+    md_path.write_text(md_text)
+
+    monkeypatch.setattr(sys, "argv", ["generate_skill_index.py", "--check"])
+    assert mod.main() == 0
+
+
+def test_generate_skill_index_check_still_fails_on_real_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A genuine content change without regeneration must still fail
+    `--check` — the date-drift tolerance must not weaken this protection.
+    """
+    repo_root = make_skill_tree(tmp_path)
+    mod = load_generate_skill_index()
+    patch_skill_index_paths(mod, repo_root)
+
+    monkeypatch.setattr(sys, "argv", ["generate_skill_index.py", "--write"])
+    assert mod.main() == 0
+
+    # Modify a skill doc's front matter without regenerating the index.
+    zeta_path = repo_root / "docs" / "skills" / "zeta.md"
+    zeta_path.write_text(
+        zeta_path.read_text().replace("Zeta purpose", "Totally different purpose")
+    )
+
+    monkeypatch.setattr(sys, "argv", ["generate_skill_index.py", "--check"])
+    assert mod.main() == 1
+    captured = capsys.readouterr()
+    assert "index.json is stale" in captured.err
 
 
 def test_generate_skill_index_rejects_missing_entry_point(

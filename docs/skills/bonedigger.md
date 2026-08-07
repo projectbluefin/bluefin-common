@@ -1,7 +1,7 @@
 ---
 name: bonedigger
 version: "1.0"
-last_updated: "2026-07-30"
+last_updated: "2026-08-06"
 id: bonedigger
 one_line_purpose: Operate bonedigger and kubestellar-bot issue/report automation.
 entry_point: docs/skills/bonedigger.md
@@ -93,6 +93,12 @@ flow.
 Every payload is previewed locally. Submission requires explicit consent,
 uses `gh issue create` rather than a browser form, and offers final-submission
 queue preferences: `3-clanker-queue`, `3-human-queue`, or no queue label.
+GitHub silently drops labels requested by reporters without repository triage
+access, so the client also records a validated
+`bonedigger-queue-preference` marker in the issue body, including `none` when
+normal triage is selected. The write-enabled
+Bonedigger intake workflow applies that preference after creation. The direct
+`--label` argument remains as the fast path for reporters who do have access.
 Selected smart logs are
 published to a public gist only after that preview and consent. `gh` is
 required and authenticated; if it is absent, the user can consent to
@@ -167,7 +173,10 @@ the bonedigger repo. Use the mergeraptor app token rather than a PAT.
 `/usr/libexec/bonedigger-report` stores a submission draft in the user's state
 directory before any public upload. On a failed or declined submission, retain
 that draft and print its exact `ujust report --resume …` command so reports are
-not lost.
+not lost. After a successful issue submission, copy the report body from the
+ draft into `$XDG_STATE_HOME/ujust-report/last/` before removing the draft. Keep
+ copy operations conditional on each source file: optional report artifacts may
+ not exist, and `cp` must never make a successful report fail with `cannot stat`.
 
 ## Common Rationalizations
 

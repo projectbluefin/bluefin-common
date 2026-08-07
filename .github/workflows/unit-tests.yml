@@ -118,6 +118,9 @@ jobs:
       - name: Run bats (oem-brew hook)
         run: bats tests/test_oem_brew.bats
 
+      - name: Run bats (bonedigger report)
+        run: bats tests/test_bonedigger_report.bats
+
       - name: Smoke-test brew bundle accepts preinstall Brewfile (real Homebrew)
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"

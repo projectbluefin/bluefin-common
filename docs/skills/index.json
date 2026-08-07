@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-05",
+  "generated_at": "2026-08-06",
   "schema_version": "1.0",
   "skills": [
     {
@@ -34,7 +34,7 @@
       ],
       "description": "bonedigger + kubestellar-bot lifecycle automation. Use when working on ujust report, issue lifecycle, priority escalation, or how fixes ship back to images.",
       "version": "1.0",
-      "last_updated": "2026-07-30",
+      "last_updated": "2026-08-06",
       "doc_type": "reference"
     },
     {
@@ -256,8 +256,8 @@
         "lifecycle"
       ],
       "description": "Triagers role, CODEOWNERS sentinel pattern, cross-repo sync workflow, and branch protection matrix for projectbluefin repos. Use when managing CODEOWNERS, adding/removing triager permissions, or syncing governance policy across repos.",
-      "version": "1.0",
-      "last_updated": "2026-07-20",
+      "version": "1.1",
+      "last_updated": "2026-08-06",
       "doc_type": "reference"
     },
     {
@@ -492,19 +492,20 @@
     {
       "id": "pr-review",
       "name": "pr-review",
-      "one_line_purpose": "Review PRs against common's CI gates and report template.",
-      "entry_point": "docs/skills/pr-review.md",
+      "one_line_purpose": "Run human-decides, agent-lands backlog review one card at a time.",
+      "entry_point": "docs/skills/pr-review/SKILL.md",
       "category": "ci-ops",
       "status": "active",
       "tags": [
         "review",
-        "testing",
-        "contributing"
+        "merge",
+        "triage",
+        "backlog"
       ],
-      "description": "PR reviewer's guide for projectbluefin/common. Use when reviewing PRs, interpreting CI gates, or following the review report template.",
-      "version": "2.0",
-      "last_updated": "2026-06-24",
-      "doc_type": "reference"
+      "description": "Human-decides, agent-lands PR and issue backlog review. Present one card at a time, take the human verdict, execute it immediately, then advance. Use when reviewing the PR queue or triaging the issue backlog.",
+      "version": "3.3",
+      "last_updated": "2026-08-07",
+      "doc_type": "procedure"
     },
     {
       "id": "qa",
@@ -519,23 +520,6 @@
         "issues"
       ],
       "description": "QA model, test coverage matrix, promotion gates by repo, hardware gap, and how to run the test suite for projectbluefin factory repos. Use when understanding QA coverage, running tests, or checking promotion gate status.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
-      "doc_type": "reference"
-    },
-    {
-      "id": "queue-dashboard",
-      "name": "queue-dashboard",
-      "one_line_purpose": "Triage the PR review and merge queue for common.",
-      "entry_point": "docs/skills/queue-dashboard.md",
-      "category": "ci-ops",
-      "status": "active",
-      "tags": [
-        "queue",
-        "issues",
-        "dashboard"
-      ],
-      "description": "PR review and merge queue workflow for projectbluefin/common \u2014 ruleset, triage tiers, rebase patterns, and actions for each PR state. Use when reviewing open PRs, understanding the merge ruleset, or deciding how to handle a stalled PR.",
       "version": "1.0",
       "last_updated": "2026-06-23",
       "doc_type": "reference"
