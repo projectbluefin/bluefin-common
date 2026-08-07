@@ -1,440 +1,299 @@
 ---
 name: pr-review
-version: "2.0"
-last_updated: "2026-06-24"
+version: "3.0"
+last_updated: "2026-08-06"
 id: pr-review
-one_line_purpose: Review PRs against common's CI gates and report template.
+one_line_purpose: Run human-decides, agent-lands backlog review in batches of five.
 entry_point: docs/skills/pr-review.md
 category: ci-ops
 mcp_compliance_level: partial
 optimization_status: draft
 status: active
 dependencies: []
-tags: [review, testing, contributing]
+tags: [review, merge, triage, backlog]
 description: >-
-  PR reviewer's guide for projectbluefin/common. Use when reviewing PRs,
-  interpreting CI gates, or following the review report template.
+  Human-decides, agent-lands PR and issue backlog review. Assemble a 5-item
+  dossier, collect per-item human verdicts, stage gh commands, land on confirm.
+  Use when reviewing the PR queue or triaging the issue backlog.
 metadata:
-  type: reference
+  type: procedure
 ---
 
-# PR Review Guide — projectbluefin/common
+# Backlog Review — Human Decides, Agent Lands
 
-`projectbluefin/common` is the shared OCI layer consumed by every downstream variant (bluefin, bluefin-lts, dakota). A broken `system_files/shared/` change cascades to all three simultaneously. Consistent, thorough review prevents those regressions from reaching users.
+The agent assembles facts and executes commands. The human makes every
+approval, merge, close, and label decision. No exceptions.
 
-This guide documents PR type taxonomy, per-type review checklists, CI gate interpretation, OEM hook review, test quality standards, and the review report template — built from live review sessions on PRs #760, #767, #768, #769, and #785.
+## Contents
 
-> **Lab testing moved (2026-06-24, restructured 2026-07-29):** Lab verification scope, quick-start YAMLs, and infrastructure live in [`lab-testing/SKILL.md`](lab-testing/SKILL.md). The baseline-vs-delta methodology and worked examples (PR #768, #769, #767) live in [`lab-testing/references/pr-review-baselines.md`](lab-testing/references/pr-review-baselines.md); the composed-image testing pattern lives in [`lab-testing/references/methodology.md`](lab-testing/references/methodology.md). This file focuses on review procedure and links out to those where lab verification is needed.
-
----
-
-## Agent-accelerated review lane
-
-Factory agents act as an additional quality layer alongside human reviewers. Because agents can submit and monitor many cluster smoke tests in parallel, they are authorized to accelerate the review of **low-risk, automated PRs** — specifically Renovate/chore dependency updates — in the RPM-based image repos (`common`, `bluefin`, `bluefin-lts`).
-
-### Workflow
-
-1. Identify PRs labelled `dependencies`, `chore/deps`, or with a `chore(deps):*` title (Renovate / mergeraptor / Dependabot).
-2. Submit a cluster smoke test via `bluefin-qa-pipeline` using the appropriate `:testing` image:
-   - `common` PR → `ghcr.io/projectbluefin/bluefin:testing`
-   - `bluefin-lts` PR → `ghcr.io/projectbluefin/bluefin-lts:testing`
-3. Poll to completion and collect logs.
-4. On **pass**: post a Vanguard Lab Strike Report and an approving review. Enable auto-merge so the change lands in the testing branch.
-5. On **fail**: post a Vanguard Lab Strike Report with diagnostics, apply `agent/blocked`, and leave the PR for human triage. Do **not** approve.
-
-### Scope limits
-
-- Applies only to dependency/chore PRs that do not touch `system_files/`, `Containerfile`, or CI workflow logic that affects artifact provenance.
-- Dakota (BST) is excluded when BST builds are known broken.
-- `actions` repo PRs are excluded unless the changed action is exercised by a consumer image build; most Actions dependency bumps should still go through normal maintainer review.
-- If a maintainer has already requested changes, the agent must not override that review.
-
-### Trust model
-
-The cluster smoke test is the ground truth. A passing smoke test on the relevant `:testing` image is sufficient to land a low-risk dependency bump into the testing branch. Human review is still required for `system_files/`, `Containerfile`, and non-Routine PRs.
+- [When to Use](#when-to-use)
+- [Core Process](#core-process)
+- [Issue Triage Sweep](#issue-triage-sweep)
+- [Blast Radius Map](#blast-radius-map)
+- [Merge Queue Defaults](#merge-queue-defaults)
+- [Worked Example](#worked-example)
+- [Red Flags](#red-flags)
+- [Verification](#verification)
+- [See Also](#see-also)
 
 ---
 
-## PR type taxonomy
+## When to Use
 
-Identify the PR type first. It determines blast radius, review depth, and whether lab testing is needed.
+- Reviewing the open PR queue.
+- Triaging the open issue backlog.
+- A maintainer asks to "work through the backlog."
 
-| Type | Paths touched | Blast radius | Lab needed? |
-|---|---|---|---|
-| `systemd unit` | `system_files/shared/**/*.service`, `system_files/shared/**/*.timer`, `system_files/shared/**/*.path` | ALL variants | Yes |
-| `systemd unit (nvidia)` | `system_files/nvidia/**/*.service` | nvidia images only | nvidia VM |
-| `shell script` | `system_files/shared/usr/libexec/**`, `system_files/shared/usr/bin/**` | ALL variants | If behavior-changing |
-| `dconf / GSettings` | `system_files/shared/**/*.gschema.override`, `system_files/shared/**/*.d/*.conf` | ALL variants | Optional |
-| `OEM hardware hook` | `system_files/shared/usr/share/ublue-os/user-setup.hooks.d/**`, `system_files/shared/usr/share/ublue-os/system-setup.hooks.d/**` | Scoped to DMI gate | If DMI gate changed |
-| `test addition` | `tests/**` | None (tests only) | No — run `just test` |
-| `CI workflow` | `.github/workflows/**` | CI pipeline | No, but needs maintainer review |
-| `doc / skill update` | `docs/**`, `AGENTS.md` | None | No — doc-only exception, push direct to main |
-| `Containerfile` | `Containerfile` | ALL variants | Yes |
+## Core Process
 
-For lab testing scope by changed path and quick-start YAMLs, see [`lab-testing/SKILL.md`](lab-testing/SKILL.md); for the baseline-vs-delta methodology, see [`lab-testing/references/pr-review-baselines.md`](lab-testing/references/pr-review-baselines.md).
+The loop: **dossier → verdict → stage → land.**
 
----
+### 1 — Dossier
 
-## Universal checklist
+Assemble exactly **5** PRs (or issues). Present each as a one-screen card.
 
-Apply to every PR regardless of type:
+**Card fields** (all required):
 
-- [ ] `just check` passes (Justfile lint)
-- [ ] `pre-commit run --all-files` passes (JSON/YAML/TOML hygiene, actionlint, SHA pinning)
-- [ ] PR title follows Conventional Commits format (`feat:`, `fix:`, `chore(deps):`, `docs:`, etc.)
-- [ ] All `uses:` references to external GitHub Actions are SHA-pinned with a version comment — no `@main`, `@latest`, or `@v*` floating tags
-- [ ] If `system_files/shared/`: blast radius acknowledged — change affects bluefin, bluefin-lts, AND dakota
-- [ ] `system_files/` changes have lab verification or passing E2E CI before merge
-
----
-
-## Per-type review checklists
-
-### systemd unit
-
-- [ ] `WantedBy=` target matches the intended boot path:
-  - `multi-user.target` for network services, update daemons, background tasks — runs on all boots including headless
-  - `graphical.target` only if the service genuinely requires a graphical session (e.g., GNOME-specific D-Bus activation)
-  - **Do not downgrade `multi-user.target` to `graphical.target`** unless the service truly needs GNOME — this silently drops the service on non-graphical boots (PR #767: `flatpak-appstream-firstboot.service` was incorrectly changed to `graphical.target`)
-- [ ] `StartLimitBurst=` and `StartLimitIntervalSec=` are in `[Unit]`, not `[Service]` — systemd ignores them in `[Service]` (PR #767: these were in wrong section)
-- [ ] `Restart=on-failure` interaction with conditions:
-  - `ConditionACPower=true` — if AC condition fails (not met), systemd exits `SERVICE_SKIP_CONDITION` (exit 0 from systemd's perspective), which does NOT trigger `Restart=on-failure`. Transient condition-skip is silent.
-  - `ExecCondition=` — same behavior: skip-condition exits are not failures. A service that installs, then fails a later step, may be silently skipped on restart if the install step's check returns non-zero on re-entry (PR #769: GL runtime already installed → ExecCondition exits non-zero → unit skips on Restart)
-- [ ] `StartLimitBurst=1` combined with rate-limiting window: if the service can be legitimately triggered multiple times in the window (e.g., brief AC plug-in fires udev → service starts → AC unplugged before activation → real plug-in later is silently dropped), consider whether the rate limit is correct (PR #768)
-- [ ] `After=` includes ordering dependencies that `Wants=` alone does not provide — `Wants=network-online.target` does not guarantee network is up before the unit starts; add `After=network-online.target` if ordering matters (PR #768: `uupd.timer` missing `After=`)
-- [ ] `TimeoutStartSec=` is adequate for the work being done (e.g., large flatpak updates need 900s+, not 600s)
-- [ ] `RemainAfterExit=yes` is appropriate — correct for one-shot setup services that should stay "active" after completion
-- [ ] `[Install]` section: its absence is intentional for udev-started units (document in review); its presence is required for timer-started or manually-enabled units
-- [ ] **Enable mechanism present**: if `[Install]` / `WantedBy=` is set, confirm a preset file (`.preset`) or systemctl enable call will activate it in the built image — a unit file without an enable mechanism ships as a no-op (PR #767: preset existed in source but image pre-dated its merge, so service was disabled)
-- [ ] Service name reflects current behavior — if a "firstboot" service was generalized to run on every boot, the name should be updated (PR #767: service is no longer firstboot-only)
-
-### shell script
-
-- [ ] `shellcheck` passes — at minimum, run `shellcheck -S warning <file>`
-- [ ] SC1091 suppression (`. /path/to/sourced/file`): use `# shellcheck source=/path` annotation, not a blanket disable
-- [ ] Variable quoting — unquoted variables in conditionals and loops are common failure modes
-- [ ] Error handling — `set -euo pipefail` or explicit checks; silent failures in hooks cause hard-to-debug regressions
-- [ ] D-Bus / systemd calls in user hooks: `systemctl --user` needs `$DBUS_SESSION_BUS_ADDRESS` — confirm environment is available at hook execution time
-
-> **See also:** [`shell-scripts.md`](shell-scripts.md) for testability patterns (env-var override idiom, PATH-stub mocking, idempotent main guard, XDG isolation) and [`ci-tooling.md`](ci-tooling.md) § Shellcheck in validate.yml for CI config.
-
-### dconf / GSettings
-
-- [ ] Override file AND lock file change together — see [`dconf-consistency.md`](dconf-consistency.md)
-- [ ] Lock file path matches override key exactly (key in `00-common` → lock entry in `00-common.conf`)
-- [ ] `just check` catches parity mismatches via the dconf consistency checker
-
-### OEM hardware hook
-
-See the full OEM pattern section below. Quick checklist:
-
-- [ ] Version-script guard wraps idempotent-but-not-safe work; purely idempotent work lives outside it
-- [ ] DMI gate is scoped to the exact target hardware: `chassis_vendor` + `sys_vendor` + `product_name` (all three)
-- [ ] Version bump acknowledged: existing users re-run the versioned block — all code inside must be safe to re-run (brew install is idempotent; dconf writes and systemctl enables are safe to re-run)
-- [ ] WirePlumber fragments: written to user fragment dir (`~/.config/wireplumber/wireplumber.conf.d/`), not global system dir
-- [ ] Hook is executable and follows naming convention (`NN-description`)
-- [ ] **Brew availability early-exit**: brew-independent payloads (config file copies, WirePlumber fragments, etc.) are placed BEFORE the `BREW_BIN` check, not after it — if they are after, they silently don't run on first login when brew isn't yet available (PR #760)
-
-### test addition
-
-See the test quality checklist below. Quick checklist:
-
-- [ ] Full argv asserted, not substring membership — catches missing flags, wrong spawn wrapper, wrong ordering
-- [ ] Key kwargs verified (`start_new_session=True` for background spawns)
-- [ ] Mock expands full received command line in bats (not a collapsed label like `"mock: grubby update"`)
-- [ ] Test covers failure path, not only happy path
-- [ ] `just test` passes locally
-
-### CI workflow
-
-- [ ] All external `uses:` SHA-pinned — pre-commit enforces this, but verify in review
-- [ ] New composite actions sourced from `projectbluefin/actions` where a reusable exists — do not inline logic that already lives there
-- [ ] No inline supply chain steps (signing, SBOM, provenance) — consume composite actions from `projectbluefin/actions` instead
-- [ ] Sensitive paths (secrets, GHCR push, cosign) need maintainer eyes
-- [ ] Workflow name follows existing conventions in the repo
-
-> **See also:** [`ci-tooling.md`](ci-tooling.md) for SHA pinning policy and floating-tag guard. [`ci-pitfalls.md`](ci-pitfalls.md) for CI incident-log entries to watch for in review (branch-from-target, caller permissions starvation, workflow_run name matching).
-
----
-
-## CI gate interpretation
-
-| Check name | What it means | If it fails |
-|---|---|---|
-| `Build and push image` | OCI image composes successfully from Containerfile | Blocking — fix build error |
-| `Compose PR test image` | common layer composed for E2E gate | GHCR 504/timeout = transient, re-trigger the workflow |
-| `E2E — composed common suite` | GNOME common AT-SPI suite on composed image | Investigate test output; may be flaky — re-run once |
-| `test` | pytest + bats unit tests | Blocking — fix test failures |
-| `pre-commit` | SHA pinning, JSON/YAML/TOML hygiene, actionlint | Blocking — run `pre-commit run --all-files` locally |
-| `ghost-lab` | PR-specific lab test on KubeVirt cluster | Stale pending = needs requeue (see below) |
-| Renovate `dependencies` | Automated dependency update PR | Auto-merge on CI pass; agent may approve after passing ghost-lab smoke test (see Agent-accelerated review lane) |
-
-### Transient failures
-
-- **GHCR 504 on `Compose PR test image`**: This is a transient GitHub Container Registry timeout, not a code problem. Re-trigger the workflow with `gh workflow run` or the GitHub UI.
-- **`ghost-lab` stale pending**: The lab check can get stuck in a "pending" loop. Requeue via `gh api` (see below).
-
----
-
-## ghost-lab check — requeue a stale pending check
-
-The `ghost-lab` status check is set via the GitHub Checks API from the lab cluster. If it gets stuck in a pending state:
-
-```bash
-# Check current status
-gh api repos/projectbluefin/common/commits/<SHA>/check-runs \
-  --jq '.check_runs[] | select(.name == "ghost-lab") | {status, conclusion, html_url}'
-
-# Requeue by re-triggering the lab dispatch workflow
-gh workflow run ghost-lab-dispatch.yml \
-  --repo projectbluefin/common \
-  --ref <branch-name>
-
-# If the check run itself needs to be reset to queued:
-gh api repos/projectbluefin/common/check-runs/<check-run-id> \
-  -X PATCH \
-  --field status=queued
-```
-
-If the lab is unavailable, a maintainer can manually set the check to `success` with a note:
-
-```bash
-gh api repos/projectbluefin/common/statuses/<SHA> \
-  -X POST \
-  --field state=success \
-  --field context=ghost-lab \
-  --field description="manually cleared — lab unavailable"
-```
-
----
-
-## OEM hook review pattern
-
-OEM hardware first-boot hooks live in `system_files/shared/usr/share/ublue-os/user-setup.hooks.d/`. Full context is in [`oem-hardware-hooks.md`](oem-hardware-hooks.md).
-
-### Version-script guard
-
-```bash
-# Pattern: work inside the guard re-runs when version bumps
-run_if_new_version() {
-    local version="$1"
-    # ... checks ~/.local/share/ublue-os/user-setup-complete against $version
-}
-
-run_if_new_version "20260101" << 'EOF'
-  # Non-idempotent or expensive work — runs only when version > stored
-  dconf write /org/gnome/... "'value'"
-  systemctl --user enable some.service
-EOF
-
-# Idempotent-safe work — lives OUTSIDE the guard, runs every boot
-if is_this_hardware; then
-    brew install --cask some-app 2>/dev/null || true
-fi
-```
-
-- **Inside guard**: dconf writes, systemctl enables, one-time migration tasks
-- **Outside guard**: brew installs (idempotent), configuration checks, WirePlumber fragment installs (idempotent copy)
-
-**Version bump implication**: when version changes, ALL existing users re-run the guarded block. Code inside must be safe to re-run — dconf writes and systemctl enables are idempotent by nature, but destructive operations (rm -rf, overwriting config files) need extra care.
-
-### DMI gates
-
-Scope to exact hardware using all three DMI fields:
-
-```bash
-if [[ "$(cat /sys/class/dmi/id/chassis_vendor)" == "Framework" ]] && \
-   [[ "$(cat /sys/class/dmi/id/sys_vendor)" == "Framework Computer LLC" ]] && \
-   [[ "$(cat /sys/class/dmi/id/product_name)" == "Framework Desktop" ]]; then
-    # hardware-specific setup
-fi
-```
-
-- Using only `product_name` can match unrelated hardware with the same name across vendors
-- `chassis_vendor` + `sys_vendor` + `product_name` together uniquely identifies the target
-- **QEMU lab caveat**: `/sys/class/dmi/id/product_name` in QEMU VMs is typically `"Standard PC (i440FX + PIIX, 1996)"` or similar — DMI gate will correctly NOT fire. Verify this in lab to confirm the install block is a no-op on non-target hardware.
-
-### WirePlumber fragments
-
-WirePlumber user-space audio profiles must be written to the **user** fragment directory:
-
-```
-~/.config/wireplumber/wireplumber.conf.d/    ← correct (user-setup hook)
-/usr/share/wireplumber/wireplumber.conf.d/   ← wrong for user hooks (system-level, would need root)
-```
-
-The copy should be idempotent — check if the target exists and matches before writing, or use `install -m 644` which overwrites safely.
-
-### Brew availability early-exit trap
-
-User-setup hooks typically check for brew early and exit if it isn't available yet. This creates a **silent failure mode** for brew-independent work placed after the check:
-
-```bash
-# Common hook structure — DANGER ZONE
-BREW_BIN="$(brew --prefix)/bin/brew" 2>/dev/null
-if [[ ! -x "${BREW_BIN}" ]]; then
-    exit 0   # ← early exit: brew not ready yet
-fi
-
-# ... versioned brew installs ...
-
-# WirePlumber config copy — has NO brew dependency
-# BUG: this never runs on first login when brew isn't present yet
-install -m 644 "${SCRIPT_DIR}/51-hardware.conf" \
-    "${HOME}/.config/wireplumber/wireplumber.conf.d/"
-```
-
-**Fix**: move brew-independent payloads (config file copies, DMI-gated fragments) **before** the `BREW_BIN` early-exit:
-
-```bash
-# Correct order: brew-independent work first
-if is_target_hardware; then
-    install -m 644 "${SCRIPT_DIR}/51-hardware.conf" \
-        "${HOME}/.config/wireplumber/wireplumber.conf.d/"
-fi
-
-# Then gate on brew
-BREW_BIN="$(brew --prefix)/bin/brew" 2>/dev/null
-if [[ ! -x "${BREW_BIN}" ]]; then
-    exit 0
-fi
-
-# brew-dependent versioned work below
-```
-
-**Review signal**: if a hook installs a config file after a `BREW_BIN` check and the config has no brew dependency, flag it — the config silently won't install on first login (PR #760: `51-framework-desktop.conf` hit this).
-
----
-
-## Test quality checklist
-
-Derived from review of PR #785 (unit tests for check-oci-refs, bazaar-hook, hardware hooks, nvidia-flatpak-sync).
-
-### Python unit tests (pytest / mock)
-
-**Assert full argv, not substring membership:**
-
-```python
-# BAD — misses --cask flag, wrong positional order, wrong spawn wrapper
-assert "brew" in " ".join(mock_popen.call_args_list[0][0][0])
-
-# GOOD — catches all of these
-mock_popen.assert_called_once_with(
-    ["brew", "install", "--cask", "some-app"],
-    start_new_session=True,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE,
-)
-```
-
-**Verify key kwargs:**
-- `start_new_session=True` — required for background spawns that must survive the parent
-- `env=` override — if the script sets environment variables, assert they are passed
-- `cwd=` — if the script changes directory before the call
-
-**Cover failure paths:**
-- Non-zero return code from subprocess
-- Missing file / path not found
-- Permission error
-
-**Mock granularity:**
-- Mock at the level of the function under test, not the underlying OS call — `patch("module.subprocess.Popen")` not `patch("subprocess.Popen")` to avoid cross-module leakage
-
-### Bats tests (shell)
-
-**Echo the full received command line from mocks:**
-
-```bash
-# BAD — collapses all grubby calls to the same label, loses argument content
-function grubby() { echo "mock: grubby update"; }
-
-# GOOD — emits full argv, allows assertion on specific arguments
-function grubby() { echo "mock: grubby $*"; }
-```
-
-Then assert against specific content:
-
-```bash
-run some-script-under-test
-assert_output --partial "grubby --update-kernel=ALL --args=blacklist=nouveau"
-```
-
-**Framework mock pitfall**: if the bats test framework provides a mock helper that collapses argv to a label, do not use it for commands where the argument list matters. Write a minimal function mock instead.
-
-**Assert `--now` and `--args` content:**
-
-```bash
-# BAD — discards content
-assert_output --partial "systemctl enable"
-
-# GOOD — verifies the full invocation including --now and service name
-assert_output --partial "systemctl enable --now some.service"
-```
-
-> **See also:** [`shell-scripts.md`](shell-scripts.md) for bats setup/teardown patterns, PATH-stub mocking, XDG_CONFIG_HOME isolation, and the idempotent main guard.
-
----
-
-## PR review report template
-
-Use this format when reporting findings from a review session. One table row per PR, followed by per-PR detail blocks for any findings.
-
-### Summary table
-
-| PR | Title | Type | Code review | Lab result | CI | Verdict |
-|---|---|---|---|---|---|---|
-| #NNN | short title | `systemd unit` / `OEM hook` / etc | ✅ Clean / ⚠️ N findings | ✅ Green / ⚠️ Stale image / ❌ Failed | ✅ / ❌ transient | ✅ Ready / ⚠️ Needs fix / 🔁 Re-trigger CI |
-
-### Per-PR detail block
-
-```
-### PR #NNN — <title>
-
-**Type:** <PR type from taxonomy>
-**Branch:** <branch-name>
-**CI:** <status — all green / compose failed (transient GHCR 504) / ghost-lab pending>
-
-**Code review findings:**
-- [SEVERITY] Description — file:line — suggested fix
-
-**Lab baseline** (workflow: <name>, phase: <Succeeded/Failed>):
-| Artifact | Baseline state |
+| Field | Source |
 |---|---|
-| `unit-name.service` | ABSENT / EXISTS (content: ...) |
-| `systemctl is-enabled` | enabled / disabled |
-| `systemctl --failed` | Clean / mcelog only (QEMU noise) |
+| Number, title, author | `gh pr view` |
+| Age | `createdAt` → human-readable delta |
+| Size | `+additions / -deletions` |
+| Files touched | file list from API |
+| Blast radius | see [Blast Radius Map](#blast-radius-map) |
+| CI status | `gh pr checks` — real names and pass/fail |
+| Mergeable state | `MERGEABLE` / `CONFLICTING` / `UNKNOWN` |
+| Linked issue | parsed from body or `closingIssuesReferences` |
+| Competing / duplicate PRs | same files or same linked issue |
+| Summary | ONE factual sentence — what the change does |
+| Effort | `trivial` · `small` · `needs-real-attention` · `blocked-on-something` |
 
-**Post-merge verification:**
-```bash
-# paste the exact commands to verify after rebuild
-```
+> ⚠️ The agent classifies EFFORT but **never** states a verdict, recommendation,
+> or approval judgment. Report facts only.
 
-**Verdict:** ✅ Ready to merge / ⚠️ Fix needed before merge / 🔁 Re-trigger CI / 🔬 Needs nvidia lab
-```
+### 2 — Verdict
 
-### Example report — 2026-06-24 session
+Prompt the human **per PR, one at a time** (not a batch line).
 
-| PR | Title | Type | Code review | Lab result | CI | Verdict |
-|---|---|---|---|---|---|---|
-| #785 | unit tests: check-oci-refs, bazaar-hook, hw hooks | `test addition` | ⚠️ 2 findings (weak assertions) | N/A | ✅ | ⚠️ Strengthen assertions |
-| #767 | flatpak appstream refresh every boot | `systemd unit (shared)` | ⚠️ 1 finding (`graphical.target` contextually OK; metered guard missing) | ⚠️ Service disabled in image — preset not yet built in | ❌ CI stale (GHCR 504) | ⚠️ Add metered guard, re-trigger CI |
-| #768 | uupd AC-aware update scheduling | `systemd unit (shared)` | ⚠️ 1 finding (rate-limit consumes burst on brief AC plug) | ✅ Baseline captured — 3 new artifacts absent as expected | ✅ | ⚠️ Rate-limit logic needs review |
-| #769 | nvidia flatpak runtime sync | `systemd unit (nvidia)` + `skill doc` | ⚠️ 1 finding (failed flatpak update not retried on restart) | ✅ Green — service absent on non-nvidia (correct) | ⚠️ ghost-lab stale pending | ⚠️ Fix retry logic; requeue ghost-lab |
-| #760 | Framework Desktop WirePlumber OEM hook | `OEM hardware hook` + `skill doc` | ⚠️ 1 finding (wireplumber install after BREW_BIN check — won't run on first login) | ⚠️ Stale image — 20-oem-brew.sh not in testing build | ✅ | ⚠️ Move wireplumber install before brew check |
-| #790 | chore(deps): update actions/cache | `dependencies` | N/A (Renovate) | N/A | ✅ | ✅ Auto-merge on CI pass |
-| #789 | chore(deps): update taiki-e/install-action digest | `dependencies` | N/A (Renovate) | N/A | ✅ | ✅ Auto-merge on CI pass |
+PR verdict vocabulary:
+
+| Verdict | Effect |
+|---|---|
+| `merge` | Squash-merge via merge queue |
+| `close` | Close with the human’s stated reason |
+| `defer` | Leave open, move to next |
+| `rebase` | Update branch, re-present later |
+| `changes` | Request changes with the human’s exact words |
+| `open` | Show the full diff before deciding |
+| `skip` | Move to next, no action |
+
+### 3 — Stage
+
+After all 5 verdicts, print the **complete action plan** as exact `gh`
+commands, then ask: **"Confirm? (yes / edit / abort)"**
+
+Nothing is written before the human confirms.
+
+### 4 — Land
+
+On confirm, execute the batch. Report per-PR outcome (succeeded / failed /
+needs follow-up). If any command fails, report the error and continue.
 
 ---
 
-## Review sign-off checklist
+## Issue Triage Sweep
 
-Before approving any `system_files/` PR:
+Same dossier → verdict → stage → land loop, with issue verdicts:
 
-- [ ] Universal checklist passed
-- [ ] Per-type checklist completed for all changed paths
-- [ ] CI is green (or transient failures identified and re-triggered)
-- [ ] `ghost-lab` check is not stale-pending (requeue if needed)
-- [ ] Lab verification done or E2E CI pass accepted as equivalent — see [`lab-testing/SKILL.md`](lab-testing/SKILL.md) for quick-start YAMLs and [`lab-testing/references/pr-review-baselines.md`](lab-testing/references/pr-review-baselines.md) for baseline-vs-delta methodology
-- [ ] Skill file update committed in the same PR if a new pattern was discovered
-- [ ] PR title is Conventional Commits
-- [ ] Attribution trailers present on AI-authored commits (convention, not a gate)
+| Verdict | Effect |
+|---|---|
+| `close` | Close with the human’s stated reason |
+| `label <name>` | Apply a label — only the 7 canonical labels per [label-workflow](label-workflow.md) |
+| `assign` | Assign to a user or bot |
+| `dup <#>` | Close as duplicate, link to the original |
+| `wrongrepo <repo>` | Transfer or close with redirect |
+| `needsinfo` | Comment requesting more information |
+| `defer` | Leave open |
+
+---
+
+## Blast Radius Map
+
+| Path pattern | Affects | Fast-lane eligible? |
+|---|---|---|
+| `system_files/shared/` | bluefin + bluefin-lts + dakota | **Never** |
+| `system_files/bluefin/` | GNOME / Bluefin only | No |
+| `system_files/nvidia/` | NVIDIA overlay | No |
+| `.github/workflows/` | CI pipeline | No |
+| `Containerfile` | ALL variants | No |
+| `docs/**`, `AGENTS.md` | Documentation only | N/A (doc-only push) |
+| `tests/**` | Test suite only | N/A |
+
+> ⚠️ `system_files/shared/` is never eligible for any fast lane regardless of
+> diff size. A break there breaks bluefin, bluefin-lts, AND dakota simultaneously.
+
+---
+
+## Merge Queue Defaults
+
+The merge queue on `main` is squash-only (`grouping_strategy: ALLGREEN`).
+Required checks: `validate`, `Build and push image (x86_64)`,
+`Build and push image (aarch64)`.
+
+Default landing command:
+
+```bash
+# Squash-merge via the merge queue (default)
+gh pr merge <N> --squash --auto --delete-branch
+```
+
+`--admin` bypasses the queue and merges immediately. It requires **explicit
+human instruction** per PR — never default to it.
+
+```bash
+# Admin merge — ONLY when the human explicitly says so
+gh pr merge <N> --squash --admin --delete-branch
+```
+
+Fork PRs cannot be rebased via `gh pr update-branch` — see
+[queue-dashboard.md](queue-dashboard.md) for the manual git rebase pattern.
+
+---
+
+## Worked Example
+
+> Based on the open backlog as of 2026-08-06.
+
+### Dossier (batch 1 of 2)
+
+**1 / 5 — PR #936** `fix(report): preserve external queue preferences`
+Author: joshyorko · Age: 2h · Size: +80 / -5 · Effort: **small**
+Files: `.github/workflows/unit-tests.yml`, `Justfile`, `docs/SKILL.md`,
+`system_files/bluefin/usr/libexec/bonedigger-report`,
+`tests/test_bonedigger_report.bats`
+Blast radius: bluefin only + CI + docs
+CI: pending · Mergeable: yes · Linked issue: —
+Summary: Preserves caller-supplied queue preference in the bonedigger report script.
+
+**2 / 5 — PR #934** `fix: guard ublue-fastfetch with command -v check`
+Author: kylerankin · Age: 1d · Size: +5 / -0 · Effort: **trivial**
+Files: `system_files/shared/usr/bin/ublue-fastfetch`
+Blast radius: **ALL variants** (`system_files/shared/`)
+CI: pending · Mergeable: yes
+Summary: Adds a `command -v fastfetch` guard so the script exits cleanly.
+
+**3 / 5 — PR #933** `fix(sec): add sigstoreSigned policy for ghcr.io/projectbluefin`
+Author: hanthor · Age: 1d · Size: +31 / -0 · Effort: **needs-real-attention**
+Files: `system_files/shared/etc/containers/policy.json` + signing certs
+Blast radius: **ALL variants** — security policy
+CI: pending · Mergeable: yes · Label: ` 3-human-queue`
+Summary: Adds sigstore signature verification for projectbluefin images.
+
+**4 / 5 — PR #932** `fix: add consistent bootc sudo policy`
+Author: castrojo · Age: 1d · Size: +1 / -0 · Effort: **trivial**
+Files: `system_files/shared/etc/sudoers.d/001-bootc`
+Blast radius: **ALL variants**
+CI: pending · Mergeable: yes
+Summary: Adds a sudoers drop-in for consistent bootc sudo policy.
+
+**5 / 5 — PR #926** `[quality] add BATS regression coverage for theming hook`
+Author: kubestellar-hive [bot] · Age: 3d · Size: +92 / -0 · Effort: **small**
+Files: `Justfile`, `docs/TESTING.md`, `tests/test_theming_hook.bats`
+Blast radius: tests + docs only
+CI: pending · Mergeable: yes
+Summary: Adds BATS test coverage for the theming setup hook.
+
+---
+
+### Per-PR verdict prompts
+
+```
+PR #936 — fix(report): preserve external queue preferences
+Verdict? (merge / close / defer / rebase / changes / open / skip)
+> merge
+
+PR #934 — fix: guard ublue-fastfetch with command -v check
+Verdict? (merge / close / defer / rebase / changes / open / skip)
+> open
+[agent shows diff]
+> merge
+
+PR #933 — fix(sec): add sigstoreSigned policy
+Verdict? (merge / close / defer / rebase / changes / open / skip)
+> changes: Split the cert and rekor key into their own commit for auditability.
+
+PR #932 — fix: add consistent bootc sudo policy
+Verdict? (merge / close / defer / rebase / changes / open / skip)
+> merge
+
+PR #926 — [quality] add BATS regression coverage for theming hook
+Verdict? (merge / close / defer / rebase / changes / open / skip)
+> merge
+```
+
+### Staged action plan
+
+```bash
+## Action plan — batch 1
+
+# PR #936 — merge (squash via queue)
+gh pr merge 936 --squash --auto --delete-branch
+
+# PR #934 — merge (squash via queue)
+gh pr merge 934 --squash --auto --delete-branch
+
+# PR #933 — request changes
+gh pr review 933 --request-changes --body "Split the cert and rekor key into their own commit for auditability."
+
+# PR #932 — merge (squash via queue)
+gh pr merge 932 --squash --auto --delete-branch
+
+# PR #926 — merge (squash via queue)
+gh pr merge 926 --squash --auto --delete-branch
+```
+
+```
+Confirm? (yes / edit / abort)
+> yes
+```
+
+### Landing report
+
+| PR | Action | Result |
+|---|---|---|
+| #936 | merge | ✅ auto-merge enabled |
+| #934 | merge | ✅ auto-merge enabled |
+| #933 | changes | ✅ review posted |
+| #932 | merge | ✅ auto-merge enabled |
+| #926 | merge | ✅ auto-merge enabled |
+
+---
+
+## Red Flags
+
+- Agent states an opinion on whether a PR should be merged.
+- Agent approves, merges, closes, or labels without an explicit human verdict.
+- `--admin` merge used without explicit human instruction.
+- `system_files/shared/` change treated as trivial or fast-laned.
+- Batch executed before the human confirms the staged plan.
+
+## Verification
+
+- [ ] Every `gh pr merge` / `gh pr close` was preceded by an explicit human verdict.
+- [ ] No approval judgment or recommendation appears in dossier cards.
+- [ ] `--admin` was used only when the human explicitly said so.
+- [ ] `system_files/shared/` PRs were flagged as ALL-variant blast radius.
+- [ ] The four [human decision gates](human-gates.md) were respected.
+- [ ] Staged action plan was printed and confirmed before any writes.
+
+## See Also
+
+- [human-gates.md](human-gates.md) — the four human decision gates
+- [label-workflow.md](label-workflow.md) — canonical label lifecycle
+- [queue-dashboard.md](queue-dashboard.md) — merge queue config and admin merge
+- [governance.md](governance.md) — branch protection and ownership
+- [shell-scripts.md](shell-scripts.md) — shell review patterns and bats testing
+- [ci-tooling.md](ci-tooling.md) — CI workflow review and SHA pinning
+- [oem-hardware-hooks.md](oem-hardware-hooks.md) — OEM hook review
+- [dconf-consistency.md](dconf-consistency.md) — dconf override + lock review
+- [lab-testing/SKILL.md](lab-testing/SKILL.md) — lab verification
