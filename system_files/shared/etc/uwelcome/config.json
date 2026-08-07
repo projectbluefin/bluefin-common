@@ -7,7 +7,7 @@
     },
     {
       "cmd": "uwelcome toggle",
-      "desc": "motd_toggle"
+      "desc": "banner_toggle"
     },
     {
       "cmd": "ujust bluefin-cli",

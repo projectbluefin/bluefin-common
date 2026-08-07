@@ -77,6 +77,12 @@ enroll-secure-boot-key:
     EOF
     echo 'At next reboot, the mokutil UEFI menu UI will be displayed (*QWERTY* keyboard input and navigation).\nThen, select "Enroll MOK", and input "universalblue" as the password'
 
+# Toggle display of the welcome banner in terminal
+# Note: uwelcome owns its own state at ~/.config/uwelcome/disabled. This recipe
+# is a compatibility shim for users with muscle memory for the old name.
+toggle-user-motd:
+    uwelcome toggle
+
 # Check for local overrides
 check-local-overrides:
     #!/usr/bin/bash

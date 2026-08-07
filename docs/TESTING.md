@@ -57,7 +57,7 @@ Scripts exempt from behavioral testing (shellcheck-only):
 | `etc/profile.d/uutils.sh` | Profile.d sourced script — PATH manipulation only |
 | `etc/profile.d/ublue-fastfetch.sh` | Profile.d sourced script — display only |
 | `etc/profile.d/ublue-motd.sh` | Profile.d sourced script — display only |
-| `etc/profile.d/umotd.sh` | Profile.d sourced script — display only |
+| `etc/profile.d/uwelcome.sh` | Profile.d sourced script — display only; the legacy opt-out migration it carries is covered by `tests/test_motd_integration.bats` |
 | `usr/share/ublue-os/bling/bling.sh` | Sourced helper — sets aliases/functions, no side effects |
 | `usr/share/ublue-os/bling/env.sh` | Sourced helper — sets env vars only |
 | `usr/share/ublue-os/user-setup.hooks.d/20-dynamic-wallpaper.sh` | One-shot hook — logic tested indirectly via setup integration tests |
