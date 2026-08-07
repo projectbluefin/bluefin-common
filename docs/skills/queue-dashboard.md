@@ -1,7 +1,7 @@
 ---
 name: queue-dashboard
-version: "1.0"
-last_updated: "2026-06-23"
+version: "1.1"
+last_updated: "2026-08-06"
 id: queue-dashboard
 one_line_purpose: Triage the PR review and merge queue for common.
 entry_point: docs/skills/queue-dashboard.md
@@ -45,14 +45,20 @@ Do **not** wait for approval count to tick up or for non-required checks to pass
 
 | Setting | Value |
 |---|---|
-| Required approvals | **1** (+ code owner review required) |
+| Required approvals | **0** — no code-owner review required (verified live, see [Verification](#verification)) |
 | Dismiss stale reviews | Yes (on push) |
-| Required check | `Build and push image` only |
+| Required checks (via `main — merge queue` ruleset) | `validate`, `Build and push image (x86_64)`, `Build and push image (aarch64)` |
 | Merge method | Squash only |
 | Merge queue | Enabled — `ALLGREEN` grouping strategy |
-| Max entries to build | 2 |
+| Max entries to build | 5 |
 
-E2E checks are **informational** — they do not block merging. Only `Build and push image` is required.
+The ruleset name says "review-required" but the live rule does not require an
+approval or a code-owner review — it only blocks non-fast-forward pushes and
+branch deletion. Do not infer approval behavior from the ruleset name; read
+the live rule parameters instead.
+
+E2E checks are **informational** — they do not block merging. Only the checks
+in the `main — merge queue` ruleset above are required.
 
 ## Triage tiers
 
@@ -145,3 +151,22 @@ not a code defect. Admin-merge these safely when the code change is correct.
 ```
 Superseded — [explain what on main covers this]. Closing.
 ```
+
+## Verification
+
+- [ ] Live ruleset approval requirement matches this doc, not the ruleset's name:
+
+  ```bash
+  gh api repos/projectbluefin/common/rulesets --jq '.[] | {id, name}'
+  gh api repos/projectbluefin/common/rulesets/<id> \
+    --jq '.rules[] | select(.type == "pull_request") | .parameters | {required_approving_review_count, require_code_owner_review}'
+  ```
+
+  Expected today: `required_approving_review_count: 0`, `require_code_owner_review: false`
+  (verified 2026-08-06 against ruleset `main-review-required-with-renovate-bypass`, id `17070417`).
+- [ ] Required status checks for the merge queue:
+
+  ```bash
+  gh api repos/projectbluefin/common/rulesets/<merge-queue-ruleset-id> \
+    --jq '.rules[] | select(.type == "required_status_checks") | .parameters.required_status_checks'
+  ```
