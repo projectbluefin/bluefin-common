@@ -257,6 +257,7 @@ These live in `system_files/shared/usr/share/ublue-os/homebrew/` (not in
 - `cncf.Brewfile`
 - `experimental-ide.Brewfile`
 - `fonts.Brewfile`
+- `fonts-dev.Brewfile`
 - `ide.Brewfile`
 - `k8s-tools.Brewfile`
 - `swift.Brewfile`

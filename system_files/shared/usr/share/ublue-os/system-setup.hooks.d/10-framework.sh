@@ -15,14 +15,17 @@ VEN_ID="$(cat "${SYSROOT}/sys/devices/virtual/dmi/id/chassis_vendor")"
 BIOS_VERSION="$(cat "${SYSROOT}/sys/devices/virtual/dmi/id/bios_version" 2>/dev/null)"
 SYS_ID="$(cat "${SYSROOT}/sys/devices/virtual/dmi/id/product_name")"
 
-# Intel Framework hid_sensor_hub karg has been moved to /usr/lib/bootc/kargs.d/framework-intel.toml
-# On version bump to 3, clean up any grubby-applied karg from previous runs
+# Intel Framework hid_sensor_hub karg is obsolete on kernel 6.8+ (brightness keys work natively).
+# Blacklisting hid_sensor_hub breaks ambient light sensor (ALS) and causes shutdown on AC unplug.
+# Clean up any previously applied karg from rpm-ostree.
 if [[ ":Framework:" =~ :$VEN_ID: ]]; then
 	if [[ "GenuineIntel" == "$CPU_VENDOR" ]]; then
-		KARGS=$(grubby --info=DEFAULT | grep args || true)
-		if [[ $KARGS =~ "module_blacklist=hid_sensor_hub" ]]; then
-			echo "Removing legacy grubby karg (now handled declaratively via bootc kargs.d)"
-			grubby --update-kernel=ALL --remove-args="module_blacklist=hid_sensor_hub"
+		if command -v rpm-ostree >/dev/null 2>&1; then
+			OSTREE_KARGS=$(rpm-ostree kargs 2>/dev/null || true)
+			if [[ $OSTREE_KARGS =~ "module_blacklist=hid_sensor_hub" ]]; then
+				echo "Removing obsolete hid_sensor_hub karg via rpm-ostree"
+				rpm-ostree kargs --delete-if-present=module_blacklist=hid_sensor_hub || true
+			fi
 		fi
 	fi
 fi

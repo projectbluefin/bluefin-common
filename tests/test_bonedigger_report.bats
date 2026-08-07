@@ -2,166 +2,367 @@
 
 setup() {
     export BONEDIGGER_SCRIPT="$BATS_TEST_DIRNAME/../system_files/bluefin/usr/libexec/bonedigger-report"
+    export WORKDIR="$BATS_TEST_DIRNAME/.bonedigger-report-test-${BATS_TEST_NUMBER}-${$}"
+    export HOME="$WORKDIR/home"
+    export XDG_STATE_HOME="$WORKDIR/state"
+    export XDG_RUNTIME_DIR="$WORKDIR/runtime"
 
-    WORKDIR="$(mktemp -d)"
-
-    TEST_HELPER="$(mktemp)"
-    cat << 'INNER_EOF' > "$TEST_HELPER"
-#!/usr/bin/bash
-# Evaluate the scrub functions from the script
-eval "$(sed -n '/^scrub_kernel_log() {/,/^}/p' "$BONEDIGGER_SCRIPT")"
-eval "$(sed -n '/^scrub_journal_log() {/,/^}/p' "$BONEDIGGER_SCRIPT")"
-
-# Execute requested function
-"$@"
-INNER_EOF
-    chmod +x "$TEST_HELPER"
+    mkdir -p "$WORKDIR/bin" "$HOME" "$XDG_STATE_HOME" "$XDG_RUNTIME_DIR"
 }
 
 teardown() {
-    rm -f "$TEST_HELPER" "${CONFIRM_HELPER:-}"
     rm -rf "$WORKDIR"
 }
 
-@test "scrub_kernel_log redacts MAC addresses" {
-    result="$(echo "Device 00:1A:2B:3C:4D:5E connected" | "$TEST_HELPER" scrub_kernel_log)"
-    [ "$result" = "Device [MAC-REDACTED] connected" ]
+@test "scrub_kernel_log redacts MAC, IP, UUID, and home paths" {
+    run bash -c 'source "$1"; printf "%s\n" "$2" | scrub_kernel_log' _ \
+        "$BONEDIGGER_SCRIPT" \
+        "Device 00:1A:2B:3C:4D:5E from 192.168.1.100 on /home/alice/ UUID 123e4567-e89b-12d3-a456-426614174000"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "Device [MAC-REDACTED] from [IP-REDACTED] on /home/[REDACTED]/ UUID [UUID-REDACTED]" ]
 }
 
-@test "scrub_kernel_log redacts IPv4 addresses" {
-    result="$(echo "Connecting to 192.168.1.100 port 80" | "$TEST_HELPER" scrub_kernel_log)"
-    [ "$result" = "Connecting to [IP-REDACTED] port 80" ]
+@test "scrub_journal_log redacts user variables and email addresses" {
+    run bash -c 'source "$1"; printf "%s\n" "$2" | scrub_journal_log' _ \
+        "$BONEDIGGER_SCRIPT" "USER=jorge contacted jorge@example.com"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "USER=[REDACTED] contacted [REDACTED-email]" ]
 }
 
-@test "scrub_kernel_log redacts IPv6 addresses" {
-    result="$(echo "IP: 2001:0db8:85a3:0000:0000:8a2e:0370:7334" | "$TEST_HELPER" scrub_kernel_log)"
-    [ "$result" = "IP: [IP-REDACTED]" ]
+@test "bug routing maps Bluefin-family, Dakota-family, and unknown images" {
+    run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
+        "$BONEDIGGER_SCRIPT" bluefin latest
+    [ "$output" = "projectbluefin/bluefin" ]
+
+    run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
+        "$BONEDIGGER_SCRIPT" bluefin lts-42
+    [ "$output" = "projectbluefin/bluefin-lts" ]
+
+    run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
+        "$BONEDIGGER_SCRIPT" bluefin-lts-hwe stable
+    [ "$output" = "projectbluefin/bluefin-lts" ]
+
+    run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
+        "$BONEDIGGER_SCRIPT" bluefin-nvidia stable
+    [ "$output" = "projectbluefin/bluefin" ]
+
+    run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
+        "$BONEDIGGER_SCRIPT" dakota latest
+    [ "$output" = "projectbluefin/dakota" ]
+
+    run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
+        "$BONEDIGGER_SCRIPT" dakota-nvidia stable
+    [ "$output" = "projectbluefin/dakota" ]
+
+    run bash -c 'source "$1"; IMAGE_NAME="$2"; IMAGE_TAG="$3"; route_issue_repo; printf "%s" "$BUG_REPO"' _ \
+        "$BONEDIGGER_SCRIPT" unknown latest
+    [ "$output" = "projectbluefin/common" ]
 }
 
-@test "scrub_kernel_log redacts UUIDs" {
-    result="$(echo "Disk 123e4567-e89b-12d3-a456-426614174000 mounted" | "$TEST_HELPER" scrub_kernel_log)"
-    [ "$result" = "Disk [UUID-REDACTED] mounted" ]
+@test "queue choices map to at most one supported queue label" {
+    run bash -c 'source "$1"; queue_label_for_choice "$2"' _ \
+        "$BONEDIGGER_SCRIPT" "Submit to the clanker queue for machine analysis"
+    [ "$status" -eq 0 ]
+    [ "$output" = "3-clanker-queue" ]
+
+    run bash -c 'source "$1"; queue_label_for_choice "$2"' _ \
+        "$BONEDIGGER_SCRIPT" "I only want human interaction"
+    [ "$status" -eq 0 ]
+    [ "$output" = "3-human-queue" ]
+
+    run bash -c 'source "$1"; queue_label_for_choice "$2"' _ \
+        "$BONEDIGGER_SCRIPT" "No queue preference"
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }
 
-@test "scrub_kernel_log redacts home paths" {
-    result="$(echo "Error opening /var/home/jorge/.config/file" | "$TEST_HELPER" scrub_kernel_log)"
-    [ "$result" = "Error opening /var/home/[REDACTED]/.config/file" ]
-
-    result="$(echo "Cannot read /home/alice/Documents" | "$TEST_HELPER" scrub_kernel_log)"
-    [ "$result" = "Cannot read /home/[REDACTED]/Documents" ]
-}
-
-@test "scrub_journal_log redacts USER/LOGNAME variables" {
-    result="$(echo "Started session for USER=jorge" | "$TEST_HELPER" scrub_journal_log)"
-    [ "$result" = "Started session for USER=[REDACTED]" ]
-
-    result="$(echo "LOGNAME=alice is logging in" | "$TEST_HELPER" scrub_journal_log)"
-    [ "$result" = "LOGNAME=[REDACTED] is logging in" ]
-}
-
-@test "scrub_journal_log redacts email addresses" {
-    result="$(echo "Failed to sync jorge@example.com" | "$TEST_HELPER" scrub_journal_log)"
-    [ "$result" = "Failed to sync [REDACTED-email]" ]
-}
-
-@test "issue_url routing works for bluefin" {
-    # Extract the issue URL routing logic into a testable script
-    TEST_URL_ROUTER="$(mktemp)"
-    cat << 'INNER_EOF' > "$TEST_URL_ROUTER"
+@test "network smart logs are redacted and bounded" {
+    cat << 'EOF' > "$WORKDIR/bin/journalctl"
 #!/usr/bin/bash
-IMAGE_INFO_FILE="/dev/null"
-IMAGE_NAME="$1"
-IMAGE_TAG="$2"
-BONEDIGGER_ISSUE_URL="$3"
+for _ in $(seq 1 80); do
+    printf 'USER=jorge peer 192.168.1.8 MAC AA:BB:CC:DD:EE:FF /home/alice/private\n'
+done
+EOF
+    cat << 'EOF' > "$WORKDIR/bin/nmcli"
+#!/usr/bin/bash
+printf 'wlan0:wifi:connected\n'
+EOF
+    chmod +x "$WORKDIR/bin/journalctl" "$WORKDIR/bin/nmcli"
 
-eval "$(sed -n '/^case "\$IMAGE_NAME"/,/^FEATURE_URL/p' "$BONEDIGGER_SCRIPT")"
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        collect_profile Networking "$2/networking.md" 512
+        grep -Fq "[IP-REDACTED]" "$2/networking.md"
+        grep -Fq "[MAC-REDACTED]" "$2/networking.md"
+        grep -Fq "USER=[REDACTED]" "$2/networking.md"
+        ! grep -Fq "192.168.1.8" "$2/networking.md"
+        test "$(wc -c < "$2/networking.md")" -le 512
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR"
 
-echo "$ISSUE_URL_BASE|$ISSUE_REPO"
-INNER_EOF
-    chmod +x "$TEST_URL_ROUTER"
-
-    # Bluefin generic
-    result="$("$TEST_URL_ROUTER" "bluefin" "latest" "")"
-    [ "$result" = "https://github.com/projectbluefin/bluefin/issues/new?template=bug-report.yml|projectbluefin/bluefin" ]
-
-    # Bluefin LTS
-    result="$("$TEST_URL_ROUTER" "bluefin" "lts-39" "")"
-    [ "$result" = "https://github.com/projectbluefin/bluefin-lts/issues/new?template=bug-report.yml|projectbluefin/bluefin-lts" ]
-
-    # Dakota
-    result="$("$TEST_URL_ROUTER" "dakota" "latest" "")"
-    [ "$result" = "https://github.com/projectbluefin/dakota/issues/new?template=bug-report.yml|projectbluefin/dakota" ]
-
-    # Common fallback
-    result="$("$TEST_URL_ROUTER" "something-else" "latest" "")"
-    [ "$result" = "https://github.com/projectbluefin/common/issues/new?template=bug-report.yml|projectbluefin/common" ]
-
-    # Override
-    result="$("$TEST_URL_ROUTER" "bluefin" "latest" "https://example.com/custom")"
-    [ "$result" = "https://example.com/custom|projectbluefin/bluefin" ]
-
-    rm -f "$TEST_URL_ROUTER"
+    [ "$status" -eq 0 ]
 }
 
-@test "confirm posts a lightweight fingerprint to the routed repository" {
-    mkdir -p "$WORKDIR/bin"
-    cat << 'INNER_EOF' > "$WORKDIR/bin/systemctl"
+@test "selected profile bundle is capped at two MiB" {
+    cat << 'EOF' > "$WORKDIR/bin/journalctl"
+#!/usr/bin/bash
+for _ in $(seq 1 16000); do
+    printf 'warning USER=jorge peer 192.168.1.8\n'
+done
+EOF
+    chmod +x "$WORKDIR/bin/journalctl"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        BOOTC_STATUS="booted"
+        SELECTED_PROFILES=(
+            "Desktop / graphics"
+            "Sleep / crash"
+            "Update / boot"
+            Networking
+            "Flatpak / application"
+        )
+        collect_profiles
+        total=0
+        for file in "${PROFILE_FILES[@]}"; do
+            bytes="$(wc -c < "$file")"
+            test "$bytes" -le $((500 * 1024))
+            total=$((total + bytes))
+        done
+        test "$total" -le $((2 * 1024 * 1024))
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR"
+
+    [ "$status" -eq 0 ]
+}
+
+@test "issue creation uses direct gh arguments and one queue label" {
+    cat << 'EOF' > "$WORKDIR/bin/gh"
+#!/usr/bin/bash
+printf '%s\n' "$*" >> "$CALLS_FILE"
+if [[ "$1" == issue ]]; then
+    printf 'https://github.com/projectbluefin/bluefin/issues/99\n'
+fi
+EOF
+    chmod +x "$WORKDIR/bin/gh"
+    export CALLS_FILE="$WORKDIR/gh-calls"
+    mkdir -p "$WORKDIR/draft"
+    printf 'projectbluefin/bluefin\n' > "$WORKDIR/draft/repo.txt"
+    printf '3-clanker-queue\n' > "$WORKDIR/draft/queue-label.txt"
+    printf 'Short title\n' > "$WORKDIR/draft/title.txt"
+    printf '## 🫐 Bluefin Bug Report\n' > "$WORKDIR/draft/issue.md"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        create_issue
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ "$output" = "https://github.com/projectbluefin/bluefin/issues/99" ]
+    grep -qF "issue create --repo projectbluefin/bluefin --title Short title --body-file $WORKDIR/draft/issue.md --label 3-clanker-queue" "$CALLS_FILE"
+    [ "$(grep -o -- '--label' "$CALLS_FILE" | wc -l)" -eq 1 ]
+}
+
+@test "confirmation accepts a GitHub issue URL and posts no device identifier" {
+    cat << 'EOF' > "$WORKDIR/bin/systemctl"
 #!/usr/bin/bash
 printf 'failed-example.service loaded failed failed\n'
-INNER_EOF
-    cat << 'INNER_EOF' > "$WORKDIR/bin/gh"
+EOF
+    cat << 'EOF' > "$WORKDIR/bin/gh"
 #!/usr/bin/bash
 printf '%s\n' "$*" >> "$CALLS_FILE"
 if [[ "$1" == api ]]; then
-    printf 'https://github.com/projectbluefin/bluefin-lts/issues/42#issuecomment-123\n'
+    printf 'https://github.com/projectbluefin/dakota/issues/42#issuecomment-123\n'
 fi
-INNER_EOF
+EOF
     chmod +x "$WORKDIR/bin/systemctl" "$WORKDIR/bin/gh"
     export CALLS_FILE="$WORKDIR/gh-calls"
-    export PATH="$WORKDIR/bin:$PATH"
 
-    CONFIRM_HELPER="$(mktemp)"
-    cat << 'INNER_EOF' > "$CONFIRM_HELPER"
-#!/usr/bin/bash
-set -euo pipefail
-eval "$(sed -n '/^confirm_report() {/,/^}$/p' "$BONEDIGGER_SCRIPT")"
-BOOTC_JSON='{"status":{"booted":{"imageDigest":"sha256:abc123"}}}'
-IMAGE_REF='ghcr.io/projectbluefin/bluefin'
-IMAGE_TAG='latest'
-confirm_report 42 projectbluefin/bluefin-lts
-INNER_EOF
-    chmod +x "$CONFIRM_HELPER"
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        parse_confirm_target "https://github.com/projectbluefin/dakota/issues/42#comment" projectbluefin/common
+        IMAGE_REF="ghcr.io/projectbluefin/dakota"
+        IMAGE_TAG="latest"
+        BOOTED_DIGEST="sha256:abc123"
+        confirm_report "$CONFIRM_ISSUE" "$CONFIRM_REPO"
+    ' _ "$BONEDIGGER_SCRIPT"
 
-    run "$CONFIRM_HELPER"
     [ "$status" -eq 0 ]
-    [[ "$output" == *'**System fingerprint** (via `ujust report --confirm`)'* ]]
-    [[ "$output" == *'Image: ghcr.io/projectbluefin/bluefin'* ]]
-    [[ "$output" == *'Digest: sha256:abc123'* ]]
-    grep -qF 'issue comment 42 --repo projectbluefin/bluefin-lts --body' "$CALLS_FILE"
-    grep -qF 'https://github.com/projectbluefin/bluefin-lts/issues/42#issuecomment-123' <<< "$output"
+    [[ "$output" == *"Will post to: https://github.com/projectbluefin/dakota/issues/42"* ]]
+    [[ "$output" == *"Digest: sha256:abc123"* ]]
+    [[ "$output" != *"Device ID"* ]]
+    grep -qF "issue comment 42 --repo projectbluefin/dakota --body" "$CALLS_FILE"
+    grep -qF "https://github.com/projectbluefin/dakota/issues/42#issuecomment-123" <<< "$output"
 }
 
-@test "confirm rejects non-positive issue numbers" {
-    run env HOME="$WORKDIR/home" bash "$BONEDIGGER_SCRIPT" --confirm 0
+@test "confirmation rejects invalid issue identifiers" {
+    run bash -c 'source "$1"; parse_confirm_target "$2" projectbluefin/common' _ \
+        "$BONEDIGGER_SCRIPT" 0
     [ "$status" -eq 1 ]
-    [[ "$output" == *'Usage: ujust report --confirm <issue-number>'* ]]
+    [[ "$output" == *"issue-number-or-url"* ]]
 
-    run env HOME="$WORKDIR/home" bash "$BONEDIGGER_SCRIPT" --confirm nope
+    run bash -c 'source "$1"; parse_confirm_target "$2" projectbluefin/common' _ \
+        "$BONEDIGGER_SCRIPT" "https://github.com/projectbluefin/common/issues/0"
     [ "$status" -eq 1 ]
-    [[ "$output" == *'Usage: ujust report --confirm <issue-number>'* ]]
 }
 
-@test "home paths with spaces are redacted" {
-    result="$(echo "Path /var/home/jorge space/file" | "$TEST_HELPER" scrub_kernel_log)"
-    # Note the original regex: s|/(var/)?home/[^/[:space:]]+/|/\1home/[REDACTED]/|g
-    # It stops at space. So /var/home/jorge space/ might not be fully scrubbed if 'jorge space' is the username.
-    # Actually, usernames cannot contain spaces. So stopping at space is correct to prevent matching across words.
+@test "confirmation accepts a positive issue number for the routed repository" {
+    run bash -c '
+        source "$1"
+        parse_confirm_target "$2" projectbluefin/bluefin-lts
+        printf "%s|%s" "$CONFIRM_REPO" "$CONFIRM_ISSUE"
+    ' _ "$BONEDIGGER_SCRIPT" 73
 
-    result="$(echo "File saved to /home/jorge/my documents/file.txt" | "$TEST_HELPER" scrub_kernel_log)"
-    [ "$result" = "File saved to /home/[REDACTED]/my documents/file.txt" ]
+    [ "$status" -eq 0 ]
+    [ "$output" = "projectbluefin/bluefin-lts|73" ]
 }
 
-@test "scrub_kernel_log handles multiple PII in one line" {
-    result="$(echo "User /home/alice/ connected from 192.168.1.5 (MAC: AA:BB:CC:DD:EE:FF)" | "$TEST_HELPER" scrub_kernel_log)"
-    [ "$result" = "User /home/[REDACTED]/ connected from [IP-REDACTED] (MAC: [MAC-REDACTED])" ]
+@test "declining submission preserves the draft and resume command" {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+if [[ "$1" == confirm ]]; then
+    exit 1
+fi
+EOF
+    chmod +x "$WORKDIR/bin/gum"
+    mkdir -p "$WORKDIR/draft"
+    printf 'projectbluefin/common\n' > "$WORKDIR/draft/repo.txt"
+    printf '\n' > "$WORKDIR/draft/queue-label.txt"
+    printf 'Short title\n' > "$WORKDIR/draft/title.txt"
+    printf '## 🫐 Bluefin Bug Report\n' > "$WORKDIR/draft/issue.md"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        PROFILE_FILES=()
+        submit_draft
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ -f "$WORKDIR/draft/issue.md" ]
+    [[ "$output" == *"Resume with: ujust report --resume $WORKDIR/draft"* ]]
+}
+
+@test "cancelling final queue selection preserves the bug draft" {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+[[ "$1" == choose ]] && exit 1
+EOF
+    chmod +x "$WORKDIR/bin/gum"
+    mkdir -p "$WORKDIR/draft"
+    printf 'projectbluefin/common\n' > "$WORKDIR/draft/repo.txt"
+    : > "$WORKDIR/draft/queue-label.txt"
+    printf 'Short title\n' > "$WORKDIR/draft/title.txt"
+    printf '## 🫐 Bluefin Bug Report\n' > "$WORKDIR/draft/issue.md"
+    : > "$WORKDIR/draft/bug-report.txt"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        PROFILE_FILES=()
+        submit_draft
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ -f "$WORKDIR/draft/issue.md" ]
+    [[ "$output" == *"Submission was cancelled before selecting a queue preference."* ]]
+    [[ "$output" == *"Resume with: ujust report --resume $WORKDIR/draft"* ]]
+}
+
+@test "feature requests draft against projectbluefin common" {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+case "$1" in
+    input)
+        case "$*" in
+            *"Short title"*) printf 'Improve the desktop\n' ;;
+            *) printf 'Please add a useful setting.\n' ;;
+        esac
+        ;;
+    confirm) exit 1 ;;
+esac
+EOF
+    chmod +x "$WORKDIR/bin/gum"
+
+    run env PATH="$WORKDIR/bin:$PATH" XDG_STATE_HOME="$XDG_STATE_HOME" \
+        bash -c '
+            source "$1"
+            start_feature_request
+            cat "$DRAFT_ROOT"/draft-*/repo.txt
+        ' _ "$BONEDIGGER_SCRIPT"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"projectbluefin/common"* ]]
+}
+
+@test "missing gh requests Homebrew installation before failing safely" {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+[[ "$1" == confirm ]]
+EOF
+    cat << 'EOF' > "$WORKDIR/bin/brew"
+#!/usr/bin/bash
+printf '%s\n' "$*" >> "$BREW_CALLS"
+EOF
+    chmod +x "$WORKDIR/bin/gum" "$WORKDIR/bin/brew"
+    export BREW_CALLS="$WORKDIR/brew-calls"
+
+    run env PATH="$WORKDIR/bin" BREW_CALLS="$BREW_CALLS" /usr/bin/bash -c '
+        source "$1"
+        ensure_gh_ready
+    ' _ "$BONEDIGGER_SCRIPT"
+
+    [ "$status" -eq 1 ]
+    grep -qFx 'install gh' "$BREW_CALLS"
+}
+
+@test "unauthenticated gh offers browser sign-in" {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+[[ "$1" == confirm ]]
+EOF
+    cat << 'EOF' > "$WORKDIR/bin/gh"
+#!/usr/bin/bash
+printf '%s\n' "$*" >> "$GH_CALLS"
+case "$1 $2" in
+    "auth status") exit 1 ;;
+    "auth login") exit 0 ;;
+esac
+EOF
+    chmod +x "$WORKDIR/bin/gum" "$WORKDIR/bin/gh"
+    export GH_CALLS="$WORKDIR/gh-calls"
+
+    run env PATH="$WORKDIR/bin:$PATH" GH_CALLS="$GH_CALLS" /usr/bin/bash -c '
+        source "$1"
+        ensure_gh_ready
+    ' _ "$BONEDIGGER_SCRIPT"
+
+    [ "$status" -eq 1 ]
+    grep -qFx 'auth login --web --skip-ssh-key' "$GH_CALLS"
+}
+
+@test "help intent does not collect diagnostics or create an issue" {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+if [[ "$1" == choose ]]; then
+    printf 'Get help\n'
+fi
+EOF
+    cat << 'EOF' > "$WORKDIR/bin/bootc"
+#!/usr/bin/bash
+printf 'bootc should not be called\n' >&2
+exit 1
+EOF
+    chmod +x "$WORKDIR/bin/gum" "$WORKDIR/bin/bootc"
+
+    run env PATH="$WORKDIR/bin:$PATH" HOME="$HOME" \
+        XDG_STATE_HOME="$XDG_STATE_HOME" XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+        bash "$BONEDIGGER_SCRIPT"
+
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"Bluefin Discussions"* ]]
+    [[ "$output" == *"No issue was created."* ]]
+    [[ "$output" != *"bootc should not be called"* ]]
 }

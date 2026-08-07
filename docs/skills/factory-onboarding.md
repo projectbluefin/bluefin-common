@@ -117,35 +117,6 @@ Minimum files:
 
 Reference: [`projectbluefin/common/docs/skills/`](https://github.com/projectbluefin/common/blob/main/docs/skills/)
 
-### `skill-drift.yml` CI check — currently non-functional, verify before wiring up
-
-`projectbluefin/actions/.github/workflows/skill-drift-check.yml` — the reusable workflow this check calls — is presently a **no-op stub** (real logic removed in `actions@001ae97`, replaced with a compatibility stub in `actions@a7c230c`). It always succeeds without inspecting any changed paths. Do not wire this up expecting it to actually warn on anything; a passing run currently proves nothing. Full detail: [`skill-drift.md`](./skill-drift.md#current-status-non-functional).
-
-If you still want the placeholder wired up for when the reusable workflow is rebuilt, the shape is:
-
-```yaml
-name: Skill Drift
-
-on:
-  pull_request:
-    branches: [main]
-
-permissions:
-  contents: read
-  pull-requests: read
-
-jobs:
-  skill-drift:
-    uses: projectbluefin/actions/.github/workflows/skill-drift-check.yml@v1
-    with:
-      code-paths: '[".github/workflows/**", "Justfile"]'  # adapt to your repo
-      skill-paths: '["docs/skills/**", "docs/*.md", "AGENTS.md"]'
-```
-
-Until `actions` restores real logic, rely on the `skill-improvement.md` self-repair loop (manual, agent-enforced) instead of this CI check for enforcement — see how `common` itself handles this in [`ci-tooling.md`](./ci-tooling.md#skill-drift-detection): it deliberately does not run this workflow at all.
-
-Adjust `code-paths` to match your repo's implementation files. Treat warnings as hard requirements.
-
 ### `AGENTS.md` — self-improvement section
 
 Every factory repo's `AGENTS.md` must state the two-output rule and the banned anti-patterns explicitly. Agents read `AGENTS.md` first. If it is not there, agents will not do it.
@@ -174,7 +145,6 @@ Before marking work done:
 ## Done When
 
 - [ ] `docs/skills/` exists with `skill-improvement.md` and `docs/SKILL.md` task router
-- [ ] `skill-drift.yml` wired and passing
 - [ ] `AGENTS.md` includes self-improvement mandate and banned list
 - [ ] Downstream onboarding points agents to local authority plus common as a
       shared sidecar

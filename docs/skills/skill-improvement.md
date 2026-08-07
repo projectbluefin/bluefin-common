@@ -157,7 +157,10 @@ Assisted-by: Claude Sonnet 4.6 via GitHub Copilot
 Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>"
 ```
 
-The skill-drift CI gate will warn if you forget. Treat the warning as a hard requirement.
+There is no CI gate for this. Skill-update discipline is enforced by
+`pre-commit`, by review, and by this self-repair loop — see
+[`skill-drift.md`](./skill-drift.md) for why the CI check was retired. Treat
+the obligation as a hard requirement regardless.
 
 ---
 
@@ -180,7 +183,7 @@ Checklist:
 
 ## See Also
 
-- [`docs/skills/skill-drift.md`](./skill-drift.md) — how the CI enforcement works
+- [`docs/skills/skill-drift.md`](./skill-drift.md) — why the CI check was retired and what replaced it
 - Canonical skill conventions (verified via Context7):
   - `/anthropics/skills` — YAML frontmatter, bundled resources, progressive disclosure.
   - `/addyosmani/agent-skills` — skill-improvement and audit structure.

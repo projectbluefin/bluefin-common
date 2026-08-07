@@ -1,7 +1,7 @@
 ---
 name: governance
-version: "1.0"
-last_updated: "2026-07-20"
+version: "1.1"
+last_updated: "2026-08-06"
 id: governance
 one_line_purpose: Manage CODEOWNERS, triager roles, and governance sync.
 entry_point: docs/skills/governance.md
@@ -78,7 +78,7 @@ triage permissions.
 - Skips repos where the block is already identical (no noise commits)
 - Uses **mergeraptor** (`MERGERAPTOR_APP_ID` / `MERGERAPTOR_PRIVATE_KEY` org secrets) for cross-repo writes
 
-> ⚠️ **Secret required:** Both `sync-codeowners.yml` and `sync-labels.yml` need `MERGERAPTOR_APP_ID` and `MERGERAPTOR_PRIVATE_KEY` set as org or repo secrets. Without them the workflows will fail. See issue #511 for tracking.
+> **Secret required:** `sync-codeowners.yml` needs `MERGERAPTOR_APP_ID` and `MERGERAPTOR_PRIVATE_KEY` set as org or repo secrets. Without them the workflow will fail.
 
 Force a resync anytime:
 ```bash
@@ -97,14 +97,7 @@ Hive progress sync now covers all five `projectbluefin` repos on staggered cron 
 | `knuckle` | `:30` |
 | `bluefin-lts` | `:45` |
 
-The sync jobs count slash-separated labels (`hive/p0`, `hive/p1`) across the full repo set.
-Older references to dotted labels are stale.
-
-## Template sync namespace
-
-bonedigger's `sync-templates.yml` now targets the `projectbluefin/*` namespace,
-not the old `ublue-os/*` pre-migration namespace. `projectbluefin/knuckle` is
-included in that sync set.
+The sync jobs read the seven canonical lifecycle labels across the full repo set.
 
 ## Branch protection
 
@@ -114,12 +107,19 @@ code-owner review is active.
 
 | Repo | Mechanism | Required approvals |
 |---|---|---|
-| `common` | Ruleset `main-review-required-with-renovate-bypass` | 1 |
+| `common` | Ruleset `main-review-required-with-renovate-bypass` | 0; no code-owner review required (verified live, see [Verification](#verification)) |
 | `bluefin` | Branch protection on `main` | 1 |
 | `bluefin-lts` | Branch protection on `main` | 1 |
 | `dakota` | Branch protection on `main` | 1 |
 | `knuckle` | Ruleset `main — merge queue` | 1 (merge queue) |
 | `lab` | Ruleset `main — merge queue` | 0; `lint` is required |
+
+`common`'s ruleset name says "review-required" but the live rule sets
+`required_approving_review_count: 0` and `require_code_owner_review: false`.
+The name is aspirational/historical — do not trust it over the live API
+response. The ruleset still blocks non-fast-forward pushes and branch
+deletion, and a separate `main — merge queue` ruleset enforces the
+`validate` and `Build and push image (x86_64|aarch64)` status checks.
 
 For any repository using a GitHub merge queue, every required check workflow must
 also subscribe to the `merge_group` event with `types: [checks_requested]`.
@@ -141,16 +141,36 @@ This includes skill updates, `docs/SKILL.md` changes, and any other `docs/` cont
 
 ## Lifecycle automation
 
-| Repo | Workflow | State |
+Issue intake automation lives in
+[`projectbluefin/bonedigger`](https://github.com/projectbluefin/bonedigger) and is
+consumed through a `bonedigger.yml` caller:
+
+| Repo | Caller | State |
 |---|---|---|
-| `bluefin` | `lifecycle-caller.yml` | ✅ live |
-| `common` | `lifecycle-caller.yml` | ✅ live |
-| `bluefin-lts` | `lifecycle-caller.yml` | ✅ live |
-| `dakota` | `lifecycle-caller.yml` | ✅ live |
-| `knuckle` | `lifecycle-caller.yml` | ✅ live |
+| `bluefin` | `bonedigger.yml` | live |
+| `bluefin-lts` | `bonedigger.yml` | live |
+| `dakota` | `bonedigger.yml` | live |
+| `knuckle` | `bonedigger.yml` | live |
+| `common` | none | intentional — no lifecycle caller here |
 
-`common` owns the reusable `.github/workflows/lifecycle.yml`. Each repo's `lifecycle-caller.yml` calls that workflow at a pinned `common` commit SHA.
-
-Lifecycle labels now come from `labels.json` and are synced by `sync-labels.yml` across the factory.
+`common` does not own or run lifecycle automation. The seven canonical labels are
+documented in [`label-workflow.md`](label-workflow.md) and applied per repository;
+there is no cross-repo label sync workflow.
 
 Full unification (claim TTL, heartbeat, linked-PR requirement, stale-claim recovery across all engines) was tracked in projectbluefin/common#409 — **closed/resolved**.
+
+## Verification
+
+- [ ] `common`'s live approval requirement matches the ruleset API, not the ruleset name:
+
+  ```bash
+  gh api repos/projectbluefin/common/rulesets --jq '.[] | {id, name}'
+  gh api repos/projectbluefin/common/rulesets/<id> \
+    --jq '.rules[] | select(.type == "pull_request") | .parameters | {required_approving_review_count, require_code_owner_review}'
+  ```
+
+  Expected today: `required_approving_review_count: 0`, `require_code_owner_review: false`
+  (verified 2026-08-06 against ruleset `main-review-required-with-renovate-bypass`,
+  id `17070417`).
+- [ ] `pre-commit run check-skill-frontmatter --all-files` passes.
+- [ ] `pre-commit run check-skill-index --all-files` passes.

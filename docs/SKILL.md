@@ -29,7 +29,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Know when to stop and ask a human | [`human-gates.md`](skills/human-gates.md) |
 | Understand issue lifecycle / labels | [`label-workflow.md`](skills/label-workflow.md) |
 | Check PR queue or merge ruleset | [`queue-dashboard.md`](skills/queue-dashboard.md) |
-| Review an incoming PR | [`pr-review.md`](skills/pr-review.md) |
+| Review the PR / issue backlog (human-decides, agent-lands) | [`pr-review.md`](skills/pr-review.md) |
 | Understand the hive / kubestellar-bot loop | [`hive.md`](skills/hive.md) |
 | Manage the canonical hosted Project Bluefin Hive | [`hosted-hive.md`](skills/hosted-hive.md) |
 | Receive work through the Clankers relay | [`hosted-hive-clankers.md`](skills/hosted-hive-clankers.md) |
@@ -55,7 +55,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Work with NVIDIA GPU support | [`nvidia.md`](skills/nvidia.md) |
 | Work with OEM first-boot hooks | [`oem-hardware-hooks.md`](skills/oem-hardware-hooks.md) |
 | Understand MIME defaults | [`mime-defaults.md`](skills/mime-defaults.md) |
-| Understand skill-drift CI check | [`skill-drift.md`](skills/skill-drift.md) |
+| Understand why skill-drift was retired | [`skill-drift.md`](skills/skill-drift.md) |
 | Decide whether / how to update a skill | [`skill-improvement.md`](skills/skill-improvement.md) |
 | Author a new skill | [`write-a-skill.md`](skills/write-a-skill.md) |
 | Understand bonedigger lifecycle | [`bonedigger.md`](skills/bonedigger.md) |

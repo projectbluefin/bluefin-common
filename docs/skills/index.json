@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-29",
+  "generated_at": "2026-08-06",
   "schema_version": "1.0",
   "skills": [
     {
@@ -34,7 +34,7 @@
       ],
       "description": "bonedigger + kubestellar-bot lifecycle automation. Use when working on ujust report, issue lifecycle, priority escalation, or how fixes ship back to images.",
       "version": "1.0",
-      "last_updated": "2026-06-23",
+      "last_updated": "2026-07-30",
       "doc_type": "reference"
     },
     {
@@ -256,8 +256,8 @@
         "lifecycle"
       ],
       "description": "Triagers role, CODEOWNERS sentinel pattern, cross-repo sync workflow, and branch protection matrix for projectbluefin repos. Use when managing CODEOWNERS, adding/removing triager permissions, or syncing governance policy across repos.",
-      "version": "1.0",
-      "last_updated": "2026-07-20",
+      "version": "1.1",
+      "last_updated": "2026-08-06",
       "doc_type": "reference"
     },
     {
@@ -403,20 +403,19 @@
     {
       "id": "label-workflow",
       "name": "label-workflow",
-      "one_line_purpose": "Apply label taxonomy and the issue lifecycle handoff model.",
+      "one_line_purpose": "Route factory work using the canonical label workflow.",
       "entry_point": "docs/skills/label-workflow.md",
       "category": "meta",
       "status": "active",
       "tags": [
         "labels",
         "issues",
-        "workflow",
-        "clanker"
+        "workflow"
       ],
-      "description": "Label taxonomy, issue lifecycle (filed\u2192triage\u2192queued\u2192claimed\u2192done), slash commands, and the agent/human handoff model for projectbluefin factory repos. Use when understanding the issue lifecycle, triaging work, or using slash commands.",
-      "version": "1.1",
+      "description": "The canonical Trust the Machines workflow and seven-label contract for projectbluefin factory repositories. Use when triaging, routing, or reviewing work.",
+      "version": "2.0",
       "last_updated": "2026-07-28",
-      "doc_type": "reference"
+      "doc_type": "procedure"
     },
     {
       "id": "mime-defaults",
@@ -493,19 +492,20 @@
     {
       "id": "pr-review",
       "name": "pr-review",
-      "one_line_purpose": "Review PRs against common's CI gates and report template.",
+      "one_line_purpose": "Run human-decides, agent-lands backlog review in batches of five.",
       "entry_point": "docs/skills/pr-review.md",
       "category": "ci-ops",
       "status": "active",
       "tags": [
         "review",
-        "testing",
-        "contributing"
+        "merge",
+        "triage",
+        "backlog"
       ],
-      "description": "PR reviewer's guide for projectbluefin/common. Use when reviewing PRs, interpreting CI gates, or following the review report template.",
-      "version": "2.0",
-      "last_updated": "2026-06-24",
-      "doc_type": "reference"
+      "description": "Human-decides, agent-lands PR and issue backlog review. Assemble a 5-item dossier, collect per-item human verdicts, stage gh commands, land on confirm. Use when reviewing the PR queue or triaging the issue backlog.",
+      "version": "3.0",
+      "last_updated": "2026-08-06",
+      "doc_type": "procedure"
     },
     {
       "id": "qa",
@@ -537,9 +537,27 @@
         "dashboard"
       ],
       "description": "PR review and merge queue workflow for projectbluefin/common \u2014 ruleset, triage tiers, rebase patterns, and actions for each PR state. Use when reviewing open PRs, understanding the merge ruleset, or deciding how to handle a stalled PR.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-08-06",
       "doc_type": "reference"
+    },
+    {
+      "id": "queue-feed",
+      "name": "queue-feed",
+      "one_line_purpose": "Read and validate the Project Bluefin static pull-request queue feed.",
+      "entry_point": "docs/skills/queue-feed.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "queue",
+        "pull-requests",
+        "json",
+        "redirects"
+      ],
+      "description": "Reads the Project Bluefin static pull-request queue as validated JSON. Use when inspecting queue.projectbluefin.io, filtering its queue items, or verifying its root redirect targets queue.json.",
+      "version": "1.0",
+      "last_updated": "2026-08-03",
+      "doc_type": "procedure"
     },
     {
       "id": "release-promotion",
@@ -591,24 +609,24 @@
       ],
       "description": "Shell script authoring and testability. Use when writing or testing shell scripts under system_files/, removing scripts, or adding bats tests.",
       "version": "1.0",
-      "last_updated": "2026-06-24",
+      "last_updated": "2026-08-01",
       "doc_type": "reference"
     },
     {
       "id": "skill-drift",
       "name": "skill-drift",
-      "one_line_purpose": "Decide if a PR needs a skill-doc update under the drift waiver process.",
+      "one_line_purpose": "Record why the skill-drift CI check was retired and what replaced it.",
       "entry_point": "docs/skills/skill-drift.md",
       "category": "meta",
-      "status": "active",
+      "status": "deprecated",
       "tags": [
         "skills",
         "drift",
         "ci"
       ],
-      "description": "Skill-drift CI check and waiver process. Use when a PR changes implementation files and you need to decide if a skill update is required.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "description": "Retirement record for the skill-drift CI check. Use when you find a stale reference to skill-drift.yml, or are tempted to add a per-convention CI gate for skill documentation.",
+      "version": "2.0",
+      "last_updated": "2026-08-01",
       "doc_type": "reference"
     },
     {
@@ -658,8 +676,8 @@
         "reference"
       ],
       "description": "What each GitHub workflow in common is for. Use when editing workflows, debugging CI, or understanding pipeline stages.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "2.2",
+      "last_updated": "2026-08-02",
       "doc_type": "reference"
     },
     {
@@ -674,7 +692,7 @@
         "authoring",
         "documentation"
       ],
-      "description": "Author a new agent skill for projectbluefin/common. Covers front-matter, size budget, canonical linking, verification sections, and the skill-drift mandate. Use when creating a new docs/skills/*.md file or splitting an oversized skill.",
+      "description": "Author a new agent skill for projectbluefin/common. Covers front-matter, size budget, canonical linking, verification sections, and the skill-update mandate. Use when creating a new docs/skills/*.md file or splitting an oversized skill.",
       "version": "1.0",
       "last_updated": "2026-07-20",
       "doc_type": "procedure"

@@ -35,7 +35,7 @@ setup() {
 
     # Mock commands that must not run for real in tests
     mkdir -p "${WORKDIR}/bin"
-    for cmd in grubby reboot plymouth udevadm; do
+    for cmd in reboot plymouth udevadm; do
         printf '#!/bin/bash\necho "mock: %s $*" >&2\nexit 0\n' "$cmd" \
             > "${WORKDIR}/bin/$cmd"
         chmod +x "${WORKDIR}/bin/$cmd"
@@ -79,51 +79,38 @@ teardown() {
     [ "${status}" -eq 0 ]
 }
 
-@test "10-framework: does not call grubby on non-Framework hardware" {
+@test "10-framework: does not run karg cleanup on non-Framework hardware" {
     run bash "${FRAMEWORK_HOOK}"
     [ "${status}" -eq 0 ]
-    # grubby mock writes to stderr if called — verify it wasn't
-    [[ "${output}" != *"mock: grubby"* ]]
+    [[ "${output}" != *"Removing obsolete hid_sensor_hub karg"* ]]
 }
 
 # ---------------------------------------------------------------------------
 # 10-framework.sh — Intel Framework (kargs fix)
 # ---------------------------------------------------------------------------
 
-@test "10-framework: detects Intel Framework and cleans up legacy grubby karg" {
+@test "10-framework: detects Intel Framework and cleans up legacy rpm-ostree karg" {
     echo "Framework" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
     printf 'vendor_id\t: GenuineIntel\n' > "${WORKDIR}/proc/cpuinfo"
-    # grubby --info returns existing hid_sensor_hub karg
-    cat > "${WORKDIR}/bin/grubby" << EOF
+    cat > "${WORKDIR}/bin/rpm-ostree" << 'EOF'
 #!/bin/bash
-case "\$1" in
-    --info=DEFAULT) echo 'args="quiet module_blacklist=hid_sensor_hub splash"' ;;
-    --update-kernel=ALL) echo "mock: grubby update" >&2 ;;
+case "$1" in
+    kargs)
+        if [[ "$*" == *"delete-if-present"* ]]; then
+            echo "mock: rpm-ostree kargs delete" >&2
+        else
+            echo "quiet module_blacklist=hid_sensor_hub splash"
+        fi
+        ;;
 esac
 exit 0
 EOF
-    chmod +x "${WORKDIR}/bin/grubby"
+    chmod +x "${WORKDIR}/bin/rpm-ostree"
 
     run bash "${FRAMEWORK_HOOK}"
     [ "${status}" -eq 0 ]
-    [[ "${output}" == *"Removing legacy grubby karg"* ]]
-    [[ "${output}" == *"mock: grubby update"* ]]
-}
-
-@test "10-framework: skips kargs fix if hid_sensor_hub already present" {
-    echo "Framework" > "${WORKDIR}/sys/devices/virtual/dmi/id/chassis_vendor"
-    printf 'vendor_id\t: GenuineIntel\n' > "${WORKDIR}/proc/cpuinfo"
-    cat > "${WORKDIR}/bin/grubby" << 'EOF'
-#!/bin/bash
-echo 'args="quiet module_blacklist=hid_sensor_hub"'
-exit 0
-EOF
-    chmod +x "${WORKDIR}/bin/grubby"
-
-    run bash "${FRAMEWORK_HOOK}"
-    [ "${status}" -eq 0 ]
-    # Should not print "Intel Framework Laptop detected" (karg already set)
-    [[ "${output}" != *"Intel Framework Laptop detected"* ]]
+    [[ "${output}" == *"Removing obsolete hid_sensor_hub karg via rpm-ostree"* ]]
+    [[ "${output}" == *"mock: rpm-ostree kargs delete"* ]]
 }
 
 # ---------------------------------------------------------------------------
