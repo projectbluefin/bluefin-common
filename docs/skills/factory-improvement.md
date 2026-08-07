@@ -43,7 +43,7 @@ metadata:
 ## When NOT to Use
 
 - Fixing a specific bug (use the repo's AGENTS.md + relevant skill)
-- Reviewing a single PR (use `hive-review` or `queue-dashboard`)
+- Reviewing a single PR (use `hive-review` or `pr-review`)
 - Active incident response — fix the incident first, then run this loop
 
 ---

@@ -493,7 +493,7 @@
       "id": "pr-review",
       "name": "pr-review",
       "one_line_purpose": "Run human-decides, agent-lands backlog review in batches of five.",
-      "entry_point": "docs/skills/pr-review.md",
+      "entry_point": "docs/skills/pr-review/SKILL.md",
       "category": "ci-ops",
       "status": "active",
       "tags": [
@@ -503,7 +503,7 @@
         "backlog"
       ],
       "description": "Human-decides, agent-lands PR and issue backlog review. Assemble a 5-item dossier, collect per-item human verdicts, stage gh commands, land on confirm. Use when reviewing the PR queue or triaging the issue backlog.",
-      "version": "3.0",
+      "version": "3.1",
       "last_updated": "2026-08-06",
       "doc_type": "procedure"
     },
@@ -522,23 +522,6 @@
       "description": "QA model, test coverage matrix, promotion gates by repo, hardware gap, and how to run the test suite for projectbluefin factory repos. Use when understanding QA coverage, running tests, or checking promotion gate status.",
       "version": "1.0",
       "last_updated": "2026-06-23",
-      "doc_type": "reference"
-    },
-    {
-      "id": "queue-dashboard",
-      "name": "queue-dashboard",
-      "one_line_purpose": "Triage the PR review and merge queue for common.",
-      "entry_point": "docs/skills/queue-dashboard.md",
-      "category": "ci-ops",
-      "status": "active",
-      "tags": [
-        "queue",
-        "issues",
-        "dashboard"
-      ],
-      "description": "PR review and merge queue workflow for projectbluefin/common \u2014 ruleset, triage tiers, rebase patterns, and actions for each PR state. Use when reviewing open PRs, understanding the merge ruleset, or deciding how to handle a stalled PR.",
-      "version": "1.1",
-      "last_updated": "2026-08-06",
       "doc_type": "reference"
     },
     {
