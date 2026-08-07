@@ -94,6 +94,34 @@ def build_catalog() -> dict:
     }
 
 
+def load_existing_catalog() -> dict | None:
+    """Return the currently committed catalog, or None if it doesn't exist/parse."""
+    if not INDEX_PATH.exists():
+        return None
+    try:
+        return json.loads(INDEX_PATH.read_text())
+    except json.JSONDecodeError:
+        return None
+
+
+def pin_unchanged_generated_at(catalog: dict, existing: dict | None) -> None:
+    """Reuse the committed `generated_at` when the actual catalog content
+    (schema_version + skills) hasn't changed.
+
+    `generated_at` is a "last regenerated" timestamp, not build-time metadata:
+    it should only advance when a skill doc actually changes. Without this,
+    every run stamps today's date, which makes `--check` fail on pure
+    calendar drift (e.g. a PR branch cut before today, or CI running a day
+    after the last regeneration) even though no skill content is stale.
+    """
+    if (
+        existing is not None
+        and existing.get("schema_version") == catalog["schema_version"]
+        and existing.get("skills") == catalog["skills"]
+    ):
+        catalog["generated_at"] = existing.get("generated_at", catalog["generated_at"])
+
+
 def validate_catalog(catalog: dict) -> None:
     schema = json.loads(SCHEMA_PATH.read_text())
     validator = Draft202012Validator(schema)
@@ -137,6 +165,7 @@ def main() -> int:
 
     try:
         catalog = build_catalog()
+        pin_unchanged_generated_at(catalog, load_existing_catalog())
         validate_catalog(catalog)
     except ValueError as e:
         print(f"error: {e}", file=sys.stderr)
