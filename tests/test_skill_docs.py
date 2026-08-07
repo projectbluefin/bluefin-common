@@ -251,6 +251,62 @@ def test_generate_skill_index_round_trip(tmp_path: Path, monkeypatch: pytest.Mon
     assert mod.main() == 0
 
 
+def test_generate_skill_index_check_tolerates_stale_generated_at(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A `--check` run must not fail purely because `generated_at` no longer
+    matches today's date. Real-world PR CI runs on a different calendar day
+    than the last regeneration on main, and that alone is not staleness.
+    """
+    repo_root = make_skill_tree(tmp_path)
+    mod = load_generate_skill_index()
+    patch_skill_index_paths(mod, repo_root)
+
+    monkeypatch.setattr(sys, "argv", ["generate_skill_index.py", "--write"])
+    assert mod.main() == 0
+
+    index_path = repo_root / "docs" / "skills" / "index.json"
+    md_path = repo_root / "docs" / "skills" / "index.md"
+
+    # Simulate calendar drift: back-date the committed files without
+    # touching any skill content.
+    data = json.loads(index_path.read_text())
+    data["generated_at"] = "2020-01-01"
+    index_path.write_text(json.dumps(data, indent=2) + "\n")
+    md_text = md_path.read_text().replace(
+        f"Generated: {mod.date.today().isoformat()}", "Generated: 2020-01-01"
+    )
+    md_path.write_text(md_text)
+
+    monkeypatch.setattr(sys, "argv", ["generate_skill_index.py", "--check"])
+    assert mod.main() == 0
+
+
+def test_generate_skill_index_check_still_fails_on_real_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A genuine content change without regeneration must still fail
+    `--check` — the date-drift tolerance must not weaken this protection.
+    """
+    repo_root = make_skill_tree(tmp_path)
+    mod = load_generate_skill_index()
+    patch_skill_index_paths(mod, repo_root)
+
+    monkeypatch.setattr(sys, "argv", ["generate_skill_index.py", "--write"])
+    assert mod.main() == 0
+
+    # Modify a skill doc's front matter without regenerating the index.
+    zeta_path = repo_root / "docs" / "skills" / "zeta.md"
+    zeta_path.write_text(
+        zeta_path.read_text().replace("Zeta purpose", "Totally different purpose")
+    )
+
+    monkeypatch.setattr(sys, "argv", ["generate_skill_index.py", "--check"])
+    assert mod.main() == 1
+    captured = capsys.readouterr()
+    assert "index.json is stale" in captured.err
+
+
 def test_generate_skill_index_rejects_missing_entry_point(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
