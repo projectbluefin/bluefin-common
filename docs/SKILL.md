@@ -28,8 +28,8 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Understand cross-repo agent rules | [`factory/agentic-model.md`](factory/agentic-model.md) |
 | Know when to stop and ask a human | [`human-gates.md`](skills/human-gates.md) |
 | Understand issue lifecycle / labels | [`label-workflow.md`](skills/label-workflow.md) |
-| Check PR queue or merge ruleset | [`queue-dashboard.md`](skills/queue-dashboard.md) |
-| Review the PR / issue backlog (human-decides, agent-lands) | [`pr-review.md`](skills/pr-review.md) |
+| Review the PR / issue backlog (human-decides, agent-lands) | [`pr-review/SKILL.md`](skills/pr-review/SKILL.md) |
+| Read the static pull-request queue feed | [`queue-feed.md`](skills/queue-feed.md) |
 | Understand the hive / kubestellar-bot loop | [`hive.md`](skills/hive.md) |
 | Manage the canonical hosted Project Bluefin Hive | [`hosted-hive.md`](skills/hosted-hive.md) |
 | Receive work through the Clankers relay | [`hosted-hive-clankers.md`](skills/hosted-hive-clankers.md) |

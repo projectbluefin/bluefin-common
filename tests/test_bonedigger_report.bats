@@ -78,6 +78,58 @@ teardown() {
     [ -z "$output" ]
 }
 
+@test "queue selection records one workflow-readable routing preference" {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+case "$1" in
+    choose) printf 'Submit to the clanker queue for machine analysis\n' ;;
+    style) exit 0 ;;
+esac
+EOF
+    chmod +x "$WORKDIR/bin/gum"
+    mkdir -p "$WORKDIR/draft"
+    : > "$WORKDIR/draft/queue-label.txt"
+    printf '%s\n' \
+        '## Bluefin report' \
+        '<!-- bonedigger-queue-preference: 3-human-queue -->' \
+        > "$WORKDIR/draft/issue.md"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        choose_queue_preference
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ "$(< "$WORKDIR/draft/queue-label.txt")" = "3-clanker-queue" ]
+    [ "$(grep -cF '<!-- bonedigger-queue-preference: 3-clanker-queue -->' "$WORKDIR/draft/issue.md")" -eq 1 ]
+    ! grep -qF '<!-- bonedigger-queue-preference: 3-human-queue -->' "$WORKDIR/draft/issue.md"
+}
+
+@test "no queue preference still records ujust report intake" {
+    cat << 'EOF' > "$WORKDIR/bin/gum"
+#!/usr/bin/bash
+case "$1" in
+    choose) printf 'No queue preference\n' ;;
+    style) exit 0 ;;
+esac
+EOF
+    chmod +x "$WORKDIR/bin/gum"
+    mkdir -p "$WORKDIR/draft"
+    : > "$WORKDIR/draft/queue-label.txt"
+    printf '## Bluefin report\n' > "$WORKDIR/draft/issue.md"
+
+    run env PATH="$WORKDIR/bin:$PATH" bash -c '
+        source "$1"
+        DRAFT_DIR="$2"
+        choose_queue_preference
+    ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR/draft"
+
+    [ "$status" -eq 0 ]
+    [ -z "$(< "$WORKDIR/draft/queue-label.txt")" ]
+    grep -qF '<!-- bonedigger-queue-preference: none -->' "$WORKDIR/draft/issue.md"
+}
+
 @test "network smart logs are redacted and bounded" {
     cat << 'EOF' > "$WORKDIR/bin/journalctl"
 #!/usr/bin/bash
@@ -135,6 +187,20 @@ EOF
     ' _ "$BONEDIGGER_SCRIPT" "$WORKDIR"
 
     [ "$status" -eq 0 ]
+}
+
+@test "persist_local_copy skips missing report files and keeps available copies" {
+    mkdir -p "$WORKDIR/draft"
+    printf 'summary\n' > "$WORKDIR/draft/issue.md"
+    printf 'projectbluefin/common\n' > "$WORKDIR/draft/repo.txt"
+    export DRAFT_DIR="$WORKDIR/draft"
+    export LOCAL_REPORT_ROOT="$WORKDIR/state/ujust-report"
+
+    run bash -c 'source "$1"; persist_local_copy' _ "$BONEDIGGER_SCRIPT"
+
+    [ "$status" -eq 0 ]
+    [ "$(cat "$LOCAL_REPORT_ROOT/last/summary.md")" = "summary" ]
+    [ ! -e "$LOCAL_REPORT_ROOT/last/journal.txt" ]
 }
 
 @test "issue creation uses direct gh arguments and one queue label" {

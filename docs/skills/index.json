@@ -34,7 +34,7 @@
       ],
       "description": "bonedigger + kubestellar-bot lifecycle automation. Use when working on ujust report, issue lifecycle, priority escalation, or how fixes ship back to images.",
       "version": "1.0",
-      "last_updated": "2026-07-30",
+      "last_updated": "2026-08-06",
       "doc_type": "reference"
     },
     {
@@ -492,8 +492,8 @@
     {
       "id": "pr-review",
       "name": "pr-review",
-      "one_line_purpose": "Run human-decides, agent-lands backlog review in batches of five.",
-      "entry_point": "docs/skills/pr-review.md",
+      "one_line_purpose": "Run human-decides, agent-lands backlog review one card at a time.",
+      "entry_point": "docs/skills/pr-review/SKILL.md",
       "category": "ci-ops",
       "status": "active",
       "tags": [
@@ -502,8 +502,8 @@
         "triage",
         "backlog"
       ],
-      "description": "Human-decides, agent-lands PR and issue backlog review. Assemble a 5-item dossier, collect per-item human verdicts, stage gh commands, land on confirm. Use when reviewing the PR queue or triaging the issue backlog.",
-      "version": "3.0",
+      "description": "Human-decides, agent-lands PR and issue backlog review. Present one card at a time, take the human verdict, execute it immediately, then advance. Use when reviewing the PR queue or triaging the issue backlog.",
+      "version": "3.2",
       "last_updated": "2026-08-06",
       "doc_type": "procedure"
     },
@@ -522,23 +522,6 @@
       "description": "QA model, test coverage matrix, promotion gates by repo, hardware gap, and how to run the test suite for projectbluefin factory repos. Use when understanding QA coverage, running tests, or checking promotion gate status.",
       "version": "1.0",
       "last_updated": "2026-06-23",
-      "doc_type": "reference"
-    },
-    {
-      "id": "queue-dashboard",
-      "name": "queue-dashboard",
-      "one_line_purpose": "Triage the PR review and merge queue for common.",
-      "entry_point": "docs/skills/queue-dashboard.md",
-      "category": "ci-ops",
-      "status": "active",
-      "tags": [
-        "queue",
-        "issues",
-        "dashboard"
-      ],
-      "description": "PR review and merge queue workflow for projectbluefin/common \u2014 ruleset, triage tiers, rebase patterns, and actions for each PR state. Use when reviewing open PRs, understanding the merge ruleset, or deciding how to handle a stalled PR.",
-      "version": "1.1",
-      "last_updated": "2026-08-06",
       "doc_type": "reference"
     },
     {

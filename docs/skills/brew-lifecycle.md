@@ -94,6 +94,15 @@ uninstalled on next login after update.**
 - Packages already on the image (`fastfetch`, `gum`, `just`, `gcc`) — no need
   to duplicate them in brew
 
+### `fzf` and `ujust --choose`
+
+`fzf` is managed through `system-cli.Brewfile`, so it may be unavailable before
+the first-login `brew-preinstall.service` completes. The `ujust` wrapper
+bootstraps `fzf` on demand when `--choose` is requested, then reinitializes the
+Homebrew environment before dispatching to `just`. Keep this bootstrap path
+separate from ordinary `ujust` commands so missing Homebrew does not affect
+non-interactive recipes.
+
 ---
 
 ## How brew-preinstall works

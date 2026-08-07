@@ -105,7 +105,7 @@ ls .github/workflows/
 | Pre/post-merge or promotion-candidate tests | `e2e-ci.md` |
 | Release cadence, promotion criteria, artifact signing | `release-promotion.md` |
 | CODEOWNERS or governance policy | `governance.md` |
-| Queue state / lifecycle | `queue-dashboard.md` and Hive context if needed |
+| Queue state / lifecycle | `pr-review/SKILL.md` (merge queue section) and Hive context if needed |
 
 ## Hard rule
 
