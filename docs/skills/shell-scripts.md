@@ -1,7 +1,7 @@
 ---
 name: shell-scripts
 version: "1.0"
-last_updated: "2026-06-24"
+last_updated: "2026-08-01"
 id: shell-scripts
 one_line_purpose: Write and test shell scripts under system_files/.
 entry_point: docs/skills/shell-scripts.md
@@ -51,6 +51,7 @@ metadata:
   - [Idempotent main guard](#idempotent-main-guard)
   - [Testability env-var override idiom](#testability-env-var-override-idiom)
   - [PATH-stub mocking for interactive commands](#path-stub-mocking-for-interactive-commands)
+  - [Docs skill validators need synthetic trees](#docs-skill-validators-need-synthetic-trees)
   - [Shellcheck pitfalls](#shellcheck-pitfalls)
   - [Both quoting fixes required for hook runners](#both-quoting-fixes-required-for-hook-runners)
   - [Subagent factual claims need source verification](#subagent-factual-claims-need-source-verification)
@@ -212,6 +213,18 @@ setup() {
 }
 ```
 Used for `gum`, `systemd-cryptenroll`, `bootc`, `rpm-ostree`. Check `"${WORKDIR}/calls.log"` in assertions.
+
+### Docs skill validators need synthetic trees
+
+Scripts that validate `docs/skills/` or `docs/SKILL.md` should run from a temp
+cwd with a handcrafted mini catalog. The real repo tree is too large for clean
+negative tests, and a synthetic tree keeps link, front-matter, and index
+failures deterministic.
+
+For `generate_skill_index.py`, patch `REPO_ROOT`, `SKILLS_DIR`, `SCHEMA_PATH`,
+and `INDEX_PATH` to point at the fixture tree before calling `build_catalog()`
+or `main()`. This keeps `--write` and `--check` safe in unit tests without
+touching the live repo files.
 
 ### Isolate fallback paths from host-installed commands
 
