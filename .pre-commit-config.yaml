@@ -1,0 +1,63 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 2c9f875913ee60ca25ce70243dc24d5b6415598c # v4.6.0
+    hooks:
+        - id: check-json
+          exclude: \.devcontainer\.json
+        - id: check-toml
+        - id: check-yaml
+        - id: end-of-file-fixer
+        - id: trailing-whitespace
+        - id: check-merge-conflict
+        - id: detect-private-key
+        - id: check-added-large-files
+  - repo: https://github.com/rhysd/actionlint
+    rev: 03d0035246f3e81f36aed592ffb4bebf33a03106 # v1.7.7
+    hooks:
+      - id: actionlint
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: f805888065fdb6162e1f800e50bb9460cbd223d6 # 0.37.2
+    hooks:
+      - id: check-jsonschema
+        name: Validate release-state.yaml
+        files: ^\.github/release-state\.yaml$
+        args:
+          - --schemafile
+          - https://raw.githubusercontent.com/projectbluefin/actions/e39c94703801a272245bf2a96416594f36fe6f93/docs/schemas/release-state.schema.json
+  - repo: local
+    hooks:
+      - id: no-floating-action-tags
+        name: Block floating GitHub Action tags (@main, @v*)
+        language: pygrep
+        entry: 'uses:(?!.*projectbluefin/).*@(main|master|latest|v[0-9])'
+        types: [yaml]
+        files: '\.github/workflows/'
+      - id: no-discord-token
+        name: Block Discord bot tokens
+        language: pygrep
+        entry: '[A-Za-z0-9_-]{24,28}\.[A-Za-z0-9_-]{6}\.[A-Za-z0-9_-]{27,38}'
+        exclude: '\.pre-commit-config\.yaml$'
+      - id: check-skill-frontmatter
+        name: Validate skill front-matter
+        language: system
+        entry: bash scripts/check-skill-frontmatter.sh
+        pass_filenames: false
+        always_run: true
+      - id: check-skill-index
+        name: Validate docs/SKILL.md skill index
+        language: system
+        entry: bash scripts/check-skill-index.sh
+        pass_filenames: false
+        always_run: true
+      - id: check-doc-links
+        name: Validate internal markdown links
+        language: system
+        entry: python3 scripts/check-doc-links.sh
+        pass_filenames: false
+        always_run: true
+      - id: check-skill-catalog
+        name: Validate docs/skills/index.json is up to date
+        language: system
+        entry: python3 scripts/generate_skill_index.py --check
+        pass_filenames: false
+        always_run: true

@@ -1,12 +1,12 @@
 #-------------- DESKTOP MODIFICATIONS --------------#
 
 [org.gnome.shell]
-favorite-apps = ['com.fyralabs.Readymade.desktop', 'org.mozilla.firefox.desktop', 'org.mozilla.Thunderbird.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'org.gnome.Software.desktop', 'code.desktop']
-enabled-extensions = ['appindicatorsupport@rgcjonas.gmail.com', 'dash-to-dock@micxgx.gmail.com', 'blur-my-shell@aunetx', 'gsconnect@andyholmes.github.io', 'logomenu@aryan_k', 'tailscale@joaophi.github.com', 'search-light@icedman.github.com']
+favorite-apps = ['org.mozilla.firefox.desktop', 'org.mozilla.Thunderbird.desktop', 'org.gnome.Nautilus.desktop', 'io.github.kolunmi.Bazaar.desktop', 'org.gnome.Software.desktop', 'code.desktop']
+enabled-extensions = ['appindicatorsupport@rgcjonas.gmail.com', 'bazaar-integration@kolunmi.github.io', 'caffeine@patapon.info', 'blur-my-shell@aunetx', 'custom-command-list@storageb.github.com', 'dash-to-dock@micxgx.gmail.com', 'gradia-integration@alexandervanhee.github.io', 'gsconnect@andyholmes.github.io', 'search-light@icedman.github.com']
 
 [org.gnome.desktop.background]
-picture-uri='file:///usr/share/backgrounds/bluefin/12-bluefin.xml'
-picture-uri-dark='file:///usr/share/backgrounds/bluefin/12-bluefin.xml'
+picture-uri='file:///usr/share/backgrounds/bluefin/06-bluefin.xml'
+picture-uri-dark='file:///usr/share/backgrounds/bluefin/06-bluefin.xml'
 picture-options='zoom'
 primary-color='000000'
 secondary-color='FFFFFF'
@@ -17,7 +17,7 @@ clock-show-weekday=true
 font-antialiasing="rgba"
 font-name="Adwaita Sans 11"
 document-font-name="Adwaita Sans 12"
-monospace-font-name="JetBrains Mono 11"
+monospace-font-name="Adwaita Mono 11"
 accent-color="slate"
 
 [org.gnome.desktop.search-providers]
@@ -78,27 +78,12 @@ sort-directories-first=true
 [org.gnome.mutter]
 center-new-windows=true
 check-alive-timeout=uint32 20000
-experimental-features=['scale-monitor-framebuffer', 'xwayland-native-scaling']
 
 [com.github.stunkymonkey.nautilus-open-any-terminal]
 terminal='ptyxis'
 keybindings=''
 new-tab=false
 flatpak='off'
-
-[org.gnome.shell.extensions.Logo-menu]
-symbolic-icon=true
-menu-button-icon-image=30
-menu-button-terminal='xdg-terminal-exec'
-menu-button-system-monitor='/usr/bin/missioncenter-helper'
-menu-button-extensions-app='com.mattjakeman.ExtensionManager.desktop'
-menu-button-software-center='/usr/bin/flatpak run io.github.kolunmi.Bazaar'
-show-activities-button=true
-show-lockscreen=false
-show-power-option=false
-show-gamemode=false
-hide-forcequit=true
-show-distroshelf=true
 
 [org.gnome.shell.extensions.search-light]
 shortcut-search=['<Super>space']
@@ -112,6 +97,9 @@ background-color=(0.0, 0.0, 0.0, 0.8)
 [org.gnome.shell.extensions.blur-my-shell.dash-to-dock]
 blur=true
 
+[org.gnome.shell.extensions.blur-my-shell.popup]
+blur=false
+
 #-------------- REMAINING SCHEMAS IN THIS SETTING SECTION ARE LOCATED IN DCONF --------------#
 # Settings bellow are supported with gschema override, but other settings, which are relocatable schemas, are not. Edit dconfs if you need to modify relocatable schemas.
 
@@ -121,7 +109,7 @@ folder-children=['Games', 'GamingUtilities', 'Utilities', 'Containers', 'Wine', 
 
 # Modifying shortcut actions for custom0, custom1, custom2, etc. are recognized as relocatable schemas
 [org.gnome.settings-daemon.plugins.media-keys]
-custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/']
+custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom6/']
 home=['<Super>e']
 
 # Ptyxis color palette is recognized as a relocatable schema
@@ -132,7 +120,5 @@ restore-window-size=false
 audible-bell=false
 profile-uuids=['2871e8027773ae74d6c87a5f659bbc74']
 default-profile-uuid='2871e8027773ae74d6c87a5f659bbc74'
-
-# LogoMenu extension uses relocatable schemas, so additional settings are in dconf
 
 # SearchLight extension misses gschema XML file, so it's located in dconf

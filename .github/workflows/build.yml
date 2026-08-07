@@ -7,6 +7,11 @@ on:
       - '*.md'
       - 'LICENSE'
       - '.gitignore'
+      - 'docs/**'
+      - 'AGENTS.md'
+      # .github/workflows/** intentionally NOT ignored: Renovate bumps action SHAs via
+      # digest PRs that only touch workflows; required Build checks must run so the
+      # merge queue can satisfy them.
   push:
     branches:
       - main
@@ -14,8 +19,17 @@ on:
       - '*.md'
       - 'LICENSE'
       - '.gitignore'
+      - 'docs/**'
+      - 'AGENTS.md'
+      - '.github/workflows/**'
   merge_group:
   workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
@@ -23,18 +37,33 @@ env:
 
 jobs:
   build_push:
-    name: Build and push image
-    runs-on: ubuntu-latest
+    name: Build and push image (${{ matrix.arch }})
+    runs-on: ${{ matrix.runs_on }}
     permissions:
       contents: read
       packages: write
-      id-token: write
-
+      security-events: write  # SARIF upload for Trivy scan results
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runs_on: ubuntu-24.04
+            arch_suffix: amd64
+          - arch: aarch64
+            runs_on: ubuntu-24.04-arm
+            arch_suffix: arm64
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          submodules: recursive
+          submodules: true
+
+      - name: Setup runner
+        uses: projectbluefin/actions/bootc-build/setup-runner@74c4356b36dd94c0eadf15bbe63a26b58a0e7468 # v1
+        with:
+          storage-backend: btrfs
+          update-podman: "true"
 
       # Keep large image/layer extraction from exhausting the hosted runner.
       - name: Free disk space
@@ -46,65 +75,140 @@ jobs:
         id: generate-tags
         shell: bash
         run: |
-          echo "sha_short=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-          alias_tags=()
-          # Only perform the follow code when the action is spawned from a Pull Request
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            alias_tags+=("pr-${{ github.event.number }}")
-          else
-            # The following is run when the timer is triggered or a merge/push to main
-            echo "date=$(date +%Y%m%d)" >> $GITHUB_OUTPUT
-            alias_tags+=("latest")
+          SHA_SHORT="${GITHUB_SHA::7}"
+          LOCAL_TAG="${SHA_SHORT}-${{ matrix.arch_suffix }}"
+          echo "sha_short=${SHA_SHORT}" >> "$GITHUB_OUTPUT"
+          echo "local_tag=${LOCAL_TAG}" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.event_name }}" != "pull_request" ]]; then
+            echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
           fi
-          echo "alias_tags=${alias_tags[*]}" >> $GITHUB_OUTPUT
 
       - name: Build Image
         id: build_image
-        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
+        uses: redhat-actions/buildah-build@3a51aade9afa17e5c78256bcbe2e1ee08c7b995b # v3
         with:
           containerfiles: |
             ./Containerfile
           image: ${{ env.IMAGE_NAME }}
-          tags: |
-            ${{ steps.generate-tags.outputs.alias_tags }}
-            ${{ steps.generate-tags.outputs.date }}
-            ${{ steps.generate-tags.outputs.sha_short }}
+          tags: ${{ steps.generate-tags.outputs.local_tag }}
           oci: true
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4
-        if: github.event_name != 'pull_request'
+      - name: Export image for scanning
+        if: github.event_name != 'merge_group'
+        shell: bash
+        run: |
+          set -eoux pipefail
+          # buildah-build stores the image in rootless buildah storage.
+          # Use buildah push to export to docker-archive for Trivy.
+          buildah push \
+            "${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}" \
+            "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
+
+      - name: Promote image to root storage for push
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        shell: bash
+        run: |
+          set -eoux pipefail
+          # buildah-build stores in rootless user storage; push-image uses
+          # sudo podman push which reads root storage (/var/lib/containers).
+          # Import the already-exported scan archive into root storage.
+          sudo skopeo copy \
+            "docker-archive:/tmp/scan-image.tar:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}" \
+            "containers-storage:${{ env.IMAGE_NAME }}:${{ steps.generate-tags.outputs.local_tag }}"
+
+      - name: Scan image for CVEs
+        if: github.event_name != 'merge_group'
+        uses: projectbluefin/actions/bootc-build/scan-image@74c4356b36dd94c0eadf15bbe63a26b58a0e7468 # v1
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
+          input: /tmp/scan-image.tar
+          severity-threshold: CRITICAL
+          exit-code: ${{ github.event_name == 'pull_request' && '0' || '1' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        id: push
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        uses: projectbluefin/actions/bootc-build/push-image@74c4356b36dd94c0eadf15bbe63a26b58a0e7468 # v1
+        with:
+          image-name: ${{ env.IMAGE_NAME }}
+          tags: ${{ steps.generate-tags.outputs.local_tag }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Write digest to file
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        shell: bash
+        run: |
+          mkdir -p /tmp/digests
+          echo "${{ steps.push.outputs.digest }}" > "/tmp/digests/${{ matrix.arch_suffix }}.txt"
+
+      - name: Upload digest
+        if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: digest-${{ matrix.arch_suffix }}
+          path: /tmp/digests/${{ matrix.arch_suffix }}.txt
+          if-no-files-found: error
+          retention-days: 1
+
+  manifest:
+    name: Create and sign multi-arch manifest
+    needs: [build_push]
+    if: github.event_name != 'pull_request' && github.event_name != 'merge_group'
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+      id-token: write      # keyless cosign signing via OIDC
+      attestations: write  # GitHub SBOM + SLSA provenance attestations
+
+    steps:
+      - name: Generate manifest tags
+        id: manifest-tags
+        shell: bash
+        run: |
+          echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date +%Y%m%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Download digests
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: digest-*
+          merge-multiple: true
+          path: /tmp/digests
+
+      - name: Build digests JSON
+        id: digests
+        shell: bash
+        run: |
+          AMD64=$(cat /tmp/digests/amd64.txt)
+          ARM64=$(cat /tmp/digests/arm64.txt)
+          echo "json={\"amd64\": \"${AMD64}\", \"arm64\": \"${ARM64}\"}" >> "$GITHUB_OUTPUT"
+
+      - name: Create multi-arch manifest
+        id: create-manifest
+        uses: projectbluefin/actions/bootc-build/create-manifest@74c4356b36dd94c0eadf15bbe63a26b58a0e7468 # v1
+        with:
+          image-name: ${{ env.IMAGE_NAME }}
+          digests-json: ${{ steps.digests.outputs.json }}
+          tags: |
+            latest
+            ${{ steps.manifest-tags.outputs.date }}
+            ${{ steps.manifest-tags.outputs.sha_short }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Login to registry for signing
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push To GHCR
-        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
-        id: push
-        if: github.event_name != 'pull_request'
-        env:
-          REGISTRY_USER: ${{ github.actor }}
-          REGISTRY_PASSWORD: ${{ github.token }}
+      - name: Sign, generate SBOM, and attest
+        uses: projectbluefin/actions/bootc-build/sign-and-publish@74c4356b36dd94c0eadf15bbe63a26b58a0e7468 # v1
         with:
-          image: ${{ steps.build_image.outputs.image }}
-          tags: ${{ steps.build_image.outputs.tags }}
-          registry: ${{ env.IMAGE_REGISTRY }}
-          username: ${{ env.REGISTRY_USER }}
-          password: ${{ env.REGISTRY_PASSWORD }}
-          extra-args: |
-            --compression-format=zstd:chunked
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
-        if: github.event_name != 'pull_request'
-
-      - name: Sign container image
-        if: github.event_name != 'pull_request'
-        run: |
-          cosign sign -y --key env://COSIGN_PRIVATE_KEY ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}@${TAGS}
-        env:
-          TAGS: ${{ steps.push.outputs.digest }}
-          COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
-
+          image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          digest: ${{ steps.create-manifest.outputs.digest }}
+          signing-mode: keyless
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          image-name: common
+          certificate-identity-regexp: >-
+            ^https://github\.com/projectbluefin/(common|actions)/\.github/workflows/

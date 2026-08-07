@@ -1,5 +1,5 @@
-set allow-duplicate-recipes := true
-set ignore-comments := true
+set allow-duplicate-recipes
+set ignore-comments
 
 _default:
     #!/usr/bin/bash
@@ -7,10 +7,13 @@ _default:
     ujust --list --list-heading $'Available commands:\n' --list-prefix $' - '
 
 # Imports
+
 import "/usr/share/ublue-os/just/apps.just"
 import "/usr/share/ublue-os/just/changelog.just"
 import "/usr/share/ublue-os/just/default.just"
 import "/usr/share/ublue-os/just/shared.just"
 import "/usr/share/ublue-os/just/system.just"
 import "/usr/share/ublue-os/just/update.just"
+import? "/usr/share/ublue-os/just/flutter.just"
 import? "/usr/share/ublue-os/just/60-custom.just"
+import? "/usr/share/ublue-os/just/60-bonedigger.just"

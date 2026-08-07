@@ -30,16 +30,16 @@ if status is-interactive
         __bling_abbr cat 'bat --style=plain --pager=never'
     end
 
-    type -q direnv; and direnv hook fish | source    
+    type -q direnv; and direnv hook fish | source
 
     # Atuin shell integration is disabled by default
     # The atuin binary is still installed and available for manual use
     # To enable shell integration, uncomment the following line or add it to your config.fish:
     # type -q atuin; and atuin init fish $ATUIN_INIT_FLAGS | source
 
-    type -q starship; and starship init fish | source 
+    type -q starship; and starship init fish | source
 
-    type -q zoxide; and zoxide init fish | source 
+    type -q zoxide; and zoxide init fish | source
 
     type -q mise; and test "$MISE_FISH_AUTO_ACTIVATE" != 0; and mise activate fish | source
 end

@@ -18,8 +18,9 @@ tap "k0sproject/tap"
 tap "kptdev/kpt", "https://github.com/kptdev/kpt.git"
 tap "wasmcloud/wasmcloud"
 tap "artifacthub/cmd"
-tap "pingcap/brew"
-tap "kcl-lang/tap"
+# tap "pingcap/brew"
+tap "kcl-lang/tap", trusted: true
+
 # === GRADUATED PROJECTS ===
 
 # Argo
@@ -99,7 +100,9 @@ brew "prometheus"
 # brew "spire" # Use manual install (spire-server/agent)
 
 # TiKV
-brew "tiup"
+# brew "tiup" # Disabled since Pingcap tap haven't been updated for 4 years.
+# TiUP can be installed via their official bash script on https://tiup.io
+# Meanwhile, Dumpling (TiDB data export tool) is available via `brew install dumpling`
 
 # Vitess
 brew "vitess"
@@ -205,7 +208,7 @@ brew "atlantis"
 brew "cdk8s"
 
 # Carvel
-brew  "carvel-dev/carvel/kwt"
+brew "carvel-dev/carvel/kwt"
 brew "carvel-dev/carvel/kctrl"
 brew "carvel-dev/carvel/ytt"
 brew "carvel-dev/carvel/kapp"

@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@98cfa07b984a61682e6cd3a0833fad2006cc84ba # main
+        uses: Homebrew/actions/setup-homebrew@841d750a0ed9262d3c3ca31f2173974696bc261a # main
 
       - name: Validate Brewfiles
         shell: bash
@@ -25,19 +25,20 @@ jobs:
           echo "PASS" > "$STATUS_FILE"
 
           while IFS= read -r -d '' brewfile ; do
-            echo "::group:: ===$(basename $brewfile)==="
-            
-            grep -E -e "^tap" "$brewfile" > taps.Brewfile || true
+            echo "::group:: ===$(basename "$brewfile")==="
+
             echo "Syncing taps..."
+            grep -E -e "^tap" "$brewfile" > taps.Brewfile || true
             brew bundle --file=./taps.Brewfile > /dev/null 2>&1 || true
-            
+
             # Extract combined list for parallel check
             FORMULAS=$(grep -E '^\s*brew\s+["'\'']' "$brewfile" | sed -E 's/^\s*brew\s+["'\'']([^"'\'']+)["'\''].*/formula \1/' || true)
             CASKS=$(grep -E '^\s*cask\s+["'\'']' "$brewfile" | sed -E 's/^\s*cask\s+["'\'']([^"'\'']+)["'\''].*/cask \1/' || true)
-            
+
             ENTRIES=$(printf "%s\n%s" "$FORMULAS" "$CASKS" | grep -v '^\s*$' || true)
 
             if [ -n "$ENTRIES" ]; then
+              # shellcheck disable=SC2016
               echo "$ENTRIES" | xargs -P 8 -I {} bash -c '
                 TYPE=$(echo "{}" | cut -d" " -f1)
                 NAME=$(echo "{}" | cut -d" " -f2)
@@ -51,7 +52,7 @@ jobs:
             else
               echo "No formulas or casks found."
             fi
-            
+
             echo "::endgroup::"
           done < <(find "system_files/shared/usr/share/ublue-os/homebrew" -iname '*\.Brewfile*' -print0)
 
