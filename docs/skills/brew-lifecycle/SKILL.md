@@ -82,7 +82,7 @@ not `system_files/bluefin/preinstall.d/`. See [package-set.md](references/packag
 
 - Suggesting `rpm-ostree install` for any missing tool — this is never correct on Bluefin
 - Adding a package to `preinstall.d/` that has a udev rule, kernel module, D-Bus system service, FUSE driver, firmware, or PAM dependency — it must stay as an RPM
-- Adding a tap without `trusted: true` / `--trust` (Homebrew 6.0 blocks untrusted taps silently)
+- Adding a tap without `trusted: true` in Brewfiles or a following `brew trust` command in recipes (Homebrew 6.0 blocks untrusted taps silently)
 - Bumping a version number or manual stamp to "trigger" a brew-preinstall re-run — the service is content-addressed; edit the Brewfile and the hash change triggers it automatically
 - Editing `preinstall.d/` in a downstream repo (bluefin, bluefin-lts, dakota) for packages that should live in `common` — common ships to all variants
 - Assuming `brew-preinstall.service` ran successfully because it's enabled — the service exits 0 silently if brew is not yet installed; check `journalctl --user -u brew-preinstall.service`

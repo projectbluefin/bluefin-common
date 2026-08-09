@@ -59,9 +59,11 @@ Antigravity, Zed, Cursor, framework_tool, asusctl-linux.
 **In just recipes** that call `brew tap` before cask installs:
 ```diff
 - brew tap ublue-os/tap 2>/dev/null || true
-+ brew tap --trust ublue-os/tap
++ brew tap ublue-os/tap 2>/dev/null || true
++ brew trust ublue-os/tap 2>/dev/null || true
 ```
-The `|| true` silencer must be removed — tap failures should surface.
+Keep the existing error handling for each recipe; `brew trust` is a separate
+command and must run after the tap succeeds.
 
 **In Brewfiles** that declare taps (Homebrew 6.0 Brewfile-native syntax):
 ```ruby
@@ -70,16 +72,16 @@ tap "ublue-os/experimental-tap", trusted: true
 ```
 
 **Do not use `HOMEBREW_TRUSTED_TAPS` env var** — this was a Homebrew 4.x
-mechanism. The correct 6.0 approach is `--trust` at tap-time and
-`trusted: true` in Brewfiles.
+mechanism. The correct 6.0 approach is `brew tap` followed by `brew trust`,
+or `trusted: true` in Brewfiles.
 
 ### Known trust issues in the codebase (as of 2026-06)
 
 | File | Current code | Status |
 |---|---|---|
-| `system.just` dx recipe | `brew tap --trust ublue-os/tap` | ✅ correct |
-| `system.just` dx recipe | `brew tap --trust ublue-os/experimental-tap` | ✅ correct |
-| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/homebrew-tap` | ❌ wrong tap name + no `--trust` |
+| `system.just` dx recipe | `brew tap` + `brew trust` | ✅ correct |
+| `system.just` dx recipe | `brew tap` + `brew trust` | ✅ correct |
+| `apps.just` install-jetbrains-toolbox | `brew tap` + `brew trust` | ✅ correct |
 | `apps.just` bbrew recipe | `brew install Valkyrie00/homebrew-bbrew/bbrew` | ❌ 3rd-party tap, no trust |
 
 Ref: https://brew.sh/2026/06/11/homebrew-6.0.0/
