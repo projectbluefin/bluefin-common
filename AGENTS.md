@@ -144,7 +144,7 @@ system_files/bluefin/**  @castrojo @hanthor @ahmedadan
 | Factory org structure | `docs/factory/README.md` |
 | Cross-repo agent hard rules | `docs/factory/agentic-model.md` |
 | Issue lifecycle / labels | `docs/skills/label-workflow.md` |
-| CI tooling / SHA pinning | `docs/skills/ci-tooling.md` |
+| CI tooling / SHA pinning | `docs/skills/ci-tooling/SKILL.md` |
 | Image registry / tags | `docs/skills/image-registry.md` |
 | Skill improvement mandate | `docs/skills/skill-improvement.md` |
 | PR review checklist | `docs/skills/pr-review.md` |

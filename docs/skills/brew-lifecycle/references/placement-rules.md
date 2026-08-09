@@ -1,0 +1,119 @@
+# Placement Rules — brew-lifecycle
+
+Part of [brew-lifecycle](../SKILL.md) — the no-rpm-ostree rule, what can move to brew, Homebrew 6.0 tap trust requirements, and Starship shell initialization details.
+
+---
+
+## Rule: no rpm-ostree layering — ever
+
+`rpm-ostree install` (layering) is **not supported in Bluefin under any circumstances**
+and must never be suggested as a workaround for missing packages.
+
+**Why it does not work:**
+- bootc's atomic upgrade model tracks a single OCI image digest. A layered commit
+  is a divergence from that digest that the factory cannot reason about, test, or roll back cleanly.
+- Layering breaks zstd:chunked delta pulls — the rechunker produces layer-level
+  deltas against the published image; a locally layered image has no matching
+  published chunks and must pull the full image on the next upgrade.
+- PAM/NSS/system-daemon packages installed via `rpm-ostree install` on a running
+  system interact with the live OS in ways that differ from the build-time
+  installation path, producing unreproducible system state.
+
+**If a use case requires a package with system integration:**
+- Bake it into the image via `FEDORA_PACKAGES` in `build_files/base/03-packages.sh` — or
+- Accept that the use case is not supported on stock Bluefin and direct the user
+  to a downstream custom image.
+
+Do not suggest `rpm-ostree install` as a solution in issues, docs, or ujust recipes.
+
+---
+
+## Rule: what can move to brew
+
+Only move a package if it is a self-contained CLI tool with **none** of:
+- systemd services or timers
+- udev rules
+- kernel modules
+- D-Bus system services
+- FUSE / filesystem drivers
+- firmware
+- PAM modules
+
+Anything with those kinds of dependencies stays on the image as an RPM.
+
+**Must stay on image regardless (required before brew is available):**
+- `gum`, `just`, `zenity` — used by ujust scripts
+- `gcc`, `gcc-c++`, `make`, `git` — required by brew's build toolchain
+- `bootc`, `uupd` — OS update stack
+- `fastfetch` — called by ublue-motd before brew runs on first login
+
+---
+
+## Homebrew 6.0 tap trust (required as of 2026-06-11)
+
+Homebrew 6.0.0 blocks untrusted taps — formulae/casks from them are silently
+unavailable unless the tap is explicitly trusted. This affects `ublue-os/tap`
+and `ublue-os/experimental-tap` which ship VS Code, VSCodium, JetBrains,
+Antigravity, Zed, Cursor, framework_tool, asusctl-linux.
+
+**In just recipes** that call `brew tap` before cask installs:
+```diff
+- brew tap ublue-os/tap 2>/dev/null || true
++ brew tap --trust ublue-os/tap
+```
+The `|| true` silencer must be removed — tap failures should surface.
+
+**In Brewfiles** that declare taps (Homebrew 6.0 Brewfile-native syntax):
+```ruby
+tap "ublue-os/tap", trusted: true
+tap "ublue-os/experimental-tap", trusted: true
+```
+
+**Do not use `HOMEBREW_TRUSTED_TAPS` env var** — this was a Homebrew 4.x
+mechanism. The correct 6.0 approach is `--trust` at tap-time and
+`trusted: true` in Brewfiles.
+
+### Known trust issues in the codebase (as of 2026-06)
+
+| File | Current code | Status |
+|---|---|---|
+| `system.just` dx recipe | `brew tap --trust ublue-os/tap` | ✅ correct |
+| `system.just` dx recipe | `brew tap --trust ublue-os/experimental-tap` | ✅ correct |
+| `apps.just` install-jetbrains-toolbox | `brew tap ublue-os/homebrew-tap` | ❌ wrong tap name + no `--trust` |
+| `apps.just` bbrew recipe | `brew install Valkyrie00/homebrew-bbrew/bbrew` | ❌ 3rd-party tap, no trust |
+
+Ref: https://brew.sh/2026/06/11/homebrew-6.0.0/
+
+---
+
+## Starship shell initialization
+
+Starship is installed via `preinstall.d/system-cli.Brewfile` (not baked
+into the image). Each shell initializes it with a silent fallback:
+
+**bash** — `etc/profile.d/90-bluefin-starship.sh` (in `projectbluefin/bluefin`):
+```sh
+if command -v starship >/dev/null 2>&1; then
+    _starship_bin="starship"
+elif [ -x "/var/home/linuxbrew/.linuxbrew/bin/starship" ]; then
+    _starship_bin="/var/home/linuxbrew/.linuxbrew/bin/starship"
+else
+    return 0  # silent fallback to default prompt
+fi
+eval "$("$_starship_bin" init bash)"
+```
+Why the explicit brew path: `profile.d` scripts run before `brew shellenv`
+is sourced, so `command -v starship` always misses the brew-installed binary
+unless the path is checked directly.
+
+**zsh** — `etc/zsh/zshrc` (in `projectbluefin/common`):
+`brew shellenv` runs before the `if type starship` check, so brew's bin
+is in PATH by the time the check runs. No special handling needed.
+
+**fish** — `usr/share/fish/vendor_conf.d/starship.fish` (in `projectbluefin/common`):
+```fish
+if command -q starship
+    starship init fish | source
+end
+```
+Falls back to `vendor_functions.d/fish_prompt.fish` when starship is absent.
