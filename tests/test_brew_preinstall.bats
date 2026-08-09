@@ -395,6 +395,36 @@ BREWMOCK
         "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
 }
 
+@test "brew-preinstall: renaming a cask from tap-qualified to bare does not uninstall it" {
+    echo 'cask "chairlift"' > "${WORKDIR}/preinstall.d/apps.Brewfile"
+
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"oldhash","packages":[],"casks":["frostyard/tap/chairlift"]}' \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" != *"removing cask frostyard/tap/chairlift"* ]]
+    ! grep -q "uninstall --cask" "${WORKDIR}/brew.log" 2>/dev/null
+    jq -e '.casks == ["chairlift"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+}
+
+@test "brew-preinstall: renaming a formula from tap-qualified to bare does not uninstall it" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/tools.Brewfile"
+
+    mkdir -p "${WORKDIR}/.local/share/ublue-os"
+    printf '{"hash":"oldhash","packages":["homebrew/core/ripgrep"],"casks":[]}' \
+        > "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" != *"removing homebrew/core/ripgrep"* ]]
+    ! grep -q "uninstall homebrew/core/ripgrep" "${WORKDIR}/brew.log" 2>/dev/null
+    jq -e '.packages == ["ripgrep"]' \
+        "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json"
+}
+
 @test "brew-preinstall: cask removal does not touch formula with same diff" {
     echo 'brew "chairlift-formula"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
 
@@ -428,7 +458,11 @@ BREW_LOG="\${BREW_LOG:-/dev/null}"
 printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
 case "\$1" in
     shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
-    bundle)   [[ "\$*" == *"a-fail"* ]] && exit 1 ;;
+    bundle)
+        if [[ "\$*" == *"a-fail"* ]]; then
+            exit 1
+        fi
+        ;;
     list)     exit 0 ;;
     uninstall) ;;
 esac
@@ -499,7 +533,10 @@ case "\$1" in
     shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
     bundle)   ;;
     list)     exit 0 ;;
-    uninstall) exit 1 ;;
+    uninstall)
+        echo "mock uninstall failure" >&2
+        exit 1
+        ;;
 esac
 BREWMOCK
     chmod +x "${WORKDIR}/bin/brew"
@@ -507,6 +544,7 @@ BREWMOCK
     BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
     [ "${status}" -eq 1 ]
     [[ "${output}" == *"removals failed"* ]]
+    [[ "${output}" == *"mock uninstall failure"* ]]
     stored_hash="$(jq -r '.hash' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json")"
     [ "${stored_hash}" = "oldhash" ]
     pkgs="$(jq -r '.packages[]' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json")"
