@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-08",
+  "generated_at": "2026-08-09",
   "schema_version": "1.0",
   "skills": [
     {
@@ -70,6 +70,25 @@
       "version": "1.1",
       "last_updated": "2026-08-08",
       "doc_type": "procedure"
+    },
+    {
+      "id": "buildstream",
+      "name": "buildstream",
+      "one_line_purpose": "Apply the BuildStream 2 patterns shared by every factory BST repo.",
+      "entry_point": "docs/skills/buildstream/SKILL.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "buildstream",
+        "bst",
+        "elements",
+        "junctions",
+        "caching"
+      ],
+      "description": "Cross-repo BuildStream 2 conventions for the factory's BST repos (dakota, fsdk-containers): element kinds, dependency types, cache keys, junction hygiene, source tracking. Use when authoring .bst elements, debugging BST builds, or bumping junction refs.",
+      "version": "1.0",
+      "last_updated": "2026-08-09",
+      "doc_type": "reference"
     },
     {
       "id": "ci-pitfalls",

@@ -41,6 +41,7 @@ repository's local catalog with `docs/skills/hive.md` as the preflight guard.
 | Edit `system_files/shared/`, `bluefin/`, or `nvidia/` | [`submodule-boundary.md`](skills/submodule-boundary.md) |
 | Touch any image reference or registry path | [`image-registry.md`](skills/image-registry.md) |
 | Modify the `Containerfile` or add a binary | [`containerfile.md`](skills/containerfile/SKILL.md) |
+| Author or debug BuildStream elements (dakota, fsdk-containers) | [`buildstream/SKILL.md`](skills/buildstream/SKILL.md) |
 | Use Context7 to look up external tools | [`context7.md`](skills/context7.md) |
 | Change `.github/workflows/` | [`ci-tooling.md`](skills/ci-tooling/SKILL.md) + [`workflow-map.md`](skills/workflow-map.md) |
 | Debug a CI failure | [`ci-pitfalls.md`](skills/ci-pitfalls/SKILL.md) |
