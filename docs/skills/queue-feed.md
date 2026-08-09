@@ -1,7 +1,7 @@
 ---
 name: queue-feed
-version: "1.0"
-last_updated: 2026-08-03
+version: "1.1"
+last_updated: 2026-08-08
 id: queue-feed
 one_line_purpose: Read and validate the Project Bluefin static pull-request queue feed.
 entry_point: docs/skills/queue-feed.md
@@ -35,11 +35,16 @@ GitHub as the source of pull-request review and merge state.
 
 ## Core Process
 
+The canonical feed URL is `https://projectbluefin.github.io/review/queue.json`.
+`https://queue.projectbluefin.io/` 301-redirects there, but
+`https://queue.projectbluefin.io/queue.json` returns 404 — never append
+`/queue.json` to the hostname.
+
 1. Fetch the explicit JSON endpoint, never the hostname root:
 
    ```bash
    curl --fail --silent --show-error --location --max-time 20 \
-     https://queue.projectbluefin.io/queue.json |
+     https://projectbluefin.github.io/review/queue.json |
      jq -e '(.generated_at | type == "string") and (.items | type == "array")'
    ```
 
@@ -47,14 +52,14 @@ GitHub as the source of pull-request review and merge state.
 
    ```bash
    curl --fail --silent --show-error --location --max-time 20 \
-     https://queue.projectbluefin.io/queue.json |
+     https://projectbluefin.github.io/review/queue.json |
      jq -r '.items[] | [.id, .repository, .number, .title, .url] | @tsv'
    ```
 
 3. Verify the root hostname redirects to the JSON endpoint:
 
    ```bash
-   expected='https://queue.projectbluefin.io/queue.json'
+   expected='https://projectbluefin.github.io/review/queue.json'
    actual=$(curl --silent --show-error --head --max-time 20 \
      --write-out '%{redirect_url}' --output /dev/null \
      https://queue.projectbluefin.io/)
@@ -62,8 +67,18 @@ GitHub as the source of pull-request review and merge state.
    ```
 
 If the redirect check fails, correct the hostname's redirect rule to target
-exactly `https://queue.projectbluefin.io/queue.json`. Keep machine consumers on
-the explicit `.json` URL even after the redirect is corrected.
+exactly `https://projectbluefin.github.io/review/queue.json`. Keep machine
+consumers on the explicit URL even after the redirect is corrected.
+
+Items carry `recommended_action` (`review`, `ready-for-human-merge`,
+`fix-ci`, `investigate`, `resolve-conflicts`). Group by it for batching:
+
+```bash
+curl --fail --silent --show-error --location --max-time 20 \
+  https://projectbluefin.github.io/review/queue.json |
+jq -r '.items[] | select(.recommended_action == "ready-for-human-merge") |
+  [.repository, .number, .title] | @tsv'
+```
 
 ## Common Rationalizations
 
@@ -75,14 +90,16 @@ the explicit `.json` URL even after the redirect is corrected.
 ## Red Flags
 
 - Treating an HTML response as queue data.
+- Appending `/queue.json` to `queue.projectbluefin.io` — it 404s; the JSON
+  lives at `projectbluefin.github.io/review/queue.json`.
 - Reusing a cached snapshot for a new operational decision.
 - Inferring queue order or eligibility as authorization to select work.
-- Pointing the root redirect at the HTML dashboard rather than `queue.json`.
+- Pointing the root redirect at the HTML dashboard rather than the JSON feed.
 
 ## Verification
 
 ```bash
 curl --fail --silent --show-error --location --max-time 20 \
-  https://queue.projectbluefin.io/queue.json |
+  https://projectbluefin.github.io/review/queue.json |
 jq -e '(.generated_at | type == "string") and (.items | type == "array")'
 ```

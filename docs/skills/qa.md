@@ -110,7 +110,7 @@ just bats               # BATS integration tests
 
 ## bonedigger integration
 
-bonedigger crash/panic detection should gate promotions — currently it is disconnected from the promotion workflow. See [#424](https://github.com/projectbluefin/common/issues/424) and [docs/skills/bonedigger.md](bonedigger.md).
+bonedigger crash/panic detection should gate promotions — currently it is disconnected from the promotion workflow. See [#424](https://github.com/projectbluefin/common/issues/424) and [docs/skills/bonedigger.md](bonedigger/SKILL.md).
 
 ## libsetup.sh — setup versioning
 

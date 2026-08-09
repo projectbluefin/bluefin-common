@@ -1,0 +1,31 @@
+# Issue Triage and Blast Radius Map
+
+Part of [pr-review](../SKILL.md) — issue triage verdict vocabulary and blast radius classification for common PRs.
+
+## Issue Triage Sweep
+
+Same dossier → verdict → stage → land loop, with issue verdicts:
+
+| Verdict | Effect |
+|---|---|
+| `close` | Close with the human's stated reason |
+| `label <name>` | Apply a label — only the 7 canonical labels per [label-workflow](../../label-workflow.md). Queue labels swap, never stack |
+| `assign` | Assign to a user or bot |
+| `dup <#>` | Close as duplicate, link to the original |
+| `wrongrepo <repo>` | Transfer or close with redirect |
+| `needsinfo` | Comment requesting more information |
+| `defer` | Leave open |
+
+---
+
+## Blast Radius Map
+
+| Path pattern | Affects | Fast-lane eligible? |
+|---|---|---|
+| `system_files/shared/` | bluefin + bluefin-lts + dakota | **Never** |
+| `system_files/bluefin/` | GNOME / Bluefin only | No |
+| `system_files/nvidia/` | NVIDIA overlay | No |
+| `.github/workflows/` | CI pipeline | No |
+| `Containerfile` | ALL variants | No |
+| `docs/**`, `AGENTS.md` | Documentation only | N/A (doc-only push) |
+| `tests/**` | Test suite only | N/A |
