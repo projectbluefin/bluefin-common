@@ -108,6 +108,7 @@ Library IDs can change; always resolve fresh.
 | Tool | Library ID (last confirmed) | Used for |
 |---|---|---|
 | bootc | `/bootc-dev/bootc` | image build, kargs, filesystem layout |
+| BuildStream | `/apache/buildstream` | element kinds, cache keys, junctions, source tracking |
 | WirePlumber | `/websites/pipewire_pages_freedesktop_wireplumber` | OEM hook config fragments |
 
 Add rows here as you confirm new IDs during sessions, with the date.
