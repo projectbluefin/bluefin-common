@@ -94,18 +94,24 @@ in an install script).
 
 An element's strong cache key covers its own config plus all dependency keys,
 recursively. A junction ref bump therefore invalidates every element the
-junction provides, and any `patch_queue` on a junction destroys artifact
-reuse against upstream public caches. Non-strict (weak-key) builds can serve
-stale artifacts — symptom: a package builds but is missing from the composed
-image. (Source: BuildStream docs → `arch_cachekeys.md`.) Details and policy:
+junction provides, and a junction's `patch_queue` is part of its source hash
+— so the queue decides which upstream cache your keys align with (pattern 5).
+Non-strict (weak-key) builds can serve stale artifacts — symptom: a package
+builds but is missing from the composed image. (Source: BuildStream docs →
+`arch_cachekeys.md`.) Details and policy:
 [`references/cache-keys-and-junctions.md`](references/cache-keys-and-junctions.md).
 
-### 5. Junction hygiene: upstream-first
+### 5. Junction hygiene: drift control, not "never patch"
 
-Never edit junction `.bst` content directly; keep junctions clean of
-downstream patch queues; prefer an upstream fix or ref bump over a local
-override; every override/patch carries a written exit condition. Local
-override debt is re-audited at every junction bump.
+A junction's `patch_queue` is part of its source hash, so the queue decides
+which upstream artifact cache your keys align with. Patches **diverging**
+from the parent project's own queue are cache-destroying and prohibited;
+patches **replicating** the parent's queue byte-for-byte at the pinned ref
+are cache-aligning and mandatory when the parent carries one. The rule is
+drift control against the parent's queue (dakota: `just patch-drift-check`
+in CI), not "never patch a junction". Prefer upstream fixes or ref bumps
+over local overrides; every override carries a written exit condition and is
+re-audited at every junction bump.
 
 ### 6. Source and ref discipline
 
@@ -145,8 +151,9 @@ configuration between repos.
 - Copying a composition baseline (`platform.bst` vs `components/*`), arch
   option, or output recipe from one BST repo into the other.
 - `kind: stack` where filesystem output is expected.
-- A `patch_queue` or local patch on a junction without an exit condition and
-  an upstream link — it invalidates every downstream cache key.
+- A junction `patch_queue` that diverges from the upstream parent project's
+  queue at the pinned ref — divergence invalidates every downstream cache
+  key. Byte-alignment with the parent is the requirement.
 - Hand-written `git_repo` refs, or a version bump without its `ref` bump.
 - Building before `bst show` validates; sandboxing before reading the log.
 - Asserting BST flags/config keys without a Context7 `/apache/buildstream`

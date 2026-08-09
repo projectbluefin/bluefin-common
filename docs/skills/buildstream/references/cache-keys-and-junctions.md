@@ -25,7 +25,7 @@ are not automatically rebuilt.
 | Change | What is invalidated |
 |---|---|
 | Junction ref bump | Every element the junction provides, recursively downstream (widest cone) |
-| `patch_queue` on a junction | Same as a ref change: the junction's source hash changes, so every imported element's key changes |
+| `patch_queue` diverging from the parent project's queue | Same width as a ref change: keys no longer match the parent's published cache. A queue matching the parent's byte-for-byte is how cache reuse is *preserved* — see drift control below |
 | `project.conf` options/variables | Project-wide |
 | Leaf element ref bump | That element plus its reverse dependencies |
 | Workflow/Justfile/docs edits | Nothing — no cache impact |
@@ -46,29 +46,52 @@ invalidation before debugging the element.
 A failed build is cached as a failed artifact; retries exit immediately.
 Delete it before rebuilding: `bst artifact delete <element>`.
 
-## Junction hygiene (upstream-first policy)
+## Junction hygiene: drift control, not "never patch"
 
-Both factory BST repos junction `freedesktop-sdk` (dakota also junctions
-`gnome-build-meta`) and rely on upstream public artifact caches. Because a
-junction's source hash feeds every imported element's key:
+Both factory BST repos junction `freedesktop-sdk` (via a `gnome-build-meta`
+junction) and rely on upstream public artifact caches. A junction's sources —
+**including any `patch_queue`** — feed its source hash, which feeds every
+imported element's cache key. The patch queue therefore determines *which*
+upstream artifact cache you can reuse:
+
+- A patch that **diverges** from the parent project's own queue is
+  cache-destroying. dakota measured this: a downstream-only patch on the
+  `gnome-build-meta` junction silently forced from-scratch compiles of the
+  imported graph (removing it restored 1053 of 1090 cached elements). This is
+  the thing to prohibit — not patches in general.
+- A patch queue that **replicates** the parent project's queue byte-for-byte
+  at your pinned ref is cache-*aligning* — mandatory when the parent carries
+  one, because matching it is what makes your keys line up with the parent's
+  published cache. Both repos do this today: dakota carries 7 patches in
+  `patches/freedesktop-sdk/` (byte-identity with GBM's queue at the pinned
+  ref is documented in `dakota/docs/skills/bst-overrides.md`), and
+  fsdk-containers carries 0001+0002, with `elements/gnome-build-meta.bst`
+  noting its fdsdk junction "has to match what gnome-build-meta is using".
+
+The enforceable rule is **drift control against the parent project's queue at
+the pinned ref**: dakota implements this as `just patch-drift-check` (diffs
+GBM's queue at the pinned commit against the local one) run in CI;
+fsdk-containers re-checks that its two CAS-config patches still apply at
+every FSDK bump. The per-repo parameter is *which* upstream project's queue
+you must match — currently `gnome-build-meta` at the repo's pinned ref in
+both repos.
+
+Supporting rules:
 
 1. **Check upstream first.** If the fix is in a newer upstream ref, bump the
    junction ref instead of patching.
-2. **Never edit junction `.bst` content directly** and keep junctions clean
-   of downstream `patch_queue` sources — a local patch silently forces
-   from-scratch compiles of the entire imported graph by making upstream
-   cache artifacts unreachable. (dakota measured this: removing the GBM
-   patch queue restored 1053 of 1090 cached elements.)
+2. **Never edit junction `.bst` content directly** — changes go through the
+   junction element's sources/overrides so the cache impact is explicit.
 3. **Local overrides are last-resort debt.** Every override or temporary
    patch carries an exit condition (`# Exit condition: Drop after fdsdk
    ships X`) and, where upstreamable, an `Upstream-Status: Submitted <URL>`
    header. Re-audit overrides at every junction bump.
-4. **Where cache reuse matters, keep junction files byte-aligned with the
-   upstream project that publishes the cache** — even semantically equal
-   diffs change keys.
+4. **Byte-alignment is the bar where cache reuse matters** — even
+   semantically equal diffs to the parent's junction file or patch queue
+   change keys.
 
-Patch ordering note: when a repo does carry a patch queue, patches apply in
-alphabetical filename order; numbering gaps are deliberate insertion room.
+Patch ordering note: patches within a queue apply in alphabetical filename
+order; numbering gaps are deliberate insertion room.
 
 ## Remote execution evidence
 
