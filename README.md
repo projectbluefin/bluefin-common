@@ -67,7 +67,6 @@ Default flatpaks are now managed via Homebrew Brewfiles, allowing for declarativ
 
 These can be installed using:
 ```bash
-
 ujust install-system-flatpaks
 ```
 
