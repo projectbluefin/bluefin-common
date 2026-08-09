@@ -65,7 +65,7 @@ with a compatibility stub in `actions@a7c230c`). It always exits 0 without
 inspecting any changed paths. Every repo above that has a `skill-drift.yml`
 (bluefin, bluefin-lts, dakota, knuckle, testsuite) is getting a silent,
 always-green result. `common` does not run it at all (see
-[`ci-tooling.md`](../skills/ci-tooling.md#skill-drift-detection)). This is
+[`ci-tooling.md`](../skills/ci-tooling/references/pre-commit-conventions.md#skill-drift-detection)). This is
 already corrected in `common`'s own docs
 ([`skill-drift.md`](../skills/skill-drift.md),
 [`factory-onboarding.md`](../skills/factory-onboarding.md)) as part of the

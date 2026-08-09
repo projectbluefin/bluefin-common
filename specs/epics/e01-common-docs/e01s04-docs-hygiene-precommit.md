@@ -33,7 +33,8 @@ lazy-loading structure or internal links.
 
 ## Risks
 
-- Overly strict size gate breaks existing skills. Mitigation: grandfather list
-  in the script until Phase E.
+- Overly strict size gate breaks existing skills. Mitigation: migrate
+  oversized skills to per-skill directories on sight; the budget applies
+  uniformly with no exemption list.
 - Link checker false positives on generated URLs. Mitigation: only check
   relative `.md` links.

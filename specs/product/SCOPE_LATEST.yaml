@@ -41,7 +41,7 @@ constraints:
   - "Conventional Commits PR titles and commit messages."
   - "just check and pre-commit run --all-files must pass on every branch."
   - "No writes to ublue-os/* repositories."
-  - "Existing oversized skills (lab-testing.md 906 lines) are grandfathered until per-skill directory migration; the new size gate applies to net-new/changed skills and warns on existing violators."
+  - "Oversized skills are migrated to per-skill directories (SKILL.md + references/) on sight; the size budget applies uniformly to every skill, with no exemption list."
 success_criteria:
   - "All moved files are reachable from docs/SKILL.md and AGENTS.md."
   - "Internal markdown links are unbroken (lychee docs/ or equivalent passes)."
