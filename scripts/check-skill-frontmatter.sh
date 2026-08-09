@@ -7,31 +7,6 @@ MAX_SOFT=200
 MAX_HARD=500
 rc=0
 
-# Grandfathered oversized skills; per-skill directory migration will retire these.
-GRANDFATHERED=(
-    label-workflow.md
-    pr-review.md
-    release-promotion.md
-    ci-tooling.md
-    ci-pitfalls.md
-    shell-scripts.md
-    oem-hardware-hooks.md
-    bazaar.md
-    e2e-ci.md
-    factory-improvement.md
-    hive-review.md
-    nvidia.md
-    brew-lifecycle.md
-)
-
-is_grandfathered() {
-    local base="$1"
-    for g in "${GRANDFATHERED[@]}"; do
-        [ "$base" = "$g" ] && return 0
-    done
-    return 1
-}
-
 shopt -s nullglob
 skill_files=(docs/skills/*.md docs/skills/*/SKILL.md)
 shopt -u nullglob
@@ -98,10 +73,11 @@ for f in "${skill_files[@]}"; do
         rc=1
     fi
 
-    # Size budget
+    # Size budget — applies uniformly to every skill; oversized skills are
+    # migrated to per-skill directories on sight (docs/skills/write-a-skill.md)
     lines=$(wc -l < "$f")
     base=$(basename "$f")
-    if [ "$lines" -gt "$MAX_HARD" ] && ! is_grandfathered "$base"; then
+    if [ "$lines" -gt "$MAX_HARD" ]; then
         echo "error: $f is $lines lines (hard max $MAX_HARD)"
         rc=1
     elif [ "$lines" -gt "$MAX_SOFT" ]; then

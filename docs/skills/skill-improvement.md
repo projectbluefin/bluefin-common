@@ -1,7 +1,7 @@
 ---
 name: skill-improvement
-version: "1.1"
-last_updated: "2026-07-29"
+version: "1.2"
+last_updated: "2026-08-08"
 id: skill-improvement
 one_line_purpose: Capture durable agent learnings in maintained skill docs.
 entry_point: docs/skills/skill-improvement.md
@@ -148,7 +148,7 @@ The skill update goes in the **same commit or same PR** as the implementation. N
 
 ```bash
 # stage both the implementation and the skill update together
-git add .github/workflows/something.yml docs/skills/ci-tooling.md
+git add .github/workflows/something.yml docs/skills/ci-tooling/SKILL.md
 git commit -m "feat(ci): add SHA pinning for new action
 
 Update ci-tooling.md with pinning pattern for this action type.
@@ -179,7 +179,7 @@ Checklist:
 - [ ] Description is specific enough that an agent can decide to load the skill from the description alone.
 - [ ] Skill body has `## When to Use`, `## Core Process`, `## Red Flags`, and `## Verification` sections (or equivalent).
 - [ ] Any library/framework API examples were verified via Context7 first and the `libraryId` is recorded in `metadata.context7-sources`.
-- [ ] Files over 500 lines are split into a per-skill directory with `references/` or `scripts/` per the Anthropic/Vercel convention.
+- [ ] Files over 200 lines (soft max) are split into a per-skill directory with `references/` or `scripts/` per the Anthropic/Vercel convention — legacy oversized skills are migrated on sight, in the same change that touches them (see `write-a-skill.md`).
 
 ## See Also
 

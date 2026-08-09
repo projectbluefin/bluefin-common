@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-06",
+  "generated_at": "2026-08-08",
   "schema_version": "1.0",
   "skills": [
     {
@@ -24,7 +24,7 @@
       "id": "bonedigger",
       "name": "bonedigger",
       "one_line_purpose": "Operate bonedigger and kubestellar-bot issue/report automation.",
-      "entry_point": "docs/skills/bonedigger.md",
+      "entry_point": "docs/skills/bonedigger/SKILL.md",
       "category": "ci-ops",
       "status": "active",
       "tags": [
@@ -33,8 +33,8 @@
         "automation"
       ],
       "description": "bonedigger + kubestellar-bot lifecycle automation. Use when working on ujust report, issue lifecycle, priority escalation, or how fixes ship back to images.",
-      "version": "1.0",
-      "last_updated": "2026-07-30",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
@@ -58,7 +58,7 @@
       "id": "brew-lifecycle",
       "name": "brew-lifecycle",
       "one_line_purpose": "Manage OS-managed Homebrew packages and RPM/brew placement.",
-      "entry_point": "docs/skills/brew-lifecycle.md",
+      "entry_point": "docs/skills/brew-lifecycle/SKILL.md",
       "category": "ci-ops",
       "status": "active",
       "tags": [
@@ -67,15 +67,15 @@
         "packages"
       ],
       "description": "Manage OS-managed Homebrew packages. Use when adding/removing default brew packages, moving tools between RPM and brew, or auditing image-vs-brew placement.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "procedure"
     },
     {
       "id": "ci-pitfalls",
       "name": "ci-pitfalls",
       "one_line_purpose": "Diagnose CI gotchas and silent workflow failures across repos.",
-      "entry_point": "docs/skills/ci-pitfalls.md",
+      "entry_point": "docs/skills/ci-pitfalls/SKILL.md",
       "category": "ci-ops",
       "status": "active",
       "tags": [
@@ -85,15 +85,15 @@
         "pitfalls"
       ],
       "description": "Incident log of CI gotchas across projectbluefin repos. Use when debugging silent CI failures, startup_failure, or workflow skip behavior.",
-      "version": "1.0",
-      "last_updated": "2026-07-19",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
       "id": "ci-tooling",
       "name": "ci-tooling",
       "one_line_purpose": "Apply CI policy for SHA pinning, pre-commit, and Renovate tooling.",
-      "entry_point": "docs/skills/ci-tooling.md",
+      "entry_point": "docs/skills/ci-tooling/SKILL.md",
       "category": "ci-ops",
       "status": "active",
       "tags": [
@@ -102,15 +102,15 @@
         "github-actions"
       ],
       "description": "CI policy and tooling \u2014 SHA pinning, pre-commit guards, Renovate digest tracking, and workflow config. Use when editing .github/workflows/ files.",
-      "version": "2.0",
-      "last_updated": "2026-06-24",
+      "version": "2.2",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
       "id": "containerfile",
       "name": "containerfile",
       "one_line_purpose": "Modify and locally test the common Containerfile build.",
-      "entry_point": "docs/skills/containerfile.md",
+      "entry_point": "docs/skills/containerfile/SKILL.md",
       "category": "ci-ops",
       "status": "active",
       "tags": [
@@ -119,8 +119,8 @@
         "oci"
       ],
       "description": "Containerfile build structure and local testing. Use when modifying the Containerfile, adding binaries, updating wallpaper sources, or using just overlay.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
@@ -196,7 +196,7 @@
       "id": "e2e-ci",
       "name": "e2e-ci",
       "one_line_purpose": "Debug pre/post-merge E2E CI for common.",
-      "entry_point": "docs/skills/e2e-ci.md",
+      "entry_point": "docs/skills/e2e-ci/SKILL.md",
       "category": "test-authoring",
       "status": "active",
       "tags": [
@@ -205,15 +205,15 @@
         "ci"
       ],
       "description": "Pre/post-merge E2E CI for common. Use when debugging E2E failures, understanding the PR gate flow, or diagnosing masked brew-setup issues.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
       "id": "factory-improvement",
       "name": "factory-improvement",
       "one_line_purpose": "Audit and propose factory self-improvement automation.",
-      "entry_point": "docs/skills/factory-improvement.md",
+      "entry_point": "docs/skills/factory-improvement/SKILL.md",
       "category": "meta",
       "status": "active",
       "tags": [
@@ -222,8 +222,8 @@
         "improvement"
       ],
       "description": "Self-improving factory loop for projectbluefin. Use when identifying automation gaps, proposing workflows, or auditing ACMM maturity.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
@@ -292,6 +292,24 @@
       "description": "KubeStellar Hive coordination, Trust the Machines routing, and the canonical seven-label workflow. Use when finding or routing factory work.",
       "version": "2.2",
       "last_updated": "2026-07-29",
+      "doc_type": "reference"
+    },
+    {
+      "id": "hive-automerge",
+      "name": "hive-automerge",
+      "one_line_purpose": "Queue reviewed PRs for Hive's auto-merge-on-green sweep.",
+      "entry_point": "docs/skills/hive-automerge.md",
+      "category": "ci-ops",
+      "status": "active",
+      "tags": [
+        "hive",
+        "automerge",
+        "lgtm",
+        "merge-queue"
+      ],
+      "description": "The Hive \"Queue auto merge\" feature: merger-tier queue action applying the `lgtm` label plus an audit approval; a per-minute sweep squash-merges labelled PRs once CI is green. Use when queuing a reviewed PR or listing what the sweep will merge.",
+      "version": "1.0",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
@@ -439,7 +457,7 @@
       "id": "nvidia",
       "name": "nvidia",
       "one_line_purpose": "Maintain NVIDIA GPU support architecture and update procedures.",
-      "entry_point": "docs/skills/nvidia.md",
+      "entry_point": "docs/skills/nvidia/SKILL.md",
       "category": "test-authoring",
       "status": "active",
       "tags": [
@@ -449,15 +467,15 @@
         "akmods"
       ],
       "description": "NVIDIA GPU support architecture and update procedures. Use when editing nvidia files in system_files/nvidia/, bluefin scripts, or dakota elements.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
       "id": "oem-hardware-hooks",
       "name": "oem-hardware-hooks",
       "one_line_purpose": "Add OEM hardware first-boot setup hooks safely.",
-      "entry_point": "docs/skills/oem-hardware-hooks.md",
+      "entry_point": "docs/skills/oem-hardware-hooks/SKILL.md",
       "category": "test-authoring",
       "status": "active",
       "tags": [
@@ -468,8 +486,8 @@
         "shellcheck"
       ],
       "description": "OEM hardware first-boot setup hooks in projectbluefin/common. Use when adding hardware-specific setup, understanding hook directories and versioning contract, or applying shellcheck requirements.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
@@ -492,7 +510,7 @@
     {
       "id": "pr-review",
       "name": "pr-review",
-      "one_line_purpose": "Run human-decides, agent-lands backlog review in batches of five.",
+      "one_line_purpose": "Run human-decides, agent-lands backlog review one card at a time.",
       "entry_point": "docs/skills/pr-review/SKILL.md",
       "category": "ci-ops",
       "status": "active",
@@ -502,9 +520,9 @@
         "triage",
         "backlog"
       ],
-      "description": "Human-decides, agent-lands PR and issue backlog review. Assemble a 5-item dossier, collect per-item human verdicts, stage gh commands, land on confirm. Use when reviewing the PR queue or triaging the issue backlog.",
-      "version": "3.1",
-      "last_updated": "2026-08-06",
+      "description": "Human-decides, agent-lands PR and issue backlog review. Present one card at a time, take the human verdict, execute it immediately, then advance. Use when reviewing the PR queue or triaging the issue backlog.",
+      "version": "3.5",
+      "last_updated": "2026-08-08",
       "doc_type": "procedure"
     },
     {
@@ -538,15 +556,15 @@
         "redirects"
       ],
       "description": "Reads the Project Bluefin static pull-request queue as validated JSON. Use when inspecting queue.projectbluefin.io, filtering its queue items, or verifying its root redirect targets queue.json.",
-      "version": "1.0",
-      "last_updated": "2026-08-03",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "procedure"
     },
     {
       "id": "release-promotion",
       "name": "release-promotion",
       "one_line_purpose": "Cut releases and verify promotion/hotfix artifacts.",
-      "entry_point": "docs/skills/release-promotion.md",
+      "entry_point": "docs/skills/release-promotion/SKILL.md",
       "category": "ci-ops",
       "status": "active",
       "tags": [
@@ -555,8 +573,8 @@
         "staging"
       ],
       "description": "Promotion criteria, monthly release cadence, hotfix procedure, and artifact verification for projectbluefin/common. Use when cutting a release, understanding the promotion pipeline, or verifying release artifacts.",
-      "version": "1.0",
-      "last_updated": "2026-06-23",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
@@ -580,7 +598,7 @@
       "id": "shell-scripts",
       "name": "shell-scripts",
       "one_line_purpose": "Write and test shell scripts under system_files/.",
-      "entry_point": "docs/skills/shell-scripts.md",
+      "entry_point": "docs/skills/shell-scripts/SKILL.md",
       "category": "test-authoring",
       "status": "active",
       "tags": [
@@ -591,8 +609,8 @@
         "shellcheck"
       ],
       "description": "Shell script authoring and testability. Use when writing or testing shell scripts under system_files/, removing scripts, or adding bats tests.",
-      "version": "1.0",
-      "last_updated": "2026-08-01",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
@@ -625,8 +643,8 @@
         "documentation"
       ],
       "description": "The skill-improvement mandate \u2014 every agent session must produce a skill file update alongside the work. Use when completing a task and deciding whether to write a skill update, or when creating or updating a skill file.",
-      "version": "1.1",
-      "last_updated": "2026-07-29",
+      "version": "1.2",
+      "last_updated": "2026-08-08",
       "doc_type": "reference"
     },
     {
@@ -676,8 +694,8 @@
         "documentation"
       ],
       "description": "Author a new agent skill for projectbluefin/common. Covers front-matter, size budget, canonical linking, verification sections, and the skill-update mandate. Use when creating a new docs/skills/*.md file or splitting an oversized skill.",
-      "version": "1.0",
-      "last_updated": "2026-07-20",
+      "version": "1.1",
+      "last_updated": "2026-08-08",
       "doc_type": "procedure"
     }
   ]

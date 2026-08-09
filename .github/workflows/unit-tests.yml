@@ -97,8 +97,8 @@ jobs:
       - name: Run bats (ublue-fastfetch)
         run: bats tests/test_ublue_fastfetch.bats
 
-      - name: Run bats (umotd integration)
-        run: bats tests/test_umotd_integration.bats
+      - name: Run bats (motd integration)
+        run: bats tests/test_motd_integration.bats
 
       - name: Run bats (ublue-image-info.sh)
         run: bats tests/test_ublue_image_info.bats
@@ -117,6 +117,9 @@ jobs:
 
       - name: Run bats (oem-brew hook)
         run: bats tests/test_oem_brew.bats
+
+      - name: Run bats (bonedigger report)
+        run: bats tests/test_bonedigger_report.bats
 
       - name: Smoke-test brew bundle accepts preinstall Brewfile (real Homebrew)
         run: |

@@ -97,7 +97,7 @@ IMAGE_REGISTRY="ghcr.io/${IMAGE_VENDOR}"
 
 ## Build-time ublue-os source (wallpapers only)
 
-The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpapers-gnome` as a **build-time COPY source**. This is a read-only upstream artwork dependency and does not violate the ublue-os prohibition. The production image tree and all runtime registries are fully under `ghcr.io/projectbluefin/`. See [`containerfile.md`](containerfile.md) for details.
+The Containerfile pulls wallpaper artwork from `ghcr.io/ublue-os/bluefin-wallpapers-gnome` as a **build-time COPY source**. This is a read-only upstream artwork dependency and does not violate the ublue-os prohibition. The production image tree and all runtime registries are fully under `ghcr.io/projectbluefin/`. See [`containerfile.md`](containerfile/SKILL.md) for details.
 
 ## CountMe telemetry reporting
 

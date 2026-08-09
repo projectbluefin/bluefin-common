@@ -45,7 +45,7 @@ system boundaries.
 
 ## Bats patterns and testability idioms
 
-Shell-specific bats patterns live in [`docs/skills/shell-scripts.md`](skills/shell-scripts.md).
+Shell-specific bats patterns live in [`docs/skills/shell-scripts.md`](skills/shell-scripts/SKILL.md).
 
 ## Exemptions
 
@@ -57,7 +57,7 @@ Scripts exempt from behavioral testing (shellcheck-only):
 | `etc/profile.d/uutils.sh` | Profile.d sourced script — PATH manipulation only |
 | `etc/profile.d/ublue-fastfetch.sh` | Profile.d sourced script — display only |
 | `etc/profile.d/ublue-motd.sh` | Profile.d sourced script — display only |
-| `etc/profile.d/umotd.sh` | Profile.d sourced script — display only |
+| `etc/profile.d/uwelcome.sh` | Profile.d sourced script — display only; the legacy opt-out migration it carries is covered by `tests/test_motd_integration.bats` |
 | `usr/share/ublue-os/bling/bling.sh` | Sourced helper — sets aliases/functions, no side effects |
 | `usr/share/ublue-os/bling/env.sh` | Sourced helper — sets env vars only |
 | `usr/share/ublue-os/user-setup.hooks.d/20-dynamic-wallpaper.sh` | One-shot hook — logic tested indirectly via setup integration tests |
@@ -89,6 +89,7 @@ Do not add exemptions for scripts with branching logic.
 | `tests/test_bling_fastfetch.bats` | `ublue-bling-fastfetch` — all 9 accent colors, dconf/gsettings fallback chain, FASTFETCH_FORCE_THEME override |
 | `tests/test_changelog.bats` | `changelog.just` — LTS/non-LTS repo selection, URL construction, exit behaviour |
 | `tests/test_ublue_fastfetch.bats` | `ublue-fastfetch` — config reads, shuffle branch, DEFAULT_THEME export to ublue-bling-fastfetch |
+| `tests/test_theming_hook.bats` | `10-theming.sh` — Framework/Thelio branches and setup idempotency |
 
 ## Quality Epic
 

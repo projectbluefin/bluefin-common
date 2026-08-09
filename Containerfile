@@ -1,9 +1,16 @@
-FROM docker.io/library/golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS motd-build
+FROM docker.io/library/golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS umotd-build
 RUN apk add git && \
-    git clone https://github.com/projectbluefin/motd /src && \
-    git -C /src checkout 405e86c532aed42931b2d398e2761c24b70e978c
+    git clone https://github.com/projectbluefin/umotd /src && \
+    git -C /src checkout c9df8ec6b53e9b2a644a6dc511fd6fde1baad08b
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /umotd .
+
+FROM docker.io/library/golang:alpine@sha256:0178a641fbb4858c5f1b48e34bdaabe0350a330a1b1149aabd498d0699ff5fb2 AS uwelcome-build
+RUN apk add git && \
+    git clone https://github.com/projectbluefin/uwelcome /src && \
+    git -C /src checkout 5280521bf21e14802d5a8bb1cffb942fa0b5efb7
+WORKDIR /src
+RUN go build -ldflags="-s -w" -o /uwelcome .
 
 FROM docker.io/library/alpine:latest@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS build
 
@@ -11,7 +18,7 @@ COPY --from=ghcr.io/ublue-os/bluefin-wallpapers-gnome:latest@sha256:e4d74fa741ce
 
 RUN apk add just curl libjxl-tools
 
-# artwork repo points to ~/.local/share for metadata
+# Artwork repo points to ~/.local/share for metadata
 RUN mkdir -p /out/bluefin/usr/share/backgrounds/bluefin && \
   mv /out/bluefin/usr/share/*.jxl /out/bluefin/usr/share/*.xml /out/bluefin/usr/share/backgrounds/bluefin && \
   sed -i 's|~\/\.local\/share|\/usr\/share|' /out/bluefin/usr/share/backgrounds/bluefin/*.xml /out/bluefin/usr/share/gnome-background-properties/*.xml
@@ -72,7 +79,8 @@ RUN set -e && mkdir -p /out/bluefin/etc/bazaar && \
       djxl "$f" "/out/bluefin/etc/bazaar/${name}.png" --color_space=sRGB; \
     done
 
-COPY --from=motd-build /umotd /out/shared/usr/bin/umotd
+COPY --from=umotd-build /umotd /out/shared/usr/bin/umotd
+COPY --from=uwelcome-build /uwelcome /out/shared/usr/bin/uwelcome
 
 FROM scratch AS ctx
 COPY /system_files/shared /system_files/shared/

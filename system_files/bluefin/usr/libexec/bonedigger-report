@@ -5,6 +5,7 @@ set -euo pipefail
 IMAGE_INFO_FILE="${IMAGE_INFO_FILE:-/usr/share/ublue-os/image-info.json}"
 BONEDIGGER_BRAND="${BONEDIGGER_BRAND:-🫐 Bluefin Bug Report}"
 DRAFT_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/ujust-report/drafts"
+LOCAL_REPORT_ROOT="${XDG_STATE_HOME:-$HOME/.local/state}/ujust-report"
 MAX_BASELINE_BYTES=$((64 * 1024))
 MAX_BASELINE_CONTENT_BYTES=$((60 * 1024))
 MAX_PROFILE_BYTES=$((500 * 1024))
@@ -348,6 +349,28 @@ keep_draft() {
     printf 'Resume with: ujust report --resume %q\n' "$draft_dir"
 }
 
+persist_local_copy() {
+    local file
+    local source
+    local destination
+
+    destination="$LOCAL_REPORT_ROOT/last"
+    rm -rf "$destination"
+    mkdir -p "$destination"
+
+    if [[ -f "$DRAFT_DIR/issue.md" ]]; then
+        cp -f -- "$DRAFT_DIR/issue.md" "$destination/summary.md"
+    fi
+    if [[ -f "$DRAFT_DIR/journal.txt" ]]; then
+        cp -f -- "$DRAFT_DIR/journal.txt" "$destination/journal.txt"
+    fi
+
+    for source in "$DRAFT_DIR"/*.md; do
+        [[ -f "$source" && "$(basename "$source")" != issue.md ]] || continue
+        cp -f -- "$source" "$destination/$(basename "$source")"
+    done
+}
+
 load_draft() {
     local filename
 
@@ -500,6 +523,12 @@ submit_draft() {
         return 1
     fi
 
+    if ! persist_local_copy; then
+        printf 'Report submitted, but the local copy could not be saved.\n' >&2
+    else
+        printf 'Local copy kept at: %s/\n' "$LOCAL_REPORT_ROOT/last"
+    fi
+
     printf '\nReport submitted successfully.\n%s\n' "$issue_url"
     rm -rf "$DRAFT_DIR"
     offer_browser "$issue_url"
@@ -522,6 +551,18 @@ queue_label_for_choice() {
     esac
 }
 
+save_queue_preference() {
+    local queue_label="$1"
+    local marker_value="${queue_label:-none}"
+
+    sed -i -E \
+        '/^<!-- bonedigger-queue-preference: (3-clanker-queue|3-human-queue|none) -->$/d' \
+        "$DRAFT_DIR/issue.md"
+    printf '%s\n' "$queue_label" > "$DRAFT_DIR/queue-label.txt"
+    printf '\n<!-- bonedigger-queue-preference: %s -->\n' "$marker_value" \
+        >> "$DRAFT_DIR/issue.md"
+}
+
 choose_queue_preference() {
     local queue_choice
     local queue_label
@@ -534,7 +575,7 @@ choose_queue_preference() {
         "Submit to the clanker queue for machine analysis" \
         "I only want human interaction")" || return
     queue_label="$(queue_label_for_choice "$queue_choice")" || return
-    printf '%s\n' "$queue_label" > "$DRAFT_DIR/queue-label.txt"
+    save_queue_preference "$queue_label"
 }
 
 parse_confirm_target() {

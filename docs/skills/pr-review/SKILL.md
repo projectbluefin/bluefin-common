@@ -1,9 +1,9 @@
 ---
 name: pr-review
-version: "3.1"
-last_updated: "2026-08-06"
+version: "3.5"
+last_updated: "2026-08-08"
 id: pr-review
-one_line_purpose: Run human-decides, agent-lands backlog review in batches of five.
+one_line_purpose: Run human-decides, agent-lands backlog review one card at a time.
 entry_point: docs/skills/pr-review/SKILL.md
 category: ci-ops
 mcp_compliance_level: partial
@@ -12,11 +12,13 @@ status: active
 dependencies: []
 tags: [review, merge, triage, backlog]
 description: >-
-  Human-decides, agent-lands PR and issue backlog review. Assemble a 5-item
-  dossier, collect per-item human verdicts, stage gh commands, land on confirm.
-  Use when reviewing the PR queue or triaging the issue backlog.
+  Human-decides, agent-lands PR and issue backlog review. Present one card at a
+  time, take the human verdict, execute it immediately, then advance. Use when
+  reviewing the PR queue or triaging the issue backlog.
 metadata:
   type: procedure
+  context7-sources:
+    - /websites/github_en_actions
 ---
 
 # Backlog Review — Human Decides, Agent Lands
@@ -24,125 +26,106 @@ metadata:
 The agent assembles facts and executes commands. The human makes every
 approval, merge, close, and label decision. No exceptions.
 
-## Contents
-
-- [When to Use](#when-to-use)
-- [Core Process](#core-process)
-- [Issue Triage Sweep](#issue-triage-sweep)
-- [Blast Radius Map](#blast-radius-map)
-- [Merge Queue Defaults](#merge-queue-defaults)
-- [Red Flags](#red-flags)
-- [Verification](#verification)
-- [See Also](#see-also)
-
----
-
 ## When to Use
 
 - Reviewing the open PR queue.
 - Triaging the open issue backlog.
 - A maintainer asks to "work through the backlog."
 
+## When NOT to Use
+
+- Reviewing a single PR you were directly asked about — just review it.
+- Any repository outside `projectbluefin/*`. Never for `ublue-os/*`.
+- Automated/unattended review. This skill requires a human in the loop by
+  design; if no human is present, stop rather than substituting your judgment.
+
 ## Core Process
 
-The loop: **dossier → verdict → stage → land.**
+The loop: **dossier → verdict → land.**
+
+### 0 — Sources (queue sweep)
+
+For "let's review <repo> PRs" the agent assembles the list from three
+sources, in this order:
+
+1. **Queue feed** (cheap first pass, non-authoritative):
+
+   ```bash
+   curl --fail --silent --show-error --location --max-time 20 \
+     https://projectbluefin.github.io/review/queue.json |
+     jq -r '.items[] | select(.repository == "projectbluefin/<repo>") |
+       [.recommended_action, .number, .title] | @tsv'
+   ```
+
+   `ready-for-human-merge` items go first. Verify every fact live — the feed
+   is a snapshot, not authority. See [queue-feed.md](../queue-feed.md).
+
+2. **Auto-merge-armed scan** — PRs a human already queued with
+   `gh pr merge --auto` (or the Hive sweep label):
+
+   ```bash
+   gh pr list --repo projectbluefin/<repo> \
+     --json number,title,autoMergeRequest \
+     --jq '.[] | select(.autoMergeRequest != null) | "\(.number)\t\(.title)"'
+   gh pr list --repo projectbluefin/<repo> --label lgtm \
+     --json number,title,mergeStateStatus
+   ```
+
+   Armed/labelled PRs still show up in the review queue: the human verdict is
+   the only real gate (required approvals are 0 — see
+   [references/merge-queue.md](references/merge-queue.md)). For the Hive
+   sweep contract, see [hive-automerge.md](../hive-automerge.md).
+
+3. **Live GitHub state** — the dossier fetch below is the authority.
+
+### Cadence: stream, don't batch
+
+Default to **streaming**: present one card, take the verdict, execute it
+immediately, then present the next. The human stays engaged because every
+answer produces a visible result before the next question arrives.
+
+Batching verdicts is the fallback for non-interactive runs only.
+
+**Easy-wins mode.** Sort ascending by `additions + deletions` and present small
+ones first. Park anything complex in `3-human-queue` with a findings comment.
 
 ### 1 — Dossier (one-call fetch)
 
-Fetch all card data in a single API call (~2 s for 5 PRs):
-
 ```bash
-gh pr list --limit 5 --json number,title,author,createdAt,additions,deletions,files,labels,isDraft,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,closingIssuesReferences
-```
-
-**Bot-PR filtering** — Renovate, `mergeraptor`, and `kubestellar-hive` PRs
-covered by platform auto-merge waste human slots. Filter them out by default.
-
-> ⚠️ Fetch a WIDE window and slice to 5 *after* filtering. `--limit 5` applies
-> before the filter, so a bot-heavy window yields fewer than 5 cards.
-
-Filter on `author.is_bot` (a real boolean) rather than matching login strings —
-app authors appear as `app/kubestellar-hive`, so name regexes are brittle:
-
-```bash
-# Fetch wide, drop bots, then take 5
 gh pr list --limit 60 \
   --json number,title,author,createdAt,additions,deletions,files,labels,isDraft,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup,closingIssuesReferences \
 | jq '[.[] | select(.author.is_bot | not)][:5]'
 ```
 
-For a dedicated **bot sweep**, invert the selector to `select(.author.is_bot)`.
+Filter on `author.is_bot` (real boolean). Fetch a WIDE window then slice to 5
+*after* filtering. For a bot sweep, invert to `select(.author.is_bot)`.
 
-Present each PR as a one-screen card. See [references/card-fields.md](references/card-fields.md)
-for field definitions and the `mergeStateStatus` table.
+Present each PR as a one-screen card. Field definitions and the `mergeStateStatus`
+table: [references/card-fields.md](references/card-fields.md).
 
-#### Competing-pair detection (mandatory)
+**Competing-pair detection (mandatory):** pairwise-intersect file paths and
+`closingIssuesReferences` across the batch. Print `⚠️ COMPETING PAIR` on any
+overlap — human must resolve before both can be voted `merge`.
 
-Before showing verdict prompts, pairwise-intersect file paths and
-`closingIssuesReferences` across the batch:
+**CI card classification:** classify every red before it costs a human slot.
+Full procedure: [references/red-check-triage.md](references/red-check-triage.md).
 
-```python
-import json, sys
-prs = json.loads(sys.stdin.read())
-for i, a in enumerate(prs):
-    for b in prs[i+1:]:
-        shared_files = set(f["path"] for f in a["files"]) & set(f["path"] for f in b["files"])
-        shared_issues = set(r["number"] for r in a.get("closingIssuesReferences", [])) & \
-                        set(r["number"] for r in b.get("closingIssuesReferences", []))
-        if shared_files or shared_issues:
-            print(f"⚠️  COMPETING PAIR: #{a['number']} ↔ #{b['number']}")
-            if shared_files: print(f"   Files: {shared_files}")
-            if shared_issues: print(f"   Issues: {shared_issues}")
-```
-
-On any overlap, print `⚠️ COMPETING PAIR` between both cards. The human must
-resolve the pair (defer one, or explicitly acknowledge) before both can be
-voted `merge`.
-
-#### CI card classification
-
-Per-check status must distinguish three failure kinds:
-
-| Kind | Meaning | Action |
-|---|---|---|
-| **stale-red** | `validate` failure predating PR #937 merge (2026-08-07 00:41 UTC) | `gh pr update-branch <N>` to ingest the fix |
-| **fork-expected** | `Compose PR test image` red on a fork PR | Expected — the Actions token cannot push to `ghcr.io/projectbluefin/*` from fork context |
-| **bad-title** | `validate` red on the "Validate PR title (Conventional Commits)" step only | Title needs a Conventional Commits prefix. Common on bot PRs titled `[quality] ...`. Fix with `gh pr edit <N> --title "..."` — no rebase needed |
-| **real failure** | Anything else | Report to human as blocking |
-
-Confirm which step actually failed before classifying — `validate` is one job
-with several steps, and a title violation looks identical to a stale index in
-the rollup:
-
-```bash
-# Show the failing step names for a PR's validate job
-gh run view "$(gh pr checks <N> --json name,link \
-  --jq '.[]|select(.name=="validate")|.link' | grep -oP '(?<=runs/)\d+')" --log-failed \
-  | grep -oP '(?<=\t)[^\t]+(?=\t\d{4}-)' | sort -u
-```
-
-Card CI line example:
-`CI: validate=STALE-RED(pre-#937) · build(x86_64)=pass · test=pass`
+**Dismissed-approval check (mandatory):** diff current head against the approved
+commit SHA. Full procedure: [references/dismissed-approval.md](references/dismissed-approval.md).
 
 ### 2 — Verdict
 
-Prompt the human **per PR, one at a time**. Use `gum choose` when available:
+Prompt the human **per PR, one at a time**:
 
 ```bash
-gum choose "merge" "close" "defer" "rebase" "changes" "open" "skip" \
+gum choose "merge" "queue" "close" "defer" "rebase" "changes" "open" "skip" \
   --header "PR #${N} — ${TITLE}"
 ```
-
-For `open`, show the diff: `gh pr diff ${N} --color=always | glow -`
-
-Plain-text fallback for non-interactive runs: print verdict vocabulary and read
-from stdin.
-
-PR verdict vocabulary:
 
 | Verdict | Effect |
 |---|---|
 | `merge` | Squash-merge via merge queue |
+| `queue` | Hive auto-merge: audit approval + `lgtm` label (others' PRs only — see [hive-automerge.md](../hive-automerge.md)) |
 | `close` | Close with the human's stated reason |
 | `defer` | Leave open, move to next |
 | `rebase` | Update branch, re-present later |
@@ -150,121 +133,24 @@ PR verdict vocabulary:
 | `open` | Show the full diff before deciding |
 | `skip` | Move to next, no action |
 
-### 3 — Stage
+### 3 — Land
 
-After all 5 verdicts, print the **complete action plan** as exact `gh`
-commands. Use `gum confirm "Execute action plan?"` for the final gate.
+Execute the verdict immediately in streaming mode. In batch mode, print the
+complete `gh` command plan and gate it on `gum confirm "Execute action plan?"`.
 
-Nothing is written before the human confirms.
+**Three landing invariants** — check after every verdict that closes or parks:
 
-### 4 — Land
+1. **Queue labels swap, never add.** `3-human-queue` and `3-clanker-queue` are
+   mutually exclusive — swap in the same command on both the PR and its issue.
 
-On confirm, execute the batch. Report per-PR outcome.
+2. **Retitling requires close/reopen.** `edited` is not a trigger for
+   `validate.yml`. A rerun replays the stale payload. Close, reopen, re-verify.
 
-**Halt-on-overlap rule:** if a merge command fails, halt any remaining staged
-action whose file list or closing-issue set intersects the failed PR's. Report
-the conflict and ask the human whether to proceed with the unaffected remainder.
+3. **Closing a PR does not close its issue.** Only a merge does. Re-check the
+   link after any close and decide explicitly.
 
-**Batch safety:** GitHub's merge queue (`ALLGREEN` grouping) automatically
-evicts a failing PR and re-tests the remaining group. A single bad PR does NOT
-delay the rest — this makes batch review worthwhile.
-
----
-
-## Issue Triage Sweep
-
-Same dossier → verdict → stage → land loop, with issue verdicts:
-
-| Verdict | Effect |
-|---|---|
-| `close` | Close with the human's stated reason |
-| `label <name>` | Apply a label — only the 7 canonical labels per [label-workflow](../label-workflow.md) |
-| `assign` | Assign to a user or bot |
-| `dup <#>` | Close as duplicate, link to the original |
-| `wrongrepo <repo>` | Transfer or close with redirect |
-| `needsinfo` | Comment requesting more information |
-| `defer` | Leave open |
-
----
-
-## Blast Radius Map
-
-| Path pattern | Affects | Fast-lane eligible? |
-|---|---|---|
-| `system_files/shared/` | bluefin + bluefin-lts + dakota | **Never** |
-| `system_files/bluefin/` | GNOME / Bluefin only | No |
-| `system_files/nvidia/` | NVIDIA overlay | No |
-| `.github/workflows/` | CI pipeline | No |
-| `Containerfile` | ALL variants | No |
-| `docs/**`, `AGENTS.md` | Documentation only | N/A (doc-only push) |
-| `tests/**` | Test suite only | N/A |
-
----
-
-## Merge Queue Defaults
-
-| Setting | Value |
-|---|---|
-| Merge method | Squash only (`allow_rebase_merge: false`) |
-| Grouping strategy | `ALLGREEN` ("only merge non-failing pull requests") |
-| Max entries to build | 5 |
-| Required checks | `validate`, `Build and push image (x86_64)`, `Build and push image (aarch64)` |
-| Required approvals | **0** — and no code-owner review |
-
-> ⚠️ The ruleset is named `main-review-required-with-renovate-bypass`, but the
-> live rule requires **no** approval and **no** code-owner review. Never infer
-> approval behavior from the ruleset name — read the live parameters. Tracked
-> in issue #938.
-
-Because approvals are not enforced, the human verdict in this loop is the only
-real review gate on `main`. Treat it accordingly.
-
-E2E checks are **informational** — they do not block merging. Only the required
-checks listed above gate a merge.
-
-Default landing command:
-
-```bash
-# Squash-merge via the merge queue
-gh pr merge <N> --squash --auto
-```
-
-> ⚠️ Do NOT use `--delete-branch` — the repo has `deleteBranchOnMerge: true`
-> and the flag **hard-fails** when a merge queue is enabled.
-
-`--admin` bypasses the queue and merges immediately. It requires **explicit
-human instruction** per PR — never default to it.
-
-```bash
-# Admin merge — ONLY when the human explicitly says so
-gh pr merge <N> --squash --admin
-```
-
-### Updating branches
-
-`gh pr update-branch <N>` (default merge mode) works for both main-repo and
-fork PRs — it is a server-side GitHub operation.
-
-> The `--rebase` flag does NOT work on fork PRs (requires force-push across
-> permission boundaries). Use the default merge mode.
-
-### Fork PR rebase (when update-branch is insufficient)
-
-When a fork PR has real conflicts that require manual resolution:
-
-```bash
-gh pr view <N> --json headRefName,headRepository \
-  --jq '{branch: .headRefName, repo: .headRepository.nameWithOwner}'
-
-git fetch https://github.com/<fork-owner>/common.git <branch>
-git checkout -b <branch>-rebase FETCH_HEAD
-git rebase origin/main
-# resolve conflicts…
-git push origin <branch>-rebase
-gh pr create --base main --head <branch>-rebase \
-  --title "<original title>" \
-  --body "Rebased from #N. Co-authored-by: <original-author>"
-```
+See [references/merge-queue.md](references/merge-queue.md) for landing commands,
+queue state reading, branch update, and fork PR rebase.
 
 ---
 
@@ -272,47 +158,58 @@ gh pr create --base main --head <branch>-rebase \
 
 - Agent states an opinion on whether a PR should be merged.
 - Agent approves, merges, closes, or labels without an explicit human verdict.
+- `queue` verdict applied to the human's own PR (Hive self-merge ban).
+- `lgtm` added without the exact audit approval body — the sweep skips it.
 - `--admin` merge used without explicit human instruction.
 - `--delete-branch` used (hard-fails with merge queue).
 - `system_files/shared/` change treated as trivial or fast-laned.
 - Batch executed before the human confirms the staged plan.
 - Competing PRs both staged for merge without human acknowledgment.
+- A PR closed without checking whether its `Closes #NNN` issue is now orphaned.
+- `3-human-queue` and `3-clanker-queue` present on the same item.
+- Re-arming auto-merge because `autoMergeRequest` was `null`, without probing queue.
+- A title fix declared done without a close/reopen and re-read of the check.
+- A flake re-run with no issue filed against the check that flaked.
+- A PR with a `DISMISSED` approval re-reviewed without diffing the current head.
+
+---
 
 ## Verification
-
-### Behavioral checklist
 
 - [ ] Every `gh pr merge` / `gh pr close` was preceded by an explicit human verdict.
 - [ ] No approval judgment or recommendation appears in dossier cards.
 - [ ] `--admin` was used only when the human explicitly said so.
 - [ ] `system_files/shared/` PRs were flagged as ALL-variant blast radius.
 - [ ] The four [human decision gates](../human-gates.md) were respected.
-- [ ] Staged action plan was printed and confirmed before any writes.
-- [ ] Competing pairs were detected and resolved before staging merges.
+- [ ] Competing pairs detected and resolved before staging merges.
+- [ ] The orphaned-issue sweep was run before ending the session.
+- [ ] No item carries both queue labels.
+- [ ] Every red check was classified, not just reported.
+- [ ] Every infra-flake re-run has a corresponding issue filed.
+- [ ] Every retitled PR was closed/reopened and its check re-read as green.
+- [ ] Every `DISMISSED` review was diffed from the approved SHA to current head.
 
-### Re-derivation commands
+---
 
-Verify the repo merge settings and rulesets with:
+## References
 
-```bash
-# Merge settings (deleteBranchOnMerge, squashMergeAllowed)
-gh repo view --json deleteBranchOnMerge,squashMergeAllowed
-
-# Rulesets and required checks
-gh api repos/projectbluefin/common/rulesets
-
-# Confirm merge queue behavior
-gh api repos/projectbluefin/common/rulesets | jq '.[].rules[] | select(.type == "merge_queue")'
-```
+| File | Contents |
+|---|---|
+| [references/card-fields.md](references/card-fields.md) | Full card field reference and `mergeStateStatus` table |
+| [references/red-check-triage.md](references/red-check-triage.md) | Classifying red checks, infra-flake correlation, `gh` CLI traps |
+| [references/dismissed-approval.md](references/dismissed-approval.md) | Dismissed-approval regression check procedure |
+| [references/worked-example.md](references/worked-example.md) | Worked example session |
+| [references/merge-queue.md](references/merge-queue.md) | Merge queue defaults, landing commands, fork PR rebase |
+| [references/triage-operations.md](references/triage-operations.md) | Issue triage verdicts and blast radius map |
+| [references/common-rationalizations.md](references/common-rationalizations.md) | Common rationalizations and why they are wrong |
 
 ## See Also
 
-- [references/card-fields.md](references/card-fields.md) — full card field reference and `mergeStateStatus` table
-- [references/worked-example.md](references/worked-example.md) — worked example session
-- [queue-feed.md](../queue-feed.md) — optional cheap first-pass source list (read-only, non-authoritative; every card fact must be verified live)
+- [queue-feed.md](../queue-feed.md) — optional cheap first-pass source list (non-authoritative; verify every fact live)
+- [hive-automerge.md](../hive-automerge.md) — Hive "Queue auto merge" sweep contract (`lgtm` label + audit approval)
 - [human-gates.md](../human-gates.md) — the four human decision gates
 - [label-workflow.md](../label-workflow.md) — canonical label lifecycle
 - [governance.md](../governance.md) — branch protection and ownership
-- [shell-scripts.md](../shell-scripts.md) — shell review patterns and bats testing
-- [ci-tooling.md](../ci-tooling.md) — CI workflow review and SHA pinning
+- [shell-scripts/SKILL.md](../shell-scripts/SKILL.md) — shell review patterns and bats testing
+- [ci-tooling.md](../ci-tooling/SKILL.md) — CI workflow review and SHA pinning
 - [lab-testing/SKILL.md](../lab-testing/SKILL.md) — lab verification

@@ -1,7 +1,7 @@
 ---
 name: write-a-skill
-version: "1.0"
-last_updated: "2026-07-20"
+version: "1.1"
+last_updated: "2026-08-08"
 id: write-a-skill
 one_line_purpose: Author a new skill doc following front-matter and size rules.
 entry_point: docs/skills/write-a-skill.md
@@ -116,16 +116,20 @@ shorten the description.
 
 - **Soft max:** 200 lines.
 - **Hard max:** 500 lines.
-- Existing oversized skills are grandfathered until Phase E migrates them to
-  per-skill directories with `SKILL.md` + `references/`.
+- **Migrate on sight.** Any session that touches an oversized or
+  legacy-format skill must migrate it to the per-skill directory layout
+  (`SKILL.md` + `references/`) in the same change. The size budget applies
+  uniformly to every skill — no exemptions, no deferral list.
 
 If a draft exceeds 200 lines, split rarely-needed detail into a separate
 `references/` file and link to it.
 
-### Per-skill directory migration (Phase E)
+### Per-skill directory migration (migrate on sight)
 
-For a skill that outgrows a single flat file, migrate it to
-`docs/skills/<name>/SKILL.md` + `docs/skills/<name>/references/*.md`:
+When you encounter a skill that outgrows a single flat file — whether you were
+sent to migrate it or you merely touched it for another reason — migrate it to
+`docs/skills/<name>/SKILL.md` + `docs/skills/<name>/references/*.md` as part of
+that same change:
 
 - `SKILL.md` keeps the front matter, `## When to Use`, core workflow, and a
   table pointing to each reference file with a one-line description of what's
@@ -139,9 +143,6 @@ For a skill that outgrows a single flat file, migrate it to
 - `scripts/check-skill-frontmatter.sh` and `scripts/check-skill-index.sh` both
   recognize `docs/skills/*/SKILL.md` alongside flat `docs/skills/*.md` — no
   script changes needed for a new migration.
-- Remove the skill's flat-file entry from the `GRANDFATHERED` array in
-  `check-skill-frontmatter.sh` once the migrated `SKILL.md` is back under the
-  soft/hard line limits.
 
 See [`lab-testing/SKILL.md`](./lab-testing/SKILL.md) for a worked example
 (migrated 2026-07-29 from a 910-line flat file).
