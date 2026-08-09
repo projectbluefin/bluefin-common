@@ -23,18 +23,29 @@ brew is installed at `/var/home/linuxbrew/.linuxbrew/bin/brew`.
 
 `~/.local/share/ublue-os/brew-preinstall-state.json`
 ```json
-{ "hash": "<sha256 of all Brewfiles combined>", "packages": ["pkg1", ...] }
+{
+  "hash": "<sha256 of all Brewfiles combined>",
+  "packages": ["formula1"],
+  "casks": ["cask1"]
+}
 ```
+
+State files created before cask management have no `casks` key. They are read
+as an empty cask list and require no migration.
 
 ### On every login
 
 1. Hash all `preinstall.d/*.Brewfile` files combined.
 2. Compare to stored hash. **Identical → fast exit**, nothing touched.
 3. **Different:** run `brew bundle --file=` on each Brewfile (idempotent).
-4. Diff `previous_packages` (from state JSON) against `current_packages`
-   (from Brewfiles). Uninstall packages that were in the old set but not
-   the new one — **only if `brew list` confirms they are installed**.
-5. Write new hash + package list to state file atomically (tmp + mv).
+   Continue through independent Brewfiles, but exit before removals and state
+   writes if any bundle fails.
+4. Diff previous formula and cask sets (from state JSON) against the current
+   declarations (from Brewfiles). Uninstall dropped entries only if
+   `brew list --formula` or `brew list --cask` confirms they are installed.
+5. If any uninstall fails, exit before the state write so the removal is
+   retried on the next service run.
+6. Write the new hash, formula list, and cask list atomically (tmp + mv).
 
 **The service is content-addressed, not version-numbered.** Never bump a
 counter to propagate a Brewfile change — just edit the file. The hash change
@@ -55,7 +66,7 @@ Their state file lists them in `packages`. On next login after the OS update:
 3. Diff: `previous = [..., inxi, nvtop, ...]`, `current = [...]` → `removed = [inxi, nvtop]`
 4. `brew list inxi` → installed → `brew uninstall inxi --ignore-dependencies`
 5. `brew list nvtop` → installed → `brew uninstall nvtop --ignore-dependencies`
-6. State file updated with new hash + 11-package list
+6. State file updated with the new hash and managed formula/cask lists
 
 Result: packages are **silently removed on the next login**. No prompt.
 
