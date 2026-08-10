@@ -341,21 +341,143 @@ def test_schema_validator_sends_no_credentials():
         )
 
 
+#: Matches a just recipe header at column 0: `name params: dep (dep "arg")`.
+#: Recipe bodies are indented, so anchoring at column 0 skips them, and the
+#: `(?!=)` guard keeps assignments like `just := just_executable()` from
+#: being read as a recipe named `just`.
+_JUST_RECIPE_HEADER = re.compile(
+    r"^(?P<name>@?[A-Za-z_][A-Za-z0-9_-]*)(?P<params>[^\n:]*):(?!=)(?P<deps>[^\n]*)$"
+)
+
+
+def _just_recipe_block(justfile: str, name: str) -> str:
+    """Return a just recipe's header plus its whole indented body.
+
+    Matching only the header line is what let the first version of the
+    hermetic gate below pass while `python3 tests/check-chairlift-config`
+    sat in the recipe body one line down.
+    """
+    lines = justfile.splitlines()
+    for index, line in enumerate(lines):
+        match = _JUST_RECIPE_HEADER.match(line)
+        if match is None or match.group("name") != name:
+            continue
+        body = []
+        for candidate in lines[index + 1 :]:
+            if candidate.strip() and not candidate[:1].isspace():
+                break
+            body.append(candidate)
+        return "\n".join([line, *body])
+    raise AssertionError(f"Justfile has no `{name}` recipe")
+
+
+def _just_recipe_dependencies(header: str) -> list[str]:
+    """Recipe names `header` depends on, bare or parenthesized with args.
+
+    String arguments are stripped first so `(_fmt "--check" "Checking")`
+    yields `_fmt` and not the words inside its arguments.
+    """
+    match = _JUST_RECIPE_HEADER.match(header)
+    assert match is not None, f"not a just recipe header: {header!r}"
+    deps = re.sub(r'"[^"]*"|\'[^\']*\'', " ", match.group("deps"))
+    return re.findall(r"@?[A-Za-z_][A-Za-z0-9_-]*", deps)
+
+
+def _just_recipe_closure(justfile: str, name: str) -> str:
+    """Everything `just <name>` would execute: the recipe and, transitively,
+    every recipe it depends on."""
+    blocks = []
+    seen: set[str] = set()
+    pending = [name]
+    while pending:
+        current = pending.pop(0).lstrip("@")
+        if current in seen:
+            continue
+        seen.add(current)
+        block = _just_recipe_block(justfile, current)
+        blocks.append(block)
+        pending.extend(_just_recipe_dependencies(block.splitlines()[0]))
+    return "\n".join(blocks)
+
+
+def _assert_just_check_is_hermetic(justfile: str) -> None:
+    """`just check` must not reach the network, directly or through a
+    dependency."""
+    closure = _just_recipe_closure(justfile, "check")
+    assert "check-chairlift-config" not in closure, (
+        "`just check` must stay hermetic; the networked ChairLift drift gate "
+        "belongs to .github/workflows/validate-chairlift-config.yaml. Found "
+        f"it in the recipe closure:\n{closure}"
+    )
+
+
 def test_just_check_stays_hermetic():
     """`just check` is the repo-wide pre-commit gate documented across the
     skill docs and the PR template. Chaining a third-party network fetch
     into it makes every unrelated PR, the merge queue, and every offline
-    contributor depend on frostyard/chairlift being reachable."""
+    contributor depend on frostyard/chairlift being reachable.
+
+    Inspect the whole recipe closure -- header, body, and every recipe
+    `check` depends on -- because `just check` runs all of it. A header-only
+    check passes while the fetch sits in the body.
+    """
     justfile = JUSTFILE.read_text(encoding="utf-8")
-    check_recipe = re.search(r"^check:.*$", justfile, re.MULTILINE)
-    assert check_recipe, "Justfile has no `check` recipe"
-    assert "check-chairlift-config" not in check_recipe.group(0), (
-        "`just check` must stay hermetic; the networked ChairLift drift gate "
-        "belongs to .github/workflows/validate-chairlift-config.yaml"
-    )
+    _assert_just_check_is_hermetic(justfile)
     assert "check-chairlift-config:" in justfile, (
         "keep check-chairlift-config as a standalone recipe so it can still "
         "be run on demand"
+    )
+
+
+#: Mutations that each make `just check` fetch from the network. Every one
+#: must trip the guard; a mutation that survives means the guard is
+#: decorative.
+_HERMETIC_MUTATIONS = {
+    "in the check body": (
+        'check: (_fmt "--check" "Checking")',
+        'check: (_fmt "--check" "Checking")\n    python3 tests/check-chairlift-config',
+    ),
+    "as a check dependency": (
+        'check: (_fmt "--check" "Checking")',
+        'check: check-chairlift-config (_fmt "--check" "Checking")',
+    ),
+    "in a transitive dependency body": (
+        "_fmt mode verb:\n",
+        "_fmt mode verb:\n    python3 tests/check-chairlift-config\n",
+    ),
+}
+
+
+@pytest.mark.parametrize("placement", sorted(_HERMETIC_MUTATIONS))
+def test_hermetic_guard_catches_check_recipe_mutations(placement):
+    """Mutation test for the guard above.
+
+    The original guard only regex-matched the `check:` header line, so
+    moving the validator one line down into the recipe body defeated it
+    silently. Re-add the fetch in three places and assert each one fails.
+    """
+    justfile = JUSTFILE.read_text(encoding="utf-8")
+    original, mutated = _HERMETIC_MUTATIONS[placement]
+    assert original in justfile, (
+        f"Justfile no longer contains {original!r}; update _HERMETIC_MUTATIONS "
+        "so this mutation still exercises the hermetic guard"
+    )
+
+    with pytest.raises(AssertionError, match="must stay hermetic"):
+        _assert_just_check_is_hermetic(justfile.replace(original, mutated, 1))
+
+
+def test_just_recipe_closure_reaches_dependency_bodies():
+    """The guard is only as good as the parser. Pin that the closure of
+    `check` actually contains `_fmt`'s body rather than just its name."""
+    justfile = JUSTFILE.read_text(encoding="utf-8")
+    closure = _just_recipe_closure(justfile, "check")
+    assert "--unstable --fmt" in closure, (
+        "the `check` closure does not include _fmt's body; the dependency "
+        f"walk is broken:\n{closure}"
+    )
+    assert "just := just_executable()" not in closure, (
+        "variable assignments must not be parsed as recipes"
     )
 
 

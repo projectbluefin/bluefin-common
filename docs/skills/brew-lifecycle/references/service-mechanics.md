@@ -107,8 +107,11 @@ Bluefin's config drifts. Validating against upstream `main` instead would
 false-green on a key the shipped binary rejects, which is the exact outcome
 the gate exists to prevent. It needs network, so it is **not** part of
 `just check`; `.github/workflows/validate-chairlift-config.yaml` owns it with a
-path filter and a weekly cron. Run it whenever the cask, config, or upstream
-schema assumptions change.
+path filter and a weekly cron. `test_just_check_stays_hermetic` enforces that
+by walking the whole `check` recipe closure — the recipe body and every recipe
+it depends on, not just the header line — so wiring the validator anywhere
+under `check` fails the unit tests. Run the validator whenever the cask,
+config, or upstream schema assumptions change.
 
 Bootc staging is authenticated and stage-only. The image ships the fixed
 `/usr/libexec/bootc-update-stage` helper and a PolicyKit action requiring admin
