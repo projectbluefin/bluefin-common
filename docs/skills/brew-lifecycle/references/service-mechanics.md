@@ -80,6 +80,36 @@ Downstream repos can ship their own Brewfiles by dropping `*.Brewfile` files
 into the same `preinstall.d/` directory in `system_files/<variant>/`. All
 `*.Brewfile` files in the directory are hashed, bundled, and tracked together.
 
+### ChairLift lifecycle and config ownership
+
+ChairLift is a managed cask installed for every user from
+`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/chairlift.Brewfile`.
+Keep both lines load-bearing:
+
+```ruby
+tap "frostyard/tap", trusted: true
+cask "chairlift"
+```
+
+Homebrew 6 requires `trusted: true` for the Frostyard tap, and the cask must
+remain pinned upstream in `frostyard/tap`.
+
+Bluefin owns the maintainer defaults at `/usr/share/chairlift/config.yml`
+(`system_files/shared/usr/share/chairlift/config.yml` in this repo). Admins own
+`/etc/chairlift/config.yml`; never overwrite that path from image content,
+setup services, or brew lifecycle code.
+
+ChairLift treats unknown config keys as schema errors and disables the whole
+application. `tests/check-chairlift-config` fetches upstream's live page, group,
+and field schema and fails closed when Bluefin's config drifts. Run it whenever
+the cask, config, or upstream schema assumptions change.
+
+Bootc staging is authenticated and download-only. The image ships the fixed
+`/usr/libexec/bootc-update-stage` helper and a PolicyKit action requiring admin
+authentication. The helper runs only `bootc upgrade --download-only`; it must
+not apply updates, reboot, suppress progress output, or forward caller
+arguments into bootc.
+
 ---
 
 ## Confirming the service is working — bonedigger-report

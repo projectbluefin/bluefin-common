@@ -27,6 +27,22 @@ As of 2026-06, it contains 11 packages:
 **Removed:** `inxi` (system info, redundant with `fastfetch` on the image) and
 `nvtop` (GPU monitor, hardware-specific — not everyone has a GPU).
 
+### Managed casks
+
+`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/chairlift.Brewfile`
+installs ChairLift for every user:
+
+```ruby
+tap "frostyard/tap", trusted: true
+cask "chairlift"
+```
+
+This is OS-managed like the default formula set: add the cask and every user
+gets it on next login after update; remove it and users whose state file shows
+it as managed have it uninstalled. The `trusted: true` tap flag is required.
+The cask must remain pinned upstream in `frostyard/tap`; do not vendor an
+unpinned replacement cask into common.
+
 ### What belongs in preinstall.d
 
 `preinstall.d/` is for packages every user gets automatically, managed

@@ -30,6 +30,7 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 |---|---|---|
 | `validate.yml` | Main PR gate: submodule drift, `just check`, shellcheck, image-registry guard, dconf parity, pre-commit | Tightening repo-local validation or policy guards |
 | `validate-brewfiles.yaml` | Validates Brewfile correctness | Changing Brewfile structure or Brewfile validation rules |
+| `validate-chairlift-config.yaml` | Checks `/usr/share/chairlift/config.yml` against upstream ChairLift's live schema; also runs weekly | Changing the ChairLift maintainer config, cask integration, or upstream schema assumptions |
 | `unit-tests.yml` | Runs `pytest` + `bats` on `system_files/**`, `tests/**`, and the `Justfile`. Triggers on PR, push to `main`, and `merge_group`. | Adding or changing unit tests, or changing the paths they cover |
 | `build.yml` | Builds and publishes the `common` OCI layer on merge. Runs parallel per-arch jobs (x86_64 on `ubuntu-24.04`, aarch64 on `ubuntu-24.04-arm`). Build uses rootless `buildah-build`; after build, `sudo skopeo copy` promotes the image into root storage so `push-image` (which uses `sudo podman push`) can find it. Then a `manifest` job assembles the multi-arch manifest, logs into GHCR, signs with keyless OIDC, generates SBOM, and attests SLSA L2. Downstream propagation is handled by Renovate (bluefin/bluefin-lts, ~3h) and dakota's daily cron — there is no direct dispatch from this workflow. | Changing how the shared layer is built or pushed |
 | `pr-e2e.yml` | Pre-merge composed-image gate for the PR's common layer (composes + runs common suite via `run-testsuite.yml`) | Changing how PR-time downstream composition is tested |
@@ -52,6 +53,11 @@ Load this when you need to understand **what each GitHub workflow in `projectblu
 ### Validation and policy
 
 `validate.yml` and `validate-brewfiles.yaml` are about catching repo-local mistakes **before merge**.
+
+`validate-chairlift-config.yaml` validates against an external upstream schema
+that can drift without a common commit. It fetches ChairLift's page, group, and
+field names and fails closed because unknown keys disable the whole
+application.
 
 ### Shared-layer build and release
 

@@ -77,6 +77,34 @@ cask 'chairlift'
 
 Legacy state files without a `casks` key require no migration.
 
+### ChairLift managed cask
+
+ChairLift is a managed cask installed for every user through
+`system_files/shared/usr/share/ublue-os/homebrew/preinstall.d/chairlift.Brewfile`:
+
+```ruby
+tap "frostyard/tap", trusted: true
+cask "chairlift"
+```
+
+The tap line requires `trusted: true`; Homebrew 6 blocks untrusted taps. The
+cask must remain pinned upstream in `frostyard/tap` rather than being replaced
+with a local mutable download in common.
+
+Bluefin owns `/usr/share/chairlift/config.yml`, shipped from
+`system_files/shared/usr/share/chairlift/config.yml`. `/etc/chairlift/config.yml`
+is administrator-owned override state and must not be overwritten by image
+content or lifecycle code.
+
+ChairLift fails closed on schema drift: an unknown page, group, or field key in
+`config.yml` disables the whole application. Keep policy that has no upstream
+key in YAML comments, and verify with `python3 tests/check-chairlift-config`.
+
+Bootc staging is authenticated and download-only. ChairLift invokes the
+PolicyKit-gated `/usr/libexec/bootc-update-stage` helper, which runs
+`bootc upgrade --download-only`; it must not apply updates, reboot, or accept
+caller-provided bootc arguments.
+
 ### Add a tap + package from a non-core tap
 
 Homebrew 6.0 syntax — `trusted: true` is required:
@@ -99,6 +127,10 @@ not `system_files/bluefin/preinstall.d/`. See [package-set.md](references/packag
 - Suggesting `rpm-ostree install` for any missing tool — this is never correct on Bluefin
 - Adding a package to `preinstall.d/` that has a udev rule, kernel module, D-Bus system service, FUSE driver, firmware, or PAM dependency — it must stay as an RPM
 - Adding a tap without `trusted: true` / `--trust` (Homebrew 6.0 blocks untrusted taps silently)
+- Adding unknown keys to `/usr/share/chairlift/config.yml` — ChairLift disables
+  the whole application on unknown page, group, or field names
+- Writing `/etc/chairlift/config.yml` from image content or setup code; that
+  path is administrator-owned override state
 - Bumping a version number or manual stamp to "trigger" a brew-preinstall re-run — the service is content-addressed; edit the Brewfile and the hash change triggers it automatically
 - Writing lifecycle code that advances the state hash after a failed bundle or uninstall — failures must leave state unchanged so the next login retries
 - Editing `preinstall.d/` in a downstream repo (bluefin, bluefin-lts, dakota) for packages that should live in `common` — common ships to all variants
@@ -111,6 +143,7 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 - [ ] Package obeys the "can move to brew" rule: self-contained CLI, no system-level deps
 - [ ] If adding a tap: `trusted: true` in the Brewfile line (Homebrew 6.0)
 - [ ] If adding a cask: it is recorded under `.casks` and removal uses `brew uninstall --cask`
+- [ ] If touching ChairLift: `python3 tests/check-chairlift-config` passes
 - [ ] Bundle and uninstall failures leave the previous state hash intact for retry
 - [ ] `pre-commit run --all-files` passes (Brewfile format, YAML/TOML hygiene)
 - [ ] `just test` passes (bats tests in `tests/test_brew_preinstall.bats`)
@@ -121,6 +154,6 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 
 | File | Contents |
 |---|---|
-| [package-set.md](references/package-set.md) | Current 11-package default set, what belongs in preinstall.d, fzf/ujust bootstrap, opt-in Brewfiles, shared/ vs bluefin/ placement rule |
-| [service-mechanics.md](references/service-mechanics.md) | How brew-preinstall.service works, state file format, login flow, long-time user removal scenario, bonedigger-report integration, merging order, path convention |
+| [package-set.md](references/package-set.md) | Current 11-package default set, ChairLift managed cask, what belongs in preinstall.d, fzf/ujust bootstrap, opt-in Brewfiles, shared/ vs bluefin/ placement rule |
+| [service-mechanics.md](references/service-mechanics.md) | How brew-preinstall.service works, state file format, login flow, ChairLift config ownership, long-time user removal scenario, bonedigger-report integration, merging order, path convention |
 | [placement-rules.md](references/placement-rules.md) | No rpm-ostree rule, what can move to brew, Homebrew 6.0 tap trust details, Starship shell initialization |
