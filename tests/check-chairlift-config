@@ -11,22 +11,30 @@ So a single invented key in our maintainer config does not degrade one
 feature: it ships an empty application to every Bluefin user. Bluefin
 preinstalls ChairLift silently at login, so nobody opts into that.
 
-Sources of truth, both read live from upstream:
+Sources of truth, both read live from upstream at the PINNED tag:
   * pages and groups -- upstream's own config.yml, which enumerates every
     page and group and is kept in lockstep with defaultConfig().
   * group and action FIELD names -- the yaml struct tags on GroupConfig and
     ActionConfig in internal/config/config.go. config.yml cannot supply
     these, because it only exercises a subset of the optional fields.
 
+The tag matters. Bluefin ships whichever release frostyard/tap's chairlift
+cask pins, so that binary's loader is the only one whose opinion counts.
+Validating against upstream's moving `main` would false-red on renames that
+never reach our users, and -- far worse -- false-green on a key the pinned
+binary rejects, which is exactly the disabledConfig() outcome this script
+exists to prevent. Bump CHAIRLIFT_SCHEMA_REF in the same change as the cask.
+
 Do not update the expectations in this file from memory -- this script
 reads upstream directly, on purpose.
 
-Network access is required. Set GITHUB_TOKEN (or GH_TOKEN) to avoid rate
-limits; in CI, github.token is available automatically.
+Network access is required, so this is deliberately NOT part of
+`just check`. .github/workflows/validate-chairlift-config.yaml owns it:
+path filter on the config and this validator, plus a weekly cron and
+workflow_dispatch to catch upstream drift between commits.
 """
 
 from pathlib import Path
-import os
 import re
 import sys
 import urllib.error
@@ -34,13 +42,16 @@ import urllib.request
 
 import yaml
 
-UPSTREAM_CONFIG_URL = (
-    "https://raw.githubusercontent.com/frostyard/chairlift/main/config.yml"
+#: The ChairLift release Bluefin actually ships, pinned by frostyard/tap's
+#: chairlift cask. Single source of truth for every upstream fetch below;
+#: bump it together with the cask version, never independently.
+CHAIRLIFT_SCHEMA_REF = "v0.10.1"
+
+UPSTREAM_RAW = (
+    f"https://raw.githubusercontent.com/frostyard/chairlift/{CHAIRLIFT_SCHEMA_REF}"
 )
-UPSTREAM_SCHEMA_URL = (
-    "https://raw.githubusercontent.com/frostyard/chairlift/main/"
-    "internal/config/config.go"
-)
+UPSTREAM_CONFIG_URL = f"{UPSTREAM_RAW}/config.yml"
+UPSTREAM_SCHEMA_URL = f"{UPSTREAM_RAW}/internal/config/config.go"
 
 ROOT = Path(__file__).resolve().parent.parent
 OUR_CONFIG = ROOT / "system_files/shared/usr/share/chairlift/config.yml"
@@ -50,11 +61,11 @@ YAML_TAG_RE = re.compile(r'yaml:"([^",]+)')
 
 
 def _fetch(url: str) -> str:
-    request = urllib.request.Request(url)
-    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
-    if token:
-        request.add_header("Authorization", f"Bearer {token}")
-    with urllib.request.urlopen(request, timeout=30) as response:
+    # No Authorization header: raw.githubusercontent.com serves public
+    # repository content anonymously and does not draw on the api.github.com
+    # rate limit, so a token would buy nothing and would hand a credential to
+    # a request that never needed one.
+    with urllib.request.urlopen(url, timeout=30) as response:
         return response.read().decode("utf-8")
 
 
@@ -98,7 +109,7 @@ def main() -> int:
         upstream = fetch_upstream_schema()
         group_fields, action_fields = fetch_upstream_fields()
     except (urllib.error.URLError, ValueError, yaml.YAMLError) as err:
-        print(f"✗ could not read upstream ChairLift schema: {err}")
+        print(f"✗ could not read upstream ChairLift schema at {CHAIRLIFT_SCHEMA_REF}: {err}")
         return 1
 
     ours = yaml.safe_load(OUR_CONFIG.read_text(encoding="utf-8"))
@@ -151,6 +162,7 @@ def main() -> int:
                                     f"{', '.join(sorted(action_fields))})"
                                 )
 
+    print(f"ChairLift schema @ {CHAIRLIFT_SCHEMA_REF} (pinned by the frostyard/tap cask):")
     for page, groups in sorted(upstream.items()):
         print(f"  {page}: {', '.join(sorted(groups))}")
     print(f"  group fields: {', '.join(sorted(group_fields))}")

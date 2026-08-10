@@ -100,10 +100,22 @@ ChairLift fails closed on schema drift: an unknown page, group, or field key in
 `config.yml` disables the whole application. Keep policy that has no upstream
 key in YAML comments, and verify with `python3 tests/check-chairlift-config`.
 
-Bootc staging is authenticated and download-only. ChairLift invokes the
-PolicyKit-gated `/usr/libexec/bootc-update-stage` helper, which runs
-`bootc upgrade --download-only`; it must not apply updates, reboot, or accept
-caller-provided bootc arguments.
+Bootc staging is authenticated and stage-only. ChairLift invokes the
+PolicyKit-gated `/usr/libexec/bootc-update-stage` helper, which runs plain
+`bootc upgrade`: that queues a staged deployment which `ostree-finalize-staged`
+applies at the user's own next shutdown. The helper must not accept
+caller-provided bootc arguments and must never pass `--apply`/`--soft-reboot`
+(they reboot), `--download-only` (it locks finalization, so nothing applies on
+reboot and an update uupd already staged gets re-locked), or
+`--from-downloaded` (it never checks the registry).
+
+Desktop integration ships from the image, not the cask. Homebrew has one
+shared prefix, so the cask's `~/.local/share` desktop entry and icons only
+ever reach the first user to run `brew bundle`. `common` ships the upstream
+desktop file at `/usr/share/applications/org.frostyard.ChairLift.desktop`
+(`Exec=/var/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper`) and the three
+upstream icons under `/usr/share/icons/hicolor/`, so every user gets a
+launcher.
 
 ### Add a tap + package from a non-core tap
 
@@ -143,7 +155,8 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 - [ ] Package obeys the "can move to brew" rule: self-contained CLI, no system-level deps
 - [ ] If adding a tap: `trusted: true` in the Brewfile line (Homebrew 6.0)
 - [ ] If adding a cask: it is recorded under `.casks` and removal uses `brew uninstall --cask`
-- [ ] If touching ChairLift: `python3 tests/check-chairlift-config` passes
+- [ ] If touching ChairLift: `python3 tests/check-chairlift-config` passes (networked; not part of `just check`)
+- [ ] If bumping the ChairLift cask: `CHAIRLIFT_SCHEMA_REF` in `tests/check-chairlift-config` and the vendored desktop file/icons move in the same change
 - [ ] Bundle and uninstall failures leave the previous state hash intact for retry
 - [ ] `pre-commit run --all-files` passes (Brewfile format, YAML/TOML hygiene)
 - [ ] `just test` passes (bats tests in `tests/test_brew_preinstall.bats`)

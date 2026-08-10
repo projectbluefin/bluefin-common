@@ -18,8 +18,10 @@ cosmetic defect; it ships an empty app to every user.
 """
 
 from pathlib import Path
+import re
 import shlex
 
+import pytest
 import yaml
 
 
@@ -35,7 +37,32 @@ BOOTC_POLICY = (
     / "org.frostyard.ChairLift.bootc.policy"
 )
 BOOTC_STAGE_SCRIPT = ROOT / "system_files/shared/usr/libexec/bootc-update-stage"
-VALIDATE_WORKFLOW = ROOT / ".github/workflows/validate.yml"
+CHAIRLIFT_VALIDATOR = ROOT / "tests/check-chairlift-config"
+CHAIRLIFT_WORKFLOW = ROOT / ".github/workflows/validate-chairlift-config.yaml"
+JUSTFILE = ROOT / "Justfile"
+DESKTOP_FILE = (
+    ROOT / "system_files/shared/usr/share/applications/org.frostyard.ChairLift.desktop"
+)
+ICON_ROOT = ROOT / "system_files/shared/usr/share/icons/hicolor"
+ICONS = (
+    ICON_ROOT / "scalable/apps/org.frostyard.ChairLift.svg",
+    ICON_ROOT / "scalable/apps/org.frostyard.ChairLift-flower.svg",
+    ICON_ROOT / "symbolic/apps/org.frostyard.ChairLift-symbolic.svg",
+)
+#: Homebrew's shared prefix on Bluefin. The cask links chairlift-wrapper here.
+CHAIRLIFT_WRAPPER = "/var/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper"
+
+#: bootc flags the privileged helper must never carry. --apply and
+#: --soft-reboot reboot the machine; --download-only locks finalization so
+#: the update does NOT apply on the next reboot (and re-locks one uupd had
+#: already staged); --from-downloaded only unlocks, never checks upstream.
+FORBIDDEN_BOOTC_FLAGS = (
+    "--apply",
+    "--from-downloaded",
+    "--download-only",
+    "--soft-reboot",
+    "--reboot",
+)
 
 # The canonical page -> group map, mirrored from upstream
 # internal/config/config.go::defaultConfig(). ChairLift validates configs
@@ -169,12 +196,30 @@ def test_no_polkit_rule_grants_bootc_staging_without_authentication():
     )
 
 
+def _stage_script_exec_argv() -> list[str]:
+    exec_lines = [
+        line.strip()
+        for line in BOOTC_STAGE_SCRIPT.read_text(encoding="utf-8").splitlines()
+        if line.strip().startswith("exec ")
+    ]
+    assert len(exec_lines) == 1, f"expected exactly one exec invocation: {exec_lines}"
+    return shlex.split(exec_lines[0])
+
+
 def test_bootc_stage_script_is_executable_and_stages_only():
-    """The privileged helper must only stage (never auto-apply/reboot) so
-    uupd remains the sole owner of when an update actually takes effect,
-    and must not suppress progress output: ChairLift streams the helper's
-    merged stdout+stderr into its progress view, so --quiet would leave
-    the user with an empty dialog.
+    """The privileged helper must run plain `bootc upgrade` and nothing else.
+
+    Plain `bootc upgrade` fetches the update and queues it as a staged
+    deployment that ostree-finalize-staged applies at the user's next
+    ordinary shutdown -- which is exactly what ChairLift's UI promises when
+    it reads back `status.staged` and says "restart to apply", and what
+    uupd already does in the background.
+
+    `--download-only` is the trap: bootc-upgrade(8) says the image "will not
+    be applied on reboot", so the user would authenticate, pay a full image
+    pull, and get nothing on reboot. Worse, it calls change_finalization()
+    on an already-staged deployment, so pressing ChairLift's button would
+    *cancel* an update uupd had staged for the next shutdown.
 
     Assert the exact argv rather than substrings. `pkexec` runs this script
     as root, so "contains 'bootc upgrade'" is far too weak a claim: it
@@ -183,19 +228,30 @@ def test_bootc_stage_script_is_executable_and_stages_only():
     assert BOOTC_STAGE_SCRIPT.stat().st_mode & 0o111, (
         "bootc-update-stage must be executable"
     )
-    exec_lines = [
-        line.strip()
-        for line in BOOTC_STAGE_SCRIPT.read_text(encoding="utf-8").splitlines()
-        if line.strip().startswith("exec ")
+    argv = _stage_script_exec_argv()
+    assert argv == ["exec", "/usr/bin/bootc", "upgrade"], (
+        f"unexpected privileged command: {argv!r}"
+    )
+
+
+@pytest.mark.parametrize("flag", FORBIDDEN_BOOTC_FLAGS)
+def test_bootc_stage_script_rejects_dangerous_flags(flag):
+    """The exact-argv test above already pins the command, but name the
+    forbidden flags individually so a future edit that adds one fails with
+    the reason rather than a diff of two lists.
+
+    Match whole tokens, including the `--soft-reboot=auto` spelling, and
+    never a bare substring: `--apply` must not be found inside a word.
+    """
+    argv = _stage_script_exec_argv()
+    offenders = [
+        token for token in argv if token == flag or token.startswith(f"{flag}=")
     ]
-    assert len(exec_lines) == 1, "expected exactly one exec invocation"
-    (exec_line,) = exec_lines
-    assert shlex.split(exec_line) == [
-        "exec",
-        "/usr/bin/bootc",
-        "upgrade",
-        "--download-only",
-    ], f"unexpected privileged command: {exec_line!r}"
+    assert not offenders, (
+        f"bootc-update-stage passes {flag}: {offenders}; the helper stages "
+        "only and must never reboot, lock finalization, or skip the "
+        "registry check"
+    )
 
 
 def test_bootc_stage_script_ignores_arguments():
@@ -246,24 +302,72 @@ def test_config_uses_only_upstream_schema_keys():
                 )
 
 
-def test_validate_pr_workflow_bootstraps_chairlift_validator_dependencies():
-    workflow = VALIDATE_WORKFLOW.read_text(encoding="utf-8")
-    install_pyyaml = workflow.find("pip install pyyaml")
-    run_just_check = workflow.find("run: just check")
-    github_token = workflow.find("GITHUB_TOKEN: ${{ github.token }}")
+def test_schema_validator_pins_the_shipped_chairlift_release():
+    """The drift gate must read the tag the cask pins, never upstream main.
 
-    assert install_pyyaml != -1, "validate.yml must install PyYAML before just check"
-    assert run_just_check != -1, "validate.yml must run just check"
-    assert install_pyyaml < run_just_check, (
-        "validate.yml runs tests/check-chairlift-config through just check, "
-        "so PyYAML must be available on a clean runner first"
+    Against `main` the gate false-greens on a key the pinned binary rejects
+    -- which is the whole disabledConfig() failure it exists to catch -- and
+    false-reds on renames that never reach our users. One constant, used to
+    build every upstream URL, so a cask bump has exactly one place to touch.
+    """
+    validator = CHAIRLIFT_VALIDATOR.read_text(encoding="utf-8")
+
+    refs = re.findall(r'^CHAIRLIFT_SCHEMA_REF = "([^"]+)"$', validator, re.MULTILINE)
+    assert refs == ["v0.10.1"], (
+        f"expected exactly one CHAIRLIFT_SCHEMA_REF pinned to v0.10.1, got {refs}"
     )
-    assert github_token != -1, (
-        "validate.yml must pass github.token to just check so the ChairLift "
-        "schema fetch avoids unauthenticated upstream API limits"
+
+    urls = re.findall(r"https://raw\.githubusercontent\.com/frostyard/chairlift/\S*", validator)
+    unpinned = [url for url in urls if "{CHAIRLIFT_SCHEMA_REF}" not in url]
+    assert not unpinned, (
+        f"upstream URLs bypass the pin: {unpinned}; build every URL from "
+        "CHAIRLIFT_SCHEMA_REF so the cask bump moves them together"
     )
-    assert github_token < run_just_check, (
-        "GITHUB_TOKEN must be in scope before validate.yml runs just check"
+
+
+def test_schema_validator_sends_no_credentials():
+    """raw.githubusercontent.com serves public content anonymously and does
+    not draw on the api.github.com rate limit, so the fetch must not send an
+    Authorization header or read a token out of the environment."""
+    code = "\n".join(
+        line
+        for line in CHAIRLIFT_VALIDATOR.read_text(encoding="utf-8").splitlines()
+        if not line.lstrip().startswith("#")
+    )
+    for forbidden in ("Authorization", "add_header", "GITHUB_TOKEN", "GH_TOKEN"):
+        assert forbidden not in code, (
+            f"tests/check-chairlift-config references {forbidden}; the "
+            "upstream fetch is anonymous and needs no credential"
+        )
+
+
+def test_just_check_stays_hermetic():
+    """`just check` is the repo-wide pre-commit gate documented across the
+    skill docs and the PR template. Chaining a third-party network fetch
+    into it makes every unrelated PR, the merge queue, and every offline
+    contributor depend on frostyard/chairlift being reachable."""
+    justfile = JUSTFILE.read_text(encoding="utf-8")
+    check_recipe = re.search(r"^check:.*$", justfile, re.MULTILINE)
+    assert check_recipe, "Justfile has no `check` recipe"
+    assert "check-chairlift-config" not in check_recipe.group(0), (
+        "`just check` must stay hermetic; the networked ChairLift drift gate "
+        "belongs to .github/workflows/validate-chairlift-config.yaml"
+    )
+    assert "check-chairlift-config:" in justfile, (
+        "keep check-chairlift-config as a standalone recipe so it can still "
+        "be run on demand"
+    )
+
+
+def test_chairlift_drift_workflow_documents_the_pin():
+    workflow = CHAIRLIFT_WORKFLOW.read_text(encoding="utf-8")
+    assert "CHAIRLIFT_SCHEMA_REF" in workflow, (
+        "the drift workflow must say where the pin lives so the next editor "
+        "does not reintroduce a main-tracking fetch"
+    )
+    assert "python3 tests/check-chairlift-config" in workflow
+    assert "GITHUB_TOKEN" not in workflow, (
+        "the validator fetches public raw content anonymously"
     )
 
 
@@ -299,3 +403,81 @@ def test_brewfile_taps_frostyard_with_trust():
     content = BREWFILE.read_text(encoding="utf-8")
     assert 'tap "frostyard/tap", trusted: true' in content
     assert 'cask "chairlift"' in content
+
+
+# ---------------------------------------------------------------------------
+# System-wide desktop integration
+#
+# The Homebrew cask installs the desktop entry and icons into the *installing*
+# user's ~/.local/share. Homebrew has one shared prefix on Bluefin, so every
+# user after the first sees the cask as already installed, brew bundle skips
+# it, and those users never get a launcher or an icon. Shipping the same
+# upstream artifacts from the image is what makes ChairLift appear for all
+# users; the per-user copies stay harmless duplicates.
+# ---------------------------------------------------------------------------
+
+
+def _desktop_entry() -> dict[str, str]:
+    entries: dict[str, str] = {}
+    in_section = False
+    for line in DESKTOP_FILE.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        if stripped.startswith("["):
+            in_section = stripped == "[Desktop Entry]"
+            continue
+        if in_section and "=" in stripped:
+            key, _, value = stripped.partition("=")
+            entries[key.strip()] = value.strip()
+    return entries
+
+
+def test_chairlift_desktop_entry_ships_system_wide():
+    assert DESKTOP_FILE.is_file(), (
+        f"missing {DESKTOP_FILE.relative_to(ROOT)}; without it only the first "
+        "user to run brew bundle gets a ChairLift launcher"
+    )
+    entry = _desktop_entry()
+    assert entry.get("Name") == "ChairLift"
+    assert entry.get("Type") == "Application"
+    assert entry.get("Icon") == "org.frostyard.ChairLift"
+    assert entry.get("NoDisplay") == "false", (
+        "the system-wide entry must be visible; it is the launcher for every "
+        "user the cask's user-scoped artifact never reaches"
+    )
+
+
+def test_chairlift_desktop_entry_execs_the_homebrew_wrapper():
+    """qecore and the shell both launch through Exec=. The wrapper sets up the
+    Homebrew environment, so a bare `chairlift` would depend on brew being on
+    a session PATH that GDM-launched apps do not have. Absolute path only, no
+    arguments, and /var/home spelling: /home is a symlink on bootc systems and
+    the image should name the real path."""
+    exec_line = _desktop_entry().get("Exec")
+    assert exec_line, f"no Exec= in {DESKTOP_FILE.relative_to(ROOT)}"
+    argv = shlex.split(exec_line)
+    assert argv == [CHAIRLIFT_WRAPPER], (
+        f"expected Exec={CHAIRLIFT_WRAPPER} with no arguments, got {exec_line!r}"
+    )
+
+
+def test_chairlift_icons_ship_system_wide():
+    """Icon=org.frostyard.ChairLift only resolves if the theme icon exists in
+    a system search path; the flower and symbolic variants are referenced by
+    the app itself."""
+    for icon in ICONS:
+        assert icon.is_file(), f"missing icon: {icon.relative_to(ROOT)}"
+        assert icon.stat().st_size > 0, f"empty icon: {icon.relative_to(ROOT)}"
+        assert icon.read_text(encoding="utf-8").lstrip().startswith(("<?xml", "<svg")), (
+            f"{icon.relative_to(ROOT)} is not an SVG document"
+        )
+
+
+def test_chairlift_desktop_entry_records_upstream_provenance():
+    """These are verbatim upstream GPL-3.0 artifacts. Keep the attribution and
+    the version next to them so a cask bump has an obvious place to look."""
+    header = DESKTOP_FILE.read_text(encoding="utf-8")
+    assert "frostyard/chairlift" in header
+    assert "v0.10.1" in header
+    assert "GPL-3.0" in header

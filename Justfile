@@ -63,10 +63,13 @@ _fmt mode verb:
     {{ just }} --unstable --fmt {{ mode }} -f Justfile || failed=1
     exit "$failed"
 
+# Check the ChairLift maintainer config against upstream's pinned schema.
+# Requires network access, so it is deliberately NOT wired into `check`:
+# .github/workflows/validate-chairlift-config.yaml owns this gate.
 check-chairlift-config:
     python3 tests/check-chairlift-config
 
-check: (_fmt "--check" "Checking") check-chairlift-config
+check: (_fmt "--check" "Checking")
 
 fix: (_fmt "" "Fixing")
 

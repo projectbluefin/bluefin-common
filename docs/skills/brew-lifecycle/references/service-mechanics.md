@@ -100,15 +100,71 @@ Bluefin owns the maintainer defaults at `/usr/share/chairlift/config.yml`
 setup services, or brew lifecycle code.
 
 ChairLift treats unknown config keys as schema errors and disables the whole
-application. `tests/check-chairlift-config` fetches upstream's live page, group,
-and field schema and fails closed when Bluefin's config drifts. Run it whenever
-the cask, config, or upstream schema assumptions change.
+application. `tests/check-chairlift-config` fetches the page, group, and field
+schema from the ChairLift release the cask pins — one constant,
+`CHAIRLIFT_SCHEMA_REF`, builds every upstream URL — and fails closed when
+Bluefin's config drifts. Validating against upstream `main` instead would
+false-green on a key the shipped binary rejects, which is the exact outcome
+the gate exists to prevent. It needs network, so it is **not** part of
+`just check`; `.github/workflows/validate-chairlift-config.yaml` owns it with a
+path filter and a weekly cron. Run it whenever the cask, config, or upstream
+schema assumptions change.
 
-Bootc staging is authenticated and download-only. The image ships the fixed
+Bootc staging is authenticated and stage-only. The image ships the fixed
 `/usr/libexec/bootc-update-stage` helper and a PolicyKit action requiring admin
-authentication. The helper runs only `bootc upgrade --download-only`; it must
-not apply updates, reboot, suppress progress output, or forward caller
-arguments into bootc.
+authentication. The helper runs plain `bootc upgrade` and nothing else:
+
+| Flag | Why it is banned |
+|---|---|
+| `--apply`, `--soft-reboot` | Reboot the machine; when to reboot is the user's call |
+| `--download-only` | Locks finalization, so the update does **not** apply on the next reboot, and re-locks a deployment uupd had already staged for shutdown |
+| `--from-downloaded` | Only unlocks an existing download; never checks the registry |
+
+Plain `bootc upgrade` fetches the update, queues it as a staged deployment, and
+lets `ostree-finalize-staged` apply it at the user's next ordinary shutdown —
+which is what ChairLift's UI reports after it re-reads `bootc status` and finds
+a staged deployment. The helper must not suppress progress output (ChairLift
+streams its merged stdout+stderr) or forward caller arguments into bootc.
+
+### System-wide desktop integration
+
+The cask installs the desktop entry and the three icons under the *installing*
+user's `~/.local/share`. Homebrew uses a single shared prefix on Bluefin, so
+for every subsequent user `brew bundle` sees the cask already installed, skips
+it, and those users never get a launcher or an icon — managed casks with
+user-scope artifacts are first-user-wins.
+
+`common` closes that gap by shipping the same upstream artifacts image-side:
+
+| Path | Source |
+|---|---|
+| `/usr/share/applications/org.frostyard.ChairLift.desktop` | upstream `data/org.frostyard.ChairLift.desktop`, `Exec=` rewritten to the absolute wrapper path |
+| `/usr/share/icons/hicolor/scalable/apps/org.frostyard.ChairLift.svg` | upstream, verbatim |
+| `/usr/share/icons/hicolor/scalable/apps/org.frostyard.ChairLift-flower.svg` | upstream, verbatim |
+| `/usr/share/icons/hicolor/symbolic/apps/org.frostyard.ChairLift-symbolic.svg` | upstream, verbatim |
+
+All four are vendored from ChairLift v0.10.1 (GPL-3.0, `frostyard/chairlift`)
+and must be refreshed from the tag the cask pins whenever it is bumped. The
+three icons are byte-identical to upstream, so the claim is checkable:
+
+```bash
+BASE=https://raw.githubusercontent.com/frostyard/chairlift/v0.10.1/data/icons/hicolor
+cd system_files/shared/usr/share/icons/hicolor
+for icon in scalable/apps/org.frostyard.ChairLift.svg \
+            scalable/apps/org.frostyard.ChairLift-flower.svg \
+            symbolic/apps/org.frostyard.ChairLift-symbolic.svg; do
+  diff <(curl -fsSL "$BASE/$icon") "$icon" && echo "ok $icon"
+done
+```
+
+To keep them that way they are excluded from `end-of-file-fixer` and
+`check-added-large-files` in `.pre-commit-config.yaml`; upstream's two scalable
+icons carry no trailing newline and exceed the 500 KiB default, and vendored
+assets are not re-encoded. `Exec` points at
+`/var/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper`: the wrapper sets up the
+Homebrew environment that a GDM-launched session PATH lacks, and `/var/home` is
+the real path (`/home` is a symlink on bootc systems). The per-user copies the
+cask still writes for the first user are harmless duplicates of the same entry.
 
 ---
 

@@ -15,9 +15,11 @@ updates_page:
   # frostyard/chairlift#54 resolved via the system-integration split
   # (frostyard/chairlift#102): the fixed /usr/libexec/bootc-update-stage
   # path is now backed by an image-side stage script, and the bootc polkit
-  # policy ships in system_files/shared/usr/share/polkit-1/actions/. Staging
-  # only (bootc upgrade --download-only); applying still happens on the
-  # user's own reboot, or via uupd's background policy.
+  # policy ships in system_files/shared/usr/share/polkit-1/actions/. The
+  # helper runs plain `bootc upgrade`, which stages the update; it is
+  # finalized by ostree-finalize-staged on the user's own next shutdown or
+  # reboot. Never --apply/--soft-reboot (those reboot) and never
+  # --download-only (that locks finalization, so nothing applies on reboot).
   bootc_updates_group:
     enabled: true
   flatpak_updates_group:

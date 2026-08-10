@@ -1,5 +1,15 @@
 name: Validate ChairLift Config
 
+# Networked drift gate for /usr/share/chairlift/config.yml. It validates
+# against the ChairLift release the frostyard/tap cask pins, not upstream
+# main; the pin lives in one constant, CHAIRLIFT_SCHEMA_REF in
+# tests/check-chairlift-config, and moves only when the cask does.
+#
+# This is deliberately NOT part of `just check`: that gate must stay
+# hermetic, and a third-party outage must never redden unrelated PRs or the
+# merge queue. The weekly cron is what catches upstream drift between
+# commits.
+
 permissions:
   contents: read
 
@@ -29,6 +39,4 @@ jobs:
         run: pip install pyyaml
 
       - name: Validate ChairLift config against upstream schema
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: python3 tests/check-chairlift-config

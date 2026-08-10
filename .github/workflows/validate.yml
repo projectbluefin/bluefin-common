@@ -71,14 +71,8 @@ jobs:
           cargo install --locked just
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
-      - name: Install Python check deps
-        shell: bash
-        run: pip install pyyaml
-
       - name: Check Just syntax
         shell: bash
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
         run: just check
 
       - name: Install shellcheck

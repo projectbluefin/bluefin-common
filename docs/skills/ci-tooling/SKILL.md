@@ -57,7 +57,7 @@ metadata:
 1. Read the workflow or pre-commit hook before describing it; do not rely on memory.
 2. Classify the ref or tool involved: external action, internal `projectbluefin/*` reusable, schema validator, or local hook.
 3. For workflow steps that call repo-local entrypoints such as `just check`, read the full dependency chain and install every clean-runner dependency in that workflow before the step.
-4. Pass `GITHUB_TOKEN: ${{ github.token }}` to repo-local checks that fetch from GitHub, and keep workflow/job permissions minimal (`contents: read` unless more is required). GitHub Actions supports step-level `env` and workflow/job `permissions`; source: `/websites/github_en_actions`.
+4. Keep `just check` hermetic. A check that reaches a third-party host belongs in its own workflow with a path filter and a cron, not in the repo-wide gate — otherwise someone else's outage reddens every open PR and the merge queue, and offline contributors cannot commit. Keep workflow/job permissions minimal (`contents: read` unless more is required); GitHub Actions supports step-level `env` and workflow/job `permissions`, source: `/websites/github_en_actions`.
 5. Apply the policy in this order: artifact-protecting CI gates first, agent-enforced process conventions second.
 6. Run the lightest verification that matches the change (`pre-commit`, `actionlint`, or direct source inspection).
 7. If the session uncovered a non-obvious CI trap, write it to [`ci-pitfalls.md`](../ci-pitfalls/SKILL.md) in the same change. If it's a shell authoring/testability pattern, write it to [`shell-scripts.md`](../shell-scripts/SKILL.md).
