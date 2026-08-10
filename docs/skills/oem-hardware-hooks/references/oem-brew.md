@@ -124,4 +124,4 @@ the file and repeated logins safely refresh it.
 ## Known gaps (tracking issues)
 
 - `20-framework.sh` in `projectbluefin/bluefin` is superseded by `20-oem-brew.sh` in common — file a cleanup issue in bluefin to delete it after common ships.
-- `apps.just` ASUS recipe still calls `brew install --cask` directly without `--trust`; update to use Brewfile or `--trust` flag.
+- `apps.just` ASUS recipe still calls `brew install --cask` directly; update to use Brewfile or pair `brew tap` with `brew trust`.
