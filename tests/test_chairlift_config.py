@@ -35,6 +35,7 @@ BOOTC_POLICY = (
     / "org.frostyard.ChairLift.bootc.policy"
 )
 BOOTC_STAGE_SCRIPT = ROOT / "system_files/shared/usr/libexec/bootc-update-stage"
+VALIDATE_WORKFLOW = ROOT / ".github/workflows/validate.yml"
 
 # The canonical page -> group map, mirrored from upstream
 # internal/config/config.go::defaultConfig(). ChairLift validates configs
@@ -243,6 +244,27 @@ def test_config_uses_only_upstream_schema_keys():
                     f"{page}.{group}.actions: fields absent from ChairLift's "
                     f"schema: {unknown_action_fields}"
                 )
+
+
+def test_validate_pr_workflow_bootstraps_chairlift_validator_dependencies():
+    workflow = VALIDATE_WORKFLOW.read_text(encoding="utf-8")
+    install_pyyaml = workflow.find("pip install pyyaml")
+    run_just_check = workflow.find("run: just check")
+    github_token = workflow.find("GITHUB_TOKEN: ${{ github.token }}")
+
+    assert install_pyyaml != -1, "validate.yml must install PyYAML before just check"
+    assert run_just_check != -1, "validate.yml must run just check"
+    assert install_pyyaml < run_just_check, (
+        "validate.yml runs tests/check-chairlift-config through just check, "
+        "so PyYAML must be available on a clean runner first"
+    )
+    assert github_token != -1, (
+        "validate.yml must pass github.token to just check so the ChairLift "
+        "schema fetch avoids unauthenticated upstream API limits"
+    )
+    assert github_token < run_just_check, (
+        "GITHUB_TOKEN must be in scope before validate.yml runs just check"
+    )
 
 
 def test_update_scheduling_is_not_expressed_as_a_config_group():
