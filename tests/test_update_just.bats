@@ -44,7 +44,7 @@ from pathlib import Path
 import sys
 p = Path(sys.argv[1])
 text = p.read_text()
-text = text.replace("/var/home/linuxbrew/.linuxbrew/bin/brew", "${MOCK_BREW_BIN:-/var/home/linuxbrew/.linuxbrew/bin/brew}")
+text = text.replace("/home/linuxbrew/.linuxbrew/bin/brew", "${MOCK_BREW_BIN:-/home/linuxbrew/.linuxbrew/bin/brew}")
 p.write_text(text)
 PY2
     chmod +x "${UPDATE_SCRIPT}" "${TOGGLE_SCRIPT}"

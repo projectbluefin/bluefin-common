@@ -10,7 +10,7 @@
 # makes ChairLift appear for all users; see
 # docs/skills/brew-lifecycle/references/service-mechanics.md.
 Name=ChairLift
-Exec=/var/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper
+Exec=/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper
 Icon=org.frostyard.ChairLift
 Terminal=false
 Type=Application

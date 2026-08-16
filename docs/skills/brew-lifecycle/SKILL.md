@@ -114,7 +114,7 @@ Desktop integration ships from the image, not the cask. Homebrew has one
 shared prefix, so the cask's `~/.local/share` desktop entry and icons only
 ever reach the first user to run `brew bundle`. `common` ships the upstream
 desktop file at `/usr/share/applications/org.frostyard.ChairLift.desktop`
-(`Exec=/var/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper`) and the three
+(`Exec=/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper`) and the three
 upstream icons under `/usr/share/icons/hicolor/`, so every user gets a
 launcher.
 

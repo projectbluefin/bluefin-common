@@ -34,9 +34,9 @@ update:
         flatpak update --user -y
     fi
     # Guard Brew if the user does not own brew/doesn't exist
-    if [[ -O /var/home/linuxbrew/.linuxbrew/bin/brew ]]; then
+    if [[ -O /home/linuxbrew/.linuxbrew/bin/brew ]]; then
         # Upgrade will run brew update if needed
-        /var/home/linuxbrew/.linuxbrew/bin/brew upgrade
+        /home/linuxbrew/.linuxbrew/bin/brew upgrade
     fi
 
 alias auto-update := toggle-updates

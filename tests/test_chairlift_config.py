@@ -50,7 +50,7 @@ ICONS = (
     ICON_ROOT / "symbolic/apps/org.frostyard.ChairLift-symbolic.svg",
 )
 #: Homebrew's shared prefix on Bluefin. The cask links chairlift-wrapper here.
-CHAIRLIFT_WRAPPER = "/var/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper"
+CHAIRLIFT_WRAPPER = "/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper"
 
 #: bootc flags the privileged helper must never carry. --apply and
 #: --soft-reboot reboot the machine; --download-only locks finalization so

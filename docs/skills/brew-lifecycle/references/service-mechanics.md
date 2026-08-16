@@ -17,7 +17,7 @@ systemd unit. The actual brew packages are installed at **first user login**.
 `network-online.target` and `ublue-user-setup.service`. It is enabled globally
 via `usr/lib/systemd/user-preset/01-brew-preinstall.preset`. Downstream repos
 do **not** need `systemctl --global enable` calls. The service only runs when
-brew is installed at `/var/home/linuxbrew/.linuxbrew/bin/brew`.
+brew is installed at `/home/linuxbrew/.linuxbrew/bin/brew`.
 
 ### State file
 
@@ -164,7 +164,7 @@ To keep them that way they are excluded from `end-of-file-fixer` and
 `check-added-large-files` in `.pre-commit-config.yaml`; upstream's two scalable
 icons carry no trailing newline and exceed the 500 KiB default, and vendored
 assets are not re-encoded. `Exec` points at
-`/var/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper`: the wrapper sets up the
+`/home/linuxbrew/.linuxbrew/bin/chairlift-wrapper`: the wrapper sets up the
 Homebrew environment that a GDM-launched session PATH lacks, and `/var/home` is
 the real path (`/home` is a symlink on bootc systems). The per-user copies the
 cask still writes for the first user are harmless duplicates of the same entry.

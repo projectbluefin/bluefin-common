@@ -91,7 +91,7 @@ See each repo's AGENTS.md for repo-specific test commands. Common entry points:
 
 ### Testing `update.just` on GitHub Actions
 
-`tests/test_update_just.bats` must avoid `bwrap` bind-mount tricks for `/etc` and `/var/home` on GitHub-hosted runners. Use PATH mocks for `systemctl`, `sudo`, `bootc`, `flatpak`, `gum`, and `grep`, and keep the assertions focused on the bootc, flatpak, and toggle-updates branches that are reliable in CI. Parameterize the extracted brew path inside the test harness so a host-owned `/var/home/linuxbrew/.linuxbrew/bin/brew` cannot make the brew-absent branch nondeterministic on local machines.
+`tests/test_update_just.bats` must avoid `bwrap` bind-mount tricks for `/etc` and `/var/home` on GitHub-hosted runners. Use PATH mocks for `systemctl`, `sudo`, `bootc`, `flatpak`, `gum`, and `grep`, and keep the assertions focused on the bootc, flatpak, and toggle-updates branches that are reliable in CI. Parameterize the extracted brew path inside the test harness so a host-owned `/home/linuxbrew/.linuxbrew/bin/brew` cannot make the brew-absent branch nondeterministic on local machines.
 
 ```bash
 # common
