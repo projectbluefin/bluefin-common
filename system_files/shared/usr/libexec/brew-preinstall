@@ -77,10 +77,16 @@ fi
 bundle_failed=0
 for brewfile in "${brewfiles[@]}"; do
     echo "brew-preinstall: bundling ${brewfile}"
-    bundle_output=$(brew bundle --file="${brewfile}" 2>&1 | tee /dev/stderr) || {
+    # Capture output for the skipped-cask check, then echo it. Do NOT pipe
+    # through `tee /dev/stderr`: under systemd, fd 2 is a journal socket and
+    # opening /dev/stderr fails with ENXIO, failing every bundle.
+    bundle_rc=0
+    bundle_output=$(brew bundle --file="${brewfile}" 2>&1) || bundle_rc=$?
+    printf '%s\n' "${bundle_output}"
+    if [[ "${bundle_rc}" -ne 0 ]]; then
         echo "brew-preinstall: error: bundling ${brewfile} failed"
         bundle_failed=1
-    }
+    fi
     # A skipped cask is a silent no-op that exits 0; treat it as a failure
     # so state stays unstamped and the run retries instead of never.
     if grep -q "^Skipping cask" <<< "${bundle_output}"; then

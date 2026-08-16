@@ -609,3 +609,28 @@ BREWMOCK
     ! grep -q "^brew bundle" "${WORKDIR}/brew.log"
     [ ! -f "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
 }
+
+@test "brew-preinstall: bundle output surfaces in the run output" {
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    bundle)   echo "BUNDLE-OUTPUT-MARKER" ;;
+    list)     exit 0 ;;
+    uninstall) ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"BUNDLE-OUTPUT-MARKER"* ]]
+}
+
+@test "brew-preinstall: never references /dev/stderr (ENXIO under systemd)" {
+    ! sed 's/#.*//' "${BREW_PREINSTALL}" | grep -q "/dev/stderr"
+}
