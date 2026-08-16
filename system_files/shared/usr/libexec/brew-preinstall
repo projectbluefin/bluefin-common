@@ -14,7 +14,7 @@ set -euo pipefail
 
 PREINSTALL_DIR="/usr/share/ublue-os/homebrew/preinstall.d"
 STATE_FILE="${HOME}/.local/share/ublue-os/brew-preinstall-state.json"
-BREW_BIN="/var/home/linuxbrew/.linuxbrew/bin/brew"
+BREW_BIN="/home/linuxbrew/.linuxbrew/bin/brew"
 
 if [[ ! -x "${BREW_BIN}" ]]; then
     echo "brew-preinstall: brew not found at ${BREW_BIN}, skipping"
@@ -48,14 +48,43 @@ eval "$("${BREW_BIN}" shellenv)"
 
 echo "brew-preinstall: Brewfiles changed (${current_hash:0:12}...), applying..."
 
+# Install every tap before any bundle runs. brew bundle decides cask
+# installability before processing the Brewfile's own tap lines, so on a
+# system that has never seen the tap it skips the cask as "requires macOS"
+# and still exits 0 — the cask is silently never installed (first boot of
+# any image shipping a tap+cask pair, e.g. frostyard/tap + chairlift).
+tap_failed=0
+while IFS= read -r tap; do
+    [[ -z "${tap}" ]] && continue
+    echo "brew-preinstall: tapping ${tap}"
+    if ! brew tap "${tap}"; then
+        echo "brew-preinstall: error: tapping ${tap} failed"
+        tap_failed=1
+    fi
+done < <(sed -nE \
+    -e "s/^[[:space:]]*tap[[:space:]]+\"([^\"]+)\".*/\\1/p" \
+    -e "s/^[[:space:]]*tap[[:space:]]+'([^']+)'.*/\\1/p" \
+    "${brewfiles[@]}" | sort -u)
+
+if [[ "${tap_failed}" -ne 0 ]]; then
+    echo "brew-preinstall: one or more taps failed; state unchanged, will retry"
+    exit 1
+fi
+
 # Install all packages declared in Brewfiles (brew bundle is idempotent).
 # Continue after an individual failure so independent Brewfiles still install,
 # but leave state untouched so the complete run is retried.
 bundle_failed=0
 for brewfile in "${brewfiles[@]}"; do
     echo "brew-preinstall: bundling ${brewfile}"
-    if ! brew bundle --file="${brewfile}"; then
+    bundle_output=$(brew bundle --file="${brewfile}" 2>&1 | tee /dev/stderr) || {
         echo "brew-preinstall: error: bundling ${brewfile} failed"
+        bundle_failed=1
+    }
+    # A skipped cask is a silent no-op that exits 0; treat it as a failure
+    # so state stays unstamped and the run retries instead of never.
+    if grep -q "^Skipping cask" <<< "${bundle_output}"; then
+        echo "brew-preinstall: error: ${brewfile} skipped a cask; treating as failure"
         bundle_failed=1
     fi
 done

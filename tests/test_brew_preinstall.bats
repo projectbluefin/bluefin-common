@@ -49,7 +49,7 @@ BREWMOCK
     # Patch hardcoded paths in the script to temp-dir equivalents
     PATCHED_SCRIPT="${WORKDIR}/brew-preinstall"
     sed \
-        -e "s|/var/home/linuxbrew/.linuxbrew/bin/brew|${WORKDIR}/bin/brew|g" \
+        -e "s|/home/linuxbrew/.linuxbrew/bin/brew|${WORKDIR}/bin/brew|g" \
         -e "s|/usr/share/ublue-os/homebrew/preinstall.d|${WORKDIR}/preinstall.d|g" \
         "${BREW_PREINSTALL}" > "${PATCHED_SCRIPT}"
     chmod +x "${PATCHED_SCRIPT}"
@@ -549,4 +549,63 @@ BREWMOCK
     [ "${stored_hash}" = "oldhash" ]
     pkgs="$(jq -r '.packages[]' "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json")"
     [[ "${pkgs}" == *"fd"* ]]
+}
+
+@test "brew-preinstall: taps all Brewfile taps before any bundle runs" {
+    printf 'tap "frostyard/tap", trusted: true\ncask "chairlift"\n' \
+        > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+    echo 'brew "ripgrep"' > "${WORKDIR}/preinstall.d/system-cli.Brewfile"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 0 ]
+    grep -q "^brew tap frostyard/tap$" "${WORKDIR}/brew.log"
+    first_bundle=$(grep -n "^brew bundle" "${WORKDIR}/brew.log" | head -1 | cut -d: -f1)
+    tap_line=$(grep -n "^brew tap frostyard/tap$" "${WORKDIR}/brew.log" | head -1 | cut -d: -f1)
+    [ "${tap_line}" -lt "${first_bundle}" ]
+}
+
+@test "brew-preinstall: skipped cask marks the run failed so it retries" {
+    printf 'tap "frostyard/tap", trusted: true\ncask "chairlift"\n' \
+        > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    bundle)   echo "Skipping cask chairlift (requires macOS)" ;;
+    list)     exit 0 ;;
+    uninstall) ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"skipped a cask"* ]]
+    [ ! -f "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
+}
+
+@test "brew-preinstall: failed tap aborts before bundling and leaves state unstamped" {
+    printf 'tap "frostyard/tap", trusted: true\ncask "chairlift"\n' \
+        > "${WORKDIR}/preinstall.d/chairlift.Brewfile"
+
+    cat > "${WORKDIR}/bin/brew" << BREWMOCK
+#!/usr/bin/env bash
+BREW_LOG="\${BREW_LOG:-/dev/null}"
+printf 'brew %s\n' "\$*" >> "\${BREW_LOG}"
+case "\$1" in
+    shellenv) printf 'export PATH="%s:\${PATH}"\n' "${WORKDIR}/bin" ;;
+    tap)      exit 1 ;;
+    list)     exit 0 ;;
+esac
+BREWMOCK
+    chmod +x "${WORKDIR}/bin/brew"
+
+    BREW_LOG="${WORKDIR}/brew.log" run bash "${PATCHED_SCRIPT}"
+    [ "${status}" -eq 1 ]
+    [[ "${output}" == *"will retry"* ]]
+    ! grep -q "^brew bundle" "${WORKDIR}/brew.log"
+    [ ! -f "${WORKDIR}/.local/share/ublue-os/brew-preinstall-state.json" ]
 }
