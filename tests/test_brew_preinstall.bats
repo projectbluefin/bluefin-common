@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
-# Tests for system_files/shared/usr/libexec/brew-preinstall
-# and its /usr/bin wrapper.
+# Tests for system_files/shared/usr/libexec/brew-preinstall,
+# its /usr/bin wrapper, and its systemd user unit.
 #
 # Strategy: patch the hardcoded absolute paths in the libexec script to
 # temp-dir equivalents so tests run without root or real Homebrew.
@@ -12,6 +12,9 @@
 
 BREW_PREINSTALL="$BATS_TEST_DIRNAME/../system_files/shared/usr/libexec/brew-preinstall"
 BREW_PREINSTALL_WRAPPER="$BATS_TEST_DIRNAME/../system_files/shared/usr/bin/brew-preinstall"
+BREW_PREINSTALL_SERVICE="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/systemd/user/brew-preinstall.service"
+BREW_PREINSTALL_PRESET="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/systemd/user-preset/01-brew-preinstall.preset"
+UBLUE_USER_SETUP_SERVICE="$BATS_TEST_DIRNAME/../system_files/shared/usr/lib/systemd/user/ublue-user-setup.service"
 WORKDIR=""
 PATCHED_SCRIPT=""
 PATCHED_WRAPPER=""
@@ -63,6 +66,60 @@ BREWMOCK
 
 teardown() {
     rm -rf "${WORKDIR}"
+}
+
+# ---------------------------------------------------------------------------
+# Systemd integration
+# ---------------------------------------------------------------------------
+
+@test "brew-preinstall service: runs after the graphical session with reduced resource priority" {
+    grep -Fxq \
+        "After=ublue-user-setup.service graphical-session.target" \
+        "${BREW_PREINSTALL_SERVICE}"
+    grep -Fxq "Slice=background.slice" "${BREW_PREINSTALL_SERVICE}"
+    grep -Fxq "IOWeight=10" "${BREW_PREINSTALL_SERVICE}"
+    local unit_section service_section
+    unit_section="$(sed -n '/^\[Unit\]$/,/^\[Service\]$/p' "${BREW_PREINSTALL_SERVICE}")"
+    service_section="$(sed -n '/^\[Service\]$/,/^\[Install\]$/p' "${BREW_PREINSTALL_SERVICE}")"
+    [[ "${unit_section}" == *"StartLimitBurst=3"* ]]
+    [[ "${service_section}" != *"StartLimitBurst="* ]]
+    grep -Fxq "WantedBy=graphical-session.target" "${BREW_PREINSTALL_SERVICE}"
+    ! grep -q "network-online.target" "${BREW_PREINSTALL_SERVICE}"
+    ! grep -q "network-online.target" "${UBLUE_USER_SETUP_SERVICE}"
+}
+
+@test "brew-preinstall service: preset delivery and systemd transaction preserve ordering" {
+    local unit_dir="${WORKDIR}/systemd-user"
+    mkdir -p "${unit_dir}/graphical-session.target.wants"
+    # Verify with a standalone system-manager transaction because CI has no
+    # user manager. Target/Wants/After ordering semantics are identical.
+    sed 's|ExecStart=/usr/bin/brew-preinstall|ExecStart=/bin/true|' \
+        "${BREW_PREINSTALL_SERVICE}" > "${unit_dir}/brew-preinstall.service"
+    sed 's|ExecStart=/usr/bin/ublue-user-setup|ExecStart=/bin/true|' \
+        "${UBLUE_USER_SETUP_SERVICE}" > "${unit_dir}/ublue-user-setup.service"
+    ln -s ../brew-preinstall.service \
+        "${unit_dir}/graphical-session.target.wants/brew-preinstall.service"
+
+    cat > "${unit_dir}/graphical-session.target" <<'EOF'
+[Unit]
+Description=Test graphical session
+StopWhenUnneeded=yes
+EOF
+
+    grep -Fxq "enable brew-preinstall.service" "${BREW_PREINSTALL_PRESET}"
+
+    run env \
+        SYSTEMD_LOG_LEVEL=debug \
+        SYSTEMD_UNIT_PATH="${unit_dir}:/usr/lib/systemd/system" \
+        systemd-analyze verify \
+        graphical-session.target \
+        brew-preinstall.service \
+        ublue-user-setup.service
+    [ "${status}" -eq 0 ]
+    [[ "${output}" == *"Before: brew-preinstall.service"* ]]
+    [[ "${output}" == *"After: graphical-session.target"* ]]
+    [[ "${output}" != *"ordering cycle"* ]]
+    [[ "${output}" != *"Unit network-online.target not found"* ]]
 }
 
 # ---------------------------------------------------------------------------

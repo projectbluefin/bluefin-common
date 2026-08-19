@@ -1,7 +1,7 @@
 ---
 name: brew-lifecycle
-version: "1.3"
-last_updated: "2026-08-10"
+version: "1.4"
+last_updated: "2026-08-18"
 id: brew-lifecycle
 one_line_purpose: Manage OS-managed Homebrew packages and RPM/brew placement.
 entry_point: docs/skills/brew-lifecycle/SKILL.md
@@ -20,6 +20,7 @@ metadata:
   context7-sources:
     - /bootc-dev/bootc
     - /homebrew/brew
+    - /systemd/systemd
 ---
 
 # brew-lifecycle — Homebrew Package Lifecycle for Bluefin
@@ -149,6 +150,7 @@ not `system_files/bluefin/preinstall.d/`. See [package-set.md](references/packag
 - Writing lifecycle code that advances the state hash after a failed bundle or uninstall — failures must leave state unchanged so the next login retries
 - Editing `preinstall.d/` in a downstream repo (bluefin, bluefin-lts, dakota) for packages that should live in `common` — common ships to all variants
 - Assuming `brew-preinstall.service` ran successfully because it's enabled — the service exits 0 silently if brew is not yet installed; check `journalctl --user -u brew-preinstall.service`
+- Removing `After=graphical-session.target` from `brew-preinstall.service` — target units automatically order themselves after wanted units unless the wanted unit explicitly supplies the inverse ordering, which would put this oneshot back on GNOME's application-launch critical path
 
 ## Verification
 
@@ -161,6 +163,8 @@ After any change to `preinstall.d/` or `brew-preinstall`:
 - [ ] If touching ChairLift: `python3 tests/check-chairlift-config` passes (networked; not part of `just check`)
 - [ ] If bumping the ChairLift cask: `CHAIRLIFT_SCHEMA_REF` in `tests/check-chairlift-config` and the vendored desktop file/icons move in the same change
 - [ ] Bundle and uninstall failures leave the previous state hash intact for retry
+- [ ] The systemd user unit remains ordered after `graphical-session.target`, in `background.slice`, and at reduced I/O weight
+- [ ] User units do not reference the system manager's `network-online.target`; network failures use the service retry policy
 - [ ] `pre-commit run --all-files` passes (Brewfile format, YAML/TOML hygiene)
 - [ ] `just test` passes (bats tests in `tests/test_brew_preinstall.bats`)
 - [ ] If removing a package: confirmed it was in the previous managed state — it will be auto-uninstalled for existing users on next login

@@ -13,11 +13,21 @@ systemd unit. The actual brew packages are installed at **first user login**.
 
 ### Service
 
-`brew-preinstall.service` is a user-level oneshot that fires after
-`network-online.target` and `ublue-user-setup.service`. It is enabled globally
-via `usr/lib/systemd/user-preset/01-brew-preinstall.preset`. Downstream repos
-do **not** need `systemctl --global enable` calls. The service only runs when
-brew is installed at `/home/linuxbrew/.linuxbrew/bin/brew`.
+`brew-preinstall.service` is a user-level oneshot pulled in by
+`graphical-session.target`. It explicitly runs after that target and
+`ublue-user-setup.service`, uses `background.slice`, and lowers its I/O weight.
+Keep the explicit `After=graphical-session.target` ordering: systemd target
+units automatically complement wanted units with `After=` unless the wanted
+unit supplies the inverse ordering, so omitting it puts the Homebrew pass on the
+critical path for GNOME's generated application units. See
+[`systemd.target`](https://www.freedesktop.org/software/systemd/man/latest/systemd.target.html#Automatic%20Dependencies).
+
+User managers cannot depend on the system manager's `network-online.target`.
+The service starts after the graphical session and relies on its bounded
+`Restart=on-failure` policy when connectivity is not ready. It is enabled
+globally via `usr/lib/systemd/user-preset/01-brew-preinstall.preset`.
+Downstream repos do **not** need `systemctl --global enable` calls. The service
+only runs when brew is installed at `/home/linuxbrew/.linuxbrew/bin/brew`.
 
 ### State file
 
