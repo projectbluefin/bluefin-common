@@ -1,11 +1,11 @@
-FROM docker.io/library/golang:alpine@sha256:bca1814774f953b5c4401628ea9299850ced48f90f3a21032f084340d548e553 AS umotd-build
+FROM docker.io/library/golang:alpine@sha256:4c9fe60190a2a3350ddc51de80d0224b8a6698d12bdfc999fee45ea9d6c46dbc AS umotd-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/umotd /src && \
     git -C /src checkout c9df8ec6b53e9b2a644a6dc511fd6fde1baad08b
 WORKDIR /src
 RUN go build -ldflags="-s -w" -o /umotd .
 
-FROM docker.io/library/golang:alpine@sha256:bca1814774f953b5c4401628ea9299850ced48f90f3a21032f084340d548e553 AS uwelcome-build
+FROM docker.io/library/golang:alpine@sha256:4c9fe60190a2a3350ddc51de80d0224b8a6698d12bdfc999fee45ea9d6c46dbc AS uwelcome-build
 RUN apk add git && \
     git clone https://github.com/projectbluefin/uwelcome /src && \
     git -C /src checkout 5280521bf21e14802d5a8bb1cffb942fa0b5efb7
