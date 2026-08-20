@@ -76,6 +76,24 @@ read_image_info() {
     IMAGE_REF="$(read_image_field image-ref)"
     IMAGE_TAG="$(read_image_field image-tag)"
     IMAGE_FLAVOR="$(read_image_field image-flavor)"
+
+    local booted_ref=""
+    if command -v jq &>/dev/null; then
+        booted_ref="$(printf '%s' "$BOOTC_JSON" | \
+            jq -r '.status.booted.image.image.image // empty' 2>/dev/null || true)"
+    fi
+    if [[ -n "$booted_ref" ]]; then
+        local ref_without_digest="${booted_ref%@*}"
+        local image_component="${ref_without_digest##*/}"
+        IMAGE_REF="$booted_ref"
+        if [[ "$image_component" == *:* ]]; then
+            IMAGE_NAME="${image_component%:*}"
+            IMAGE_TAG="${image_component##*:}"
+        else
+            IMAGE_NAME="$image_component"
+            IMAGE_TAG="unknown"
+        fi
+    fi
 }
 
 read_boot_status() {
@@ -652,6 +670,7 @@ start_bug_report() {
     local description
     local reproduction
 
+    read_boot_status
     read_image_info
     route_issue_repo
     gum style --bold --foreground 212 "Bug report"
@@ -663,7 +682,6 @@ start_bug_report() {
 
     printf '\nSelect any relevant smart-log profiles (or none):\n'
     choose_profiles
-    read_boot_status
     create_draft "$BUG_REPO"
     : > "$DRAFT_DIR/bug-report.txt"
     collect_baseline "$title" "$description" "$reproduction"
@@ -692,8 +710,8 @@ main() {
 
     parse_args "$@"
     if [[ -n "$CONFIRM_TARGET" ]]; then
-        read_image_info
         read_boot_status
+        read_image_info
         route_issue_repo
         parse_confirm_target "$CONFIRM_TARGET" "$BUG_REPO"
         confirm_report "$CONFIRM_ISSUE" "$CONFIRM_REPO"
