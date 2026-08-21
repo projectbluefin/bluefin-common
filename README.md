@@ -56,14 +56,14 @@ COPY --from=bluefin-common /system_files/usr /usr
 
 ## Flatpak Customization
 
-Bluefin-common provides a comprehensive flatpak customization system with multiple layers:
+Bluefin-common provides a comprehensive Flatpak customization system with multiple layers:
 
 ### System Flatpak Brewfiles
 
-Default flatpaks are now managed via Homebrew Brewfiles, allowing for declarative system-wide installation:
+Default Flatpaks are now managed via Homebrew Brewfiles, allowing for declarative system-wide installation:
 
-- **`system-flatpaks.Brewfile`** - Core flatpaks installed on all Bluefin variants (37 applications including Firefox, Thunderbird, GNOME Circle apps, and utilities)
-- **`system-dx-flatpaks.Brewfile`** - Additional development-focused flatpaks for DX mode (6 applications including Podman Desktop, Builder, and DevToolbox)
+- **`system-flatpaks.Brewfile`** - Core Flatpaks installed on all Bluefin variants (37 applications including Firefox, Thunderbird, GNOME Circle apps, and utilities)
+- **`system-dx-flatpaks.Brewfile`** - Additional development-focused Flatpaks for DX mode (6 applications including Podman Desktop, Builder, and DevToolbox)
 
 These can be installed using:
 ```bash
@@ -72,7 +72,7 @@ ujust install-system-flatpaks
 
 ### Flatpak Overrides
 
-Two types of flatpak overrides are provided to grant additional permissions to specific applications:
+Two types of Flatpak overrides are provided to grant additional permissions to specific applications:
 
 **System-level overrides** (`/usr/share/ublue-os/flatpak-overrides/`):
 - `io.github.kolunmi.Bazaar` - Grants access to `host-etc` for system configuration
@@ -87,9 +87,9 @@ These overrides are automatically applied to new user accounts through the `/etc
 
 The `/usr/share/ublue-os/homebrew/` directory contains curated application bundles installable via [bbrew](https://github.com/Valkyrie00/homebrew-bbrew):
 
-- **`system-flatpaks.Brewfile`** - Default system-wide flatpaks for all Bluefin variants
-- **`system-dx-flatpaks.Brewfile`** - Additional flatpaks for DX (Developer Experience) mode
-- **`full-desktop.Brewfile`** - Comprehensive collection of GNOME Circle and community flatpak applications for a full desktop experience
+- **`system-flatpaks.Brewfile`** - Default system-wide Flatpaks for all Bluefin variants
+- **`system-dx-flatpaks.Brewfile`** - Additional Flatpaks for DX (Developer Experience) mode
+- **`full-desktop.Brewfile`** - Comprehensive collection of GNOME Circle and community Flatpak applications for a full desktop experience
 - **`fonts.Brewfile`** - Common fonts for everyday work
 - **`fonts-dev.Brewfile`** - Additional monospace fonts for development
 - **`cli.Brewfile`** - CLI tools and utilities
