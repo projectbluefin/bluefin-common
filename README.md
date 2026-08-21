@@ -7,7 +7,7 @@ Shared OCI layer containing common configuration files used across all Bluefin v
 This repository organizes configuration files into two main directories, these are important:
 
 ### `system_files/bluefin/` - Bluefin Specific Configuration
-Files specific to Bluefin
+Files specific to Bluefin:
 
 - GNOME desktop settings and theming
 - Bluefin wallpapers and branding
