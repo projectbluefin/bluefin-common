@@ -93,6 +93,11 @@ read_boot_status() {
         # the same digest, so only bootc knows the followed tag.
         booted_ref="$(printf '%s' "$BOOTC_JSON" | \
             jq -r '.status.booted.image.image.image // .spec.image.image // empty' 2>/dev/null || true)"
+        if [[ -n "$booted_ref" ]]; then
+            # The baked image-ref is equally stale for rebased or locally
+            # built deployments (projectbluefin/dakota#1328).
+            IMAGE_REF="$booted_ref"
+        fi
         case "$booted_ref" in
             *@*) ;; # digest-pinned ref, no tag to extract
             *:*) IMAGE_TAG="${booted_ref##*:}" ;;
