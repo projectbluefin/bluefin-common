@@ -93,6 +93,12 @@ read_boot_status() {
         # the same digest, so only bootc knows the followed tag.
         booted_ref="$(printf '%s' "$BOOTC_JSON" | \
             jq -r '.status.booted.image.image.image // .spec.image.image // empty' 2>/dev/null || true)"
+        # Unprivileged `bootc status` fails on bootc >= 1.14, so fall back to
+        # the boot-time snapshot written by ublue-booted-image.service on
+        # images that ship it (projectbluefin/dakota#1418).
+        if [[ -z "$booted_ref" && -r /run/ublue-os/booted-image ]]; then
+            read -r booted_ref < /run/ublue-os/booted-image || true
+        fi
         if [[ -n "$booted_ref" ]]; then
             # The baked image-ref is equally stale for rebased or locally
             # built deployments (projectbluefin/dakota#1328).
