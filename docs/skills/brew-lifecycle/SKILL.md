@@ -60,8 +60,15 @@ pattern, and the rules for what can and cannot move to brew.
 ### Remove a package
 1. Remove the `brew "<name>"` line from the Brewfile.
 2. Open a PR.
-3. On next login after the OS update, users who got it through the managed set
-   get it uninstalled. Users who installed it themselves are unaffected.
+3. On next successful login sync after the OS update, packages recorded in
+   the previous managed state get uninstalled. Packages outside that state
+   are unaffected. State records the desired set, not who originally installed
+   each package, so a manually installed package can later become managed.
+
+Bluefinctl is no longer provisioned by common. Removing its dedicated Brewfile
+uses this existing lifecycle to uninstall state-tracked copies; no separate
+cleanup script is needed. Native `ujust` recipes must not delegate to `bctl`,
+even if an untracked copy remains installed.
 
 ### Add or remove a cask
 
@@ -123,8 +130,8 @@ launcher.
 
 Homebrew 6.0 syntax — `trusted: true` is required:
 ```ruby
-tap "projectbluefin/bluefinctl", trusted: true
-brew "bluefinctl"
+tap "frostyard/tap", trusted: true
+cask "chairlift"
 ```
 Without `trusted: true` the tap is blocked and the formula is silently
 unavailable. See [placement-rules.md](references/placement-rules.md#homebrew-60-tap-trust-required-as-of-2026-06-11).
