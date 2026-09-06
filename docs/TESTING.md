@@ -11,6 +11,11 @@ just check         # lint Justfile
 pre-commit run --all-files  # hygiene checks (shellcheck, yaml, sha-pinning)
 ```
 
+`just check-brewfiles` is a separate networked check against real Homebrew
+metadata. It syncs/trusts taps declared by the shared Brewfiles, but does not
+install formulae or casks. Use a disposable Homebrew environment when testing
+it locally. Its offline regression suite is `bats tests/test_validate_brewfiles.bats`.
+
 ## What Must Be Tested
 
 ### Rule: new script in `system_files/*/usr/bin/` → new test file in `tests/`
@@ -92,6 +97,7 @@ Do not add exemptions for scripts with branching logic.
 | `tests/test_ublue_fastfetch.bats` | `ublue-fastfetch` — config reads, shuffle branch, DEFAULT_THEME export to ublue-bling-fastfetch |
 | `tests/test_theming_hook.bats` | `10-theming.sh` — Framework/Thelio branches and setup idempotency |
 | `tests/test_brew_preinstall.bats` | Managed Brewfile lifecycle plus user-unit ordering, resource priority, and preset delivery |
+| `tests/test_validate_brewfiles.bats` | Brewfile metadata validation, tap setup failures, ambiguity diagnostics, safe argument passing, and qualified wallpaper/Zed references |
 
 ## Quality Epic
 

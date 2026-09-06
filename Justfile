@@ -24,6 +24,7 @@ test:
     bats tests/test_dynamic_wallpaper.bats
     bats tests/test_geoclue_latitude.bats
     bats tests/test_brew_preinstall.bats
+    bats tests/test_validate_brewfiles.bats
     bats tests/test_oem_brew.bats
     bats tests/test_bonedigger_report.bats
     bats tests/test_hardware_hooks.bats
@@ -69,6 +70,11 @@ _fmt mode verb:
 # .github/workflows/validate-chairlift-config.yaml owns this gate.
 check-chairlift-config:
     python3 tests/check-chairlift-config
+
+# Networked metadata check; syncs/trusts declared taps but installs no packages.
+# Keep separate from the hermetic check recipe.
+check-brewfiles:
+    bash scripts/validate-brewfiles.sh
 
 check: (_fmt "--check" "Checking")
 
