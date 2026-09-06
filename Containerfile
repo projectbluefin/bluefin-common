@@ -64,7 +64,8 @@ RUN install -d /tmp/gdu-rules /out/shared/usr/lib/udev/rules.d && \
       echo "4db215f77201f1c2346a513cd1aea077eaf0805887100d9c05c9ae0527d6a171  zeroplus_technology_corporation-gdu.rules"; \
     } > checksums.txt && \
     for file in $(awk '{print $2}' checksums.txt); do \
-      curl -fsSLo "$file" "https://codeberg.org/fabiscafe/game-devices-udev/raw/aaaf684043b33a330630335a3782b02ecf87a52e/src/$file"; \
+      curl --fail --silent --show-error --location --retry 5 --retry-all-errors --retry-delay 2 \
+        --output "$file" "https://codeberg.org/fabiscafe/game-devices-udev/raw/aaaf684043b33a330630335a3782b02ecf87a52e/src/$file"; \
     done && \
     sha256sum -c checksums.txt && \
     for f in *.rules; do install -Dpm0644 "$f" "/out/shared/usr/lib/udev/rules.d/71-$f"; done && \
