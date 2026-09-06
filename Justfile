@@ -14,6 +14,7 @@ test:
     bats tests/test_bling_fastfetch.bats
     bats tests/test_changelog.bats
     bats tests/test_update_just.bats
+    bats tests/test_native_recipes.bats
     bats tests/test_ujust.bats
     bats tests/test_ublue_fastfetch.bats
     bats tests/test_motd_integration.bats

@@ -93,6 +93,7 @@ Do not add exemptions for scripts with branching logic.
 | `tests/test_rechunker_group_fix.bats` | `rechunker-group-fix` — group/gshadow append, duplicate detection, format |
 | `tests/test_bling_fastfetch.bats` | `ublue-bling-fastfetch` — all 9 accent colors, dconf/gsettings fallback chain, FASTFETCH_FORCE_THEME override |
 | `tests/test_changelog.bats` | `changelog.just` — LTS/non-LTS repo selection, URL construction, exit behaviour |
+| `tests/test_native_recipes.bats` | Native recipes with a leftover `bctl`: CLI setup, devmode, signed channel switching, VM setup, Flatpak bundles, and both reset confirmations |
 | `tests/test_ublue_fastfetch.bats` | `ublue-fastfetch` — config reads, shuffle branch, DEFAULT_THEME export to ublue-bling-fastfetch |
 | `tests/test_theming_hook.bats` | `10-theming.sh` — Framework/Thelio branches and setup idempotency |
 | `tests/test_brew_preinstall.bats` | Managed Brewfile lifecycle plus user-unit ordering, resource priority, and preset delivery |
