@@ -87,3 +87,19 @@ grep -q "^name:!\*::" file
 # ALSO CORRECT — -F disables regex entirely
 grep -qF "name:!*::" file
 ```
+
+## Isolating environment in profile/login scripts
+
+Scripts under `etc/profile.d/` often check guard variables (e.g. `UWELCOME_SHOWN`)
+to prevent duplicate execution across chained shells. When bats runs in an
+interactive login session, those guard variables are already set in the caller's
+environment, causing tests to fail silently or unexpectedly skip script bodies.
+Always unset or isolate session guard variables in `setup()`:
+
+```bash
+setup() {
+    WORKDIR="$(mktemp -d)"
+    ...
+    unset UWELCOME_SHOWN
+}
+```
