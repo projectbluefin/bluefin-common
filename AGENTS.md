@@ -66,6 +66,7 @@ See [`docs/skills/label-workflow.md`](docs/skills/label-workflow.md) and
 
 ## Agent fast path
 
+- Mandatory: query org knowledge base via `projectbluefin` MCP (`search_knowledge`) before investigating, designing, or implementing. Offline fallback: `~/agent.md`.
 - Read source before asserting project-internal facts (image names, tags,
   workflow outputs). Use `gh api` to inspect workflows, not memory.
 - Look up external tool docs via Context7 first — see `docs/skills/context7.md`.

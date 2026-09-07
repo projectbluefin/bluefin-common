@@ -22,6 +22,10 @@ cross-repository breakage, merge, or production human gates.
 
 - **The standard is the codebase itself.** Use what is in production already. When making technical decisions (like choosing a GitHub Action or CLI tool), your first step is to grep the existing codebase. If a tool (e.g., `ublue-os/remove-unwanted-software`) is already heavily used across the org's repos, that is the standard. Use it.
 - **AGENTS.md is the per-repo contract.** Read it before touching anything.
+- **Project Bluefin MCP server is mandatory.** Query the org knowledge base via `projectbluefin` MCP (`https://mcp.projectbluefin.io/mcp`) before investigating, designing, or implementing:
+  - `search_knowledge(query, limit)` — engineering patterns, coverage gaps, CI conventions, and per-repository findings across `projectbluefin/*`. Always search relevant keywords first.
+  - `get_factory_status()` / `get_work_queue()` — live Hive factory state.
+  - Offline fallback: `~/agent.md`, refreshed by `~/.local/bin/sync-hive-kb` (search with `grep`, never load whole file into context).
 - **One agentic whole.** `common` changes propagate to `bluefin`, `bluefin-lts`, and `dakota` at next build. High blast radius.
 - **Org-wide automation lives in `projectbluefin/actions`.** Treat `projectbluefin/housekeeping` as a deprecated placeholder repo, not an active home for maintenance workflows.
 - **Squash only.** All factory repos use squash merge. Never merge-commit or rebase-merge.
