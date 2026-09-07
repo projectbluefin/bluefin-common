@@ -181,6 +181,19 @@ Changes to these paths require maintainer review before merge:
 | `build_files/` | All repos |
 | `elements/` | `dakota` only |
 
+## Human decision gates
+
+Agents implement autonomously **except** at the four named human gates:
+
+| Gate | Trigger | Action |
+|---|---|---|
+| **Design** | Architectural changes, new subsystems, user-visible behavior changes | Present proposal, stop, wait for approval |
+| **Security** | Authentication, signing, supply chain, secrets, third-party package sources | Present security impact, stop, wait for maintainer approval |
+| **Breakage** | Public input changes, defaults affecting downstream repos (`bluefin`, `bluefin-lts`, `dakota`, `aurora`) | Identify consumers, describe blast radius, wait for approval |
+| **Merge** | Final PR review and merge | Human reviewer approval required; agents never self-merge |
+
+When hitting a gate: stop, present what was done and the decision needed, add the `blocked` label to the related issue, and wait for human decision. See [`docs/skills/human-gates.md`](../skills/human-gates.md).
+
 ## ublue-os absolute prohibition
 
 **NEVER create issues, PRs, comments, forks, automated reports, webhook calls, or any programmatic write action targeting any `ublue-os/*` repository.**
