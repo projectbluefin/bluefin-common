@@ -147,7 +147,8 @@ not `system_files/bluefin/preinstall.d/`. See [package-set.md](references/packag
 
 - Suggesting `rpm-ostree install` for any missing tool — this is never correct on Bluefin
 - Adding a package to `preinstall.d/` that has a udev rule, kernel module, D-Bus system service, FUSE driver, firmware, or PAM dependency — it must stay as an RPM
-- Adding a tap without `trusted: true` / `--trust` (Homebrew 6.0 blocks untrusted taps silently)
+- Adding a tap without `trusted: true` in a Brewfile, or without a `brew trust` call after `brew tap` in a recipe (Homebrew 6.0 blocks untrusted taps silently)
+- Passing `--trust` to `brew tap` — it is not a valid flag and Homebrew 6.0 exits non-zero; use `brew trust <tap>` as a separate command
 - Using `arm:` / `intel:` checksum keys for a Linux cask — those keys are macOS-only and resolve to no checksum on Linux
 - Adding unknown keys to `/usr/share/chairlift/config.yml` — ChairLift disables
   the whole application on unknown page, group, or field names
