@@ -93,6 +93,12 @@ read_boot_status() {
         # the same digest, so only bootc knows the followed tag.
         booted_ref="$(printf '%s' "$BOOTC_JSON" | \
             jq -r '.status.booted.image.image.image // .spec.image.image // empty' 2>/dev/null || true)"
+        # Unprivileged `bootc status` fails on bootc >= 1.14, so fall back to
+        # the boot-time snapshot written by ublue-booted-image.service on
+        # images that ship it (projectbluefin/dakota#1418).
+        if [[ -z "$booted_ref" && -r /run/ublue-os/booted-image ]]; then
+            read -r booted_ref < /run/ublue-os/booted-image || true
+        fi
         if [[ -n "$booted_ref" ]]; then
             # The baked image-ref is equally stale for rebased or locally
             # built deployments (projectbluefin/dakota#1328).
@@ -111,27 +117,10 @@ read_boot_status() {
 }
 
 route_issue_repo() {
-    case "$IMAGE_NAME" in
-        bluefin-lts*)
-            BUG_REPO="projectbluefin/bluefin-lts"
-            ;;
-        bluefin)
-            if [[ "$IMAGE_TAG" == lts* ]]; then
-                BUG_REPO="projectbluefin/bluefin-lts"
-            else
-                BUG_REPO="projectbluefin/bluefin"
-            fi
-            ;;
-        bluefin*)
-            BUG_REPO="projectbluefin/bluefin"
-            ;;
-        dakota*)
-            BUG_REPO="projectbluefin/dakota"
-            ;;
-        *)
-            BUG_REPO="projectbluefin/common"
-            ;;
-    esac
+    # Routing grammar lives in one place only — see
+    # system_files/shared/usr/libexec/ublue-image-repo.
+    BUG_REPO="$("${UBLUE_IMAGE_REPO_BIN:-/usr/libexec/ublue-image-repo}" \
+        --default "projectbluefin/common" "$IMAGE_NAME" "$IMAGE_TAG")"
 }
 
 scrub_kernel_log() {
