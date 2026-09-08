@@ -244,3 +244,41 @@ _extract_apps_recipe() {
     [ "$(< "${custom_xdg}/goose/config.yaml")" = "existing-xdg-config" ]
     [[ "${output}" == *"Goose config already exists: ${custom_xdg}/goose/config.yaml"* ]]
 }
+
+
+# ---------------------------------------------------------------------------
+# system.just: bluespeed recipe tests
+# ---------------------------------------------------------------------------
+
+SYSTEM_JUST="$BATS_TEST_DIRNAME/../system_files/bluefin/usr/share/ublue-os/just/system.just"
+
+_extract_system_recipe() {
+    local recipe="$1" out_file="$2"
+    awk -v recipe="$recipe" '
+        $0 ~ ("^" recipe "([[:space:]].*)?:$") { in_recipe=1; next }
+        in_recipe && /^[[:space:]]+#!\/usr\/bin\/env bash/ { found=1; next }
+        found && /^[^[:space:]]/ { exit }
+        found { sub(/^[[:space:]]{4}/, ""); print }
+    ' "${SYSTEM_JUST}" > "${out_file}"
+}
+
+@test "system.just: bluespeed fails when Homebrew is missing" {
+    local script="${WORKDIR}/bluespeed.sh"
+    _extract_system_recipe "bluespeed" "${script}"
+
+    run env -i PATH="/usr/bin:/bin" CALLS="${WORKDIR}/calls.log" bash "${script}"
+
+    [ "${status}" -eq 127 ]
+    [[ "${output}" == *"bluespeed: Homebrew is required"* ]]
+    [ ! -s "${WORKDIR}/calls.log" ]
+}
+
+@test "system.just: bluespeed runs brew bundle with --no-lock when Homebrew is present" {
+    local script="${WORKDIR}/bluespeed.sh"
+    _extract_system_recipe "bluespeed" "${script}"
+
+    run env -i PATH="${WORKDIR}/bin:/usr/bin:/bin" CALLS="${WORKDIR}/calls.log" bash "${script}"
+
+    [ "${status}" -eq 0 ]
+    grep -qFx "brew bundle --no-lock --file=/usr/share/ublue-os/homebrew/ai-tools.Brewfile" "${WORKDIR}/calls.log"
+}
