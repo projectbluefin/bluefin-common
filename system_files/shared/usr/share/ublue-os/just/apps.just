@@ -63,7 +63,7 @@ install-ai-tools:
 
     CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/goose"
     CONFIG_FILE="${CONFIG_DIR}/config.yaml"
-    TEMPLATE="/usr/share/ublue-os/goose/config.yaml"
+    TEMPLATE="${GOOSE_TEMPLATE:-/usr/share/ublue-os/goose/config.yaml}"
     mkdir -p "${CONFIG_DIR}"
 
     if [[ -e "${CONFIG_FILE}" ]]; then
